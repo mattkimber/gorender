@@ -8,3 +8,5 @@ type PointWithColour struct {
 	Point  Point
 	Colour byte
 }
+
+type RawVoxelObject [][][]byte

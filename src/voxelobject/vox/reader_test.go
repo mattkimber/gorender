@@ -76,7 +76,7 @@ func TestGetPointDataFromChunk(t *testing.T) {
 	var testCases = []struct {
 		input    []byte
 		expected []voxelobject.PointWithColour
-		error bool
+		error    bool
 	}{
 		{getSizedByteSlice(4, []byte{1, 2, 3, 64}),
 			[]voxelobject.PointWithColour{{voxelobject.Point{X: 1, Y: 2, Z: 3}, 64}}, false},
@@ -87,7 +87,6 @@ func TestGetPointDataFromChunk(t *testing.T) {
 			}, false},
 		{getSizedByteSlice(5, []byte{1, 2, 3, 4, 5}),
 			[]voxelobject.PointWithColour{}, true},
-
 	}
 
 	for _, testCase := range testCases {
@@ -109,8 +108,8 @@ func TestGetPointDataFromChunk(t *testing.T) {
 }
 
 func TestSkipUnhandledChunk(t *testing.T) {
-	var testCases = [][]byte {
-		getSizedByteSlice(4, []byte{1,2,3,4}),
+	var testCases = [][]byte{
+		getSizedByteSlice(4, []byte{1, 2, 3, 4}),
 	}
 
 	for _, testCase := range testCases {
@@ -120,6 +119,65 @@ func TestSkipUnhandledChunk(t *testing.T) {
 		if reader.Len() > 0 {
 			t.Errorf("Did not read to end of data for byte array %v", testCase)
 		}
+	}
+}
+
+func TestGetRawVoxelDataFromXyzi(t *testing.T) {
+	size := voxelobject.Point{X: 2, Y: 2, Z: 2}
+	data := []voxelobject.PointWithColour{
+		{voxelobject.Point{X: 1, Y: 1, Z: 1}, 255},
+		{voxelobject.Point{X: 0, Y: 1, Z: 1}, 1},
+		{voxelobject.Point{X: 20, Y: 31, Z: 11}, 1},
+	}
+
+	result := getRawVoxelsFromPointData(size, data)
+	testRawVoxelObject(result, t)
+}
+
+func TestGetRawVoxels(t *testing.T) {
+	testData := []byte{'V', 'O', 'X', ' '}
+	testData = append(testData, []byte{'S', 'I', 'Z', 'E'}...)
+	testData = append(testData, getSizedByteSlice(12, []byte{2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0})...)
+	testData = append(testData, []byte{'X', 'Y', 'Z', 'I'}...)
+	testData = append(testData, getSizedByteSlice(12, []byte{1, 1, 1, 255, 0, 1, 1, 1, 20, 31, 11, 1})...)
+	testData = append(testData, []byte{'U', 'N', 'K', ' '}...)
+	testData = append(testData, getSizedByteSlice(2, []byte{1, 2})...)
+
+	reader := bytes.NewReader(testData)
+	result, err := GetRawVoxels(reader)
+
+	if err != nil {
+		t.Errorf("Encountered error %v", err)
+	}
+
+	testRawVoxelObject(result, t)
+}
+
+func testRawVoxelObject(object voxelobject.RawVoxelObject, t *testing.T) {
+	if len(object) != 2 {
+		t.Error("x dimension not correctly sized")
+		return
+	}
+	if len(object[0]) != 2 {
+		t.Error("y dimension not correctly sized")
+		return
+	}
+
+	if len(object[0][0]) != 2 {
+		t.Error("z dimension not correctly sized")
+		return
+	}
+
+	if object[1][1][1] != 253 {
+		t.Error("Point at (1,1,1) was not set")
+	}
+
+	if object[0][1][1] != 255 {
+		t.Error("Point at (0,1,1) was not set")
+	}
+
+	if object[0][0][0] != 0 {
+		t.Error("Point at (0,0,0) was not left unset")
 	}
 }
 
