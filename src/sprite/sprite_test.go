@@ -8,7 +8,7 @@ import (
 
 func TestGetSprite(t *testing.T) {
 	rect := image.Rectangle{Max: image.Point{X: 2, Y: 2}}
-	img := GetSprite(rect, 0)
+	img := GetUniformSprite(rect)
 
 	if img.Bounds() != rect {
 		t.Errorf("Image bounds %v not equal to expected %v", img.Bounds(), rect)

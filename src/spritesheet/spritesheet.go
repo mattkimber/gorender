@@ -30,7 +30,12 @@ func GetSpritesheets(object voxelobject.RawVoxelObject, scale float64, numSprite
 		angle := i * angleStep
 		sw, sh := getSpriteSizeForAngle(angle, scale)
 		rect := image.Rectangle{Max: image.Point{X: sw, Y: sh}}
-		spr := sprite.GetSprite(rect, angle)
+		var spr image.Image
+		if object.Invalid() {
+			spr = sprite.GetUniformSprite(rect)
+		} else {
+			spr = sprite.GetRaycastSprite(object, rect, angle)
+		}
 		compositor.Composite(spr, img, image.Point{X: i * spriteSpacing}, rect)
 	}
 

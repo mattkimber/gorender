@@ -1,4 +1,4 @@
-package vector3
+package geometry
 
 import "math"
 
@@ -68,4 +68,9 @@ func (a Vector3) Dot(b Vector3) float64 {
 
 func (a Vector3) Lerp(b Vector3, amt float64) Vector3 {
 	return a.MultiplyByConstant(1 - amt).Add(b.MultiplyByConstant(amt))
+}
+
+func (a Vector3) Equals(b Vector3) bool {
+	const epsilon = 1e-14
+	return a.Subtract(b).Length() < epsilon
 }

@@ -1,4 +1,4 @@
-package vector3
+package geometry
 
 import (
 	"math"
@@ -77,4 +77,23 @@ func TestVector3_Dot(t *testing.T) {
 
 func TestVector3_Lerp(t *testing.T) {
 	testVector(Vector3{0.75, 0.25, 0}, UnitX().Lerp(UnitY(), 0.25), t)
+}
+
+func TestVector3_Equal(t *testing.T) {
+	testCases := []struct {
+		a        Vector3
+		b        Vector3
+		expected bool
+	}{
+		{UnitX(), UnitX(), true},
+		{UnitX(), UnitY(), false},
+		{UnitX(), UnitX().Add(UnitX().MultiplyByConstant(1e-15)), true},
+		{UnitX(), UnitX().Add(UnitX().MultiplyByConstant(1e-7)), false},
+	}
+
+	for _, testCase := range testCases {
+		if result := testCase.a.Equals(testCase.b); result != testCase.expected {
+			t.Errorf("%v == %v expected %v, was %v", testCase.a, testCase.b, testCase.expected, result)
+		}
+	}
 }

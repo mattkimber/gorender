@@ -41,7 +41,7 @@ func getTestSpriteRectangle(angle int, scale float64) image.Rectangle {
 }
 
 func getTestSpriteImage(rect image.Rectangle) image.Image {
-	spr := sprite.GetSprite(rect, 0)
+	spr := sprite.GetUniformSprite(rect)
 	img := image.NewRGBA(rect)
 	compositor.Composite(spr, img, image.Point{}, rect)
 	return img

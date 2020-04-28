@@ -136,6 +136,7 @@ func TestGetRawVoxelDataFromXyzi(t *testing.T) {
 
 func TestGetRawVoxels(t *testing.T) {
 	testData := []byte{'V', 'O', 'X', ' '}
+	testData = append(testData, []byte{150, 0, 0, 0}...)
 	testData = append(testData, []byte{'S', 'I', 'Z', 'E'}...)
 	testData = append(testData, getSizedByteSlice(12, []byte{2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0})...)
 	testData = append(testData, []byte{'X', 'Y', 'Z', 'I'}...)

@@ -56,14 +56,7 @@ func getPointDataFromChunk(handle io.Reader) ([]voxelobject.PointWithColour, err
 }
 
 func getRawVoxelsFromPointData(size voxelobject.Point, data []voxelobject.PointWithColour) voxelobject.RawVoxelObject {
-	result := make([][][]byte, size.X)
-
-	for x := range result {
-		result[x] = make([][]byte, size.Y)
-		for y := range result[x] {
-			result[x][y] = make([]byte, size.Z)
-		}
-	}
+	result := voxelobject.MakeRawVoxelObject(size)
 
 	for _, p := range data {
 		if p.Point.X < size.X && p.Point.Y < size.Y && p.Point.Z < size.Z {
@@ -105,7 +98,7 @@ func getSize(handle io.Reader) int64 {
 		return 0
 	}
 
-	parsedSize := int64(binary.LittleEndian.Uint64(size))
+	parsedSize := int64(binary.LittleEndian.Uint32(size[0:4]))
 	return parsedSize
 }
 
@@ -117,6 +110,7 @@ func GetRawVoxels(handle io.Reader) (voxelobject.RawVoxelObject, error) {
 	if !isHeaderValid(handle) {
 		return nil, fmt.Errorf("header not valid")
 	}
+	getChunkHeader(handle)
 
 	size := voxelobject.Point{}
 	pointData := make([]voxelobject.PointWithColour, 0)
