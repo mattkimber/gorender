@@ -18,9 +18,9 @@ type Spritesheets map[string]Spritesheet
 const spriteSpacing = 40
 const totalHeight = 40
 
-func GetSpritesheets(object voxelobject.RawVoxelObject, scale float32, numSprites int) Spritesheets {
-	w := int(float32(spriteSpacing*numSprites) * scale)
-	h := int(float32(totalHeight) * scale)
+func GetSpritesheets(object voxelobject.RawVoxelObject, scale float64, numSprites int) Spritesheets {
+	w := int(float64(spriteSpacing*numSprites) * scale)
+	h := int(float64(totalHeight) * scale)
 	bounds := image.Rectangle{Max: image.Point{X: w, Y: h}}
 
 	img := imageutils.GetUniformImage(bounds, color.White)
@@ -40,8 +40,8 @@ func GetSpritesheets(object voxelobject.RawVoxelObject, scale float32, numSprite
 	return sheets
 }
 
-func getSpriteSizeForAngle(angle int, scale float32) (x, y int) {
-	var fx, fy float32
+func getSpriteSizeForAngle(angle int, scale float64) (x, y int) {
+	var fx, fy float64
 
 	switch {
 	case angle == 0 || angle == 180:

@@ -10,7 +10,7 @@ import (
 )
 
 func TestGetSpritesheets(t *testing.T) {
-	expectedRect := image.Rectangle{Max: image.Point{X: spriteSpacing*2, Y: totalHeight}}
+	expectedRect := image.Rectangle{Max: image.Point{X: spriteSpacing * 2, Y: totalHeight}}
 	spriteRect := getTestSpriteRectangle(0, 1.0)
 	expectedImg := getTestSpriteImage(spriteRect)
 
@@ -29,13 +29,13 @@ func TestGetSpritesheets(t *testing.T) {
 		t.Errorf("sprite at %v not equal to composited output", spriteRect)
 	}
 
-	if !imageutils.IsColourEqual(sheet.Image, spriteSpacing - 1, 0, 65535, 65535, 65535) {
+	if !imageutils.IsColourEqual(sheet.Image, spriteSpacing-1, 0, 65535, 65535, 65535) {
 		t.Errorf("blank area of spritesheet not set to white")
 	}
 }
 
-func getTestSpriteRectangle(angle int, scale float32) image.Rectangle {
-	x,y := getSpriteSizeForAngle(angle, scale)
+func getTestSpriteRectangle(angle int, scale float64) image.Rectangle {
+	x, y := getSpriteSizeForAngle(angle, scale)
 	rect := image.Rectangle{Max: image.Point{X: x, Y: y}}
 	return rect
 }

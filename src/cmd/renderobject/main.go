@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	sheets := spritesheet.GetSpritesheets(voxelobject.RawVoxelObject{},1.0,8)
+	sheets := spritesheet.GetSpritesheets(voxelobject.RawVoxelObject{}, 1.0, 8)
 	sheet, ok := sheets["32bpp"]
 
 	if !ok {
