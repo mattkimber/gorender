@@ -1,6 +1,7 @@
 package main
 
 import (
+	"colour"
 	"fmt"
 	"image/png"
 	"os"
@@ -9,6 +10,20 @@ import (
 )
 
 func main() {
+	paletteFile, err := os.Open("files/ttd_palette.json")
+
+	if err != nil {
+		s := fmt.Sprintf("could not open palette file: %s", err)
+		panic(s)
+	}
+
+	palette := colour.GetPaletteFromJson(paletteFile)
+
+	if err := paletteFile.Close(); err != nil {
+		s := fmt.Sprintf("error closing palette file: %s", err)
+		panic(s)
+	}
+
 	if len(os.Args) < 2 {
 		s := fmt.Sprintf("no command line argument given for voxel file source")
 		panic(s)
@@ -32,7 +47,7 @@ func main() {
 		panic(s)
 	}
 
-	sheets := spritesheet.GetSpritesheets(object, 1.0, 8)
+	sheets := spritesheet.GetSpritesheets(object, palette, 2.0, 8)
 	sheet, ok := sheets["32bpp"]
 
 	if !ok {

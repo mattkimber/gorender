@@ -1,6 +1,7 @@
 package spritesheet
 
 import (
+	"colour"
 	"compositor"
 	"image"
 	"sprite"
@@ -14,7 +15,7 @@ func TestGetSpritesheets(t *testing.T) {
 	spriteRect := getTestSpriteRectangle(0, 1.0)
 	expectedImg := getTestSpriteImage(spriteRect)
 
-	sheets := GetSpritesheets(voxelobject.RawVoxelObject{}, 1.0, 2)
+	sheets := GetSpritesheets(voxelobject.RawVoxelObject{}, colour.Palette{}, 1.0, 2)
 	sheet, ok := sheets["32bpp"]
 
 	if !ok {

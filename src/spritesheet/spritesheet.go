@@ -1,6 +1,7 @@
 package spritesheet
 
 import (
+	"colour"
 	"compositor"
 	"image"
 	"image/color"
@@ -18,7 +19,7 @@ type Spritesheets map[string]Spritesheet
 const spriteSpacing = 40
 const totalHeight = 40
 
-func GetSpritesheets(object voxelobject.RawVoxelObject, scale float64, numSprites int) Spritesheets {
+func GetSpritesheets(object voxelobject.RawVoxelObject, pal colour.Palette, scale float64, numSprites int) Spritesheets {
 	w := int(float64(spriteSpacing*numSprites) * scale)
 	h := int(float64(totalHeight) * scale)
 	bounds := image.Rectangle{Max: image.Point{X: w, Y: h}}
@@ -27,16 +28,16 @@ func GetSpritesheets(object voxelobject.RawVoxelObject, scale float64, numSprite
 	angleStep := 360 / numSprites
 
 	for i := 0; i < numSprites; i++ {
-		angle := i * angleStep
+		angle := 180 - (i * angleStep)
 		sw, sh := getSpriteSizeForAngle(angle, scale)
 		rect := image.Rectangle{Max: image.Point{X: sw, Y: sh}}
 		var spr image.Image
 		if object.Invalid() {
 			spr = sprite.GetUniformSprite(rect)
 		} else {
-			spr = sprite.GetRaycastSprite(object, rect, angle)
+			spr = sprite.GetRaycastSprite(object, pal, rect, angle)
 		}
-		compositor.Composite(spr, img, image.Point{X: i * spriteSpacing}, rect)
+		compositor.Composite(spr, img, image.Point{X: int(float64(i * spriteSpacing) * scale)}, rect)
 	}
 
 	sheets := make(Spritesheets)

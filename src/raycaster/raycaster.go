@@ -8,6 +8,7 @@ import (
 
 type RenderInfo struct {
 	Collision bool
+	Index     byte
 }
 
 type RenderOutput [][]RenderInfo
@@ -75,6 +76,7 @@ func GetRaycastOutput(object voxelobject.RawVoxelObject, angle int, w int, h int
 					lx, ly, lz := byte(loc.X), byte(loc.Y), byte(loc.Z)
 					if object[lx][ly][lz] != 0 {
 						result[x][y].Collision = true
+						result[x][y].Index = object[lx][ly][lz]
 					}
 				}
 
