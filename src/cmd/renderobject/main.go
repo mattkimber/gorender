@@ -16,6 +16,7 @@ type Flags struct {
 	InputFilename, OutputFilename string
 	NumSprites                    int
 	OutputTime                    bool
+	Debug                         bool
 }
 
 var flags Flags
@@ -27,13 +28,16 @@ func init() {
 	flag.StringVar(&flags.OutputFilename, "output", "", "base file name of output PNG files, bit depth will be appended")
 	flag.IntVar(&flags.NumSprites, "num_sprites", 8, "number of sprite rotations to render")
 	flag.BoolVar(&flags.OutputTime, "time", false, "output basic profiling information")
+	flag.BoolVar(&flags.Debug, "debug", false, "output extra debugging spritesheets")
 
 	// Short format
-	flag.Float64Var(&flags.Scale, "s", 1.0, "scale to render sprites at")
-	flag.StringVar(&flags.InputFilename, "i", "", "voxel file to process")
-	flag.StringVar(&flags.OutputFilename, "o", "", "base file name of output PNG files, bit depth will be appended")
-	flag.IntVar(&flags.NumSprites, "n", 8, "number of sprite rotations to render")
-	flag.BoolVar(&flags.OutputTime, "t", false, "output basic profiling information")
+	flag.Float64Var(&flags.Scale, "s", 1.0, "shorthand for -scale")
+	flag.StringVar(&flags.InputFilename, "i", "", "shorthand for -input")
+	flag.StringVar(&flags.OutputFilename, "o", "", "shorthand for -output")
+	flag.IntVar(&flags.NumSprites, "n", 8, "shorthand for -num_sprites")
+	flag.BoolVar(&flags.OutputTime, "t", false, "shorthand for -time")
+	flag.BoolVar(&flags.Debug, "d", false, "shorthand for -debug")
+
 }
 
 func main() {
@@ -54,10 +58,11 @@ func main() {
 	}
 
 	def := spritesheet.Definition{
-		Object:     object,
+		Object:     object.GetProcessedVoxelObject(&palette),
 		Palette:    palette,
 		Scale:      flags.Scale,
 		NumSprites: flags.NumSprites,
+		Debug:      flags.Debug,
 	}
 	sheets := spritesheet.GetSpritesheets(def)
 	if err := sheets.SaveAll(flags.OutputFilename); err != nil {

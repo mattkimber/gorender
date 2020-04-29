@@ -21,6 +21,7 @@ GoRender supports the following command line flags:
 * `-n`, `-num_sprites`: How many sprites of rotation to produce (default: `8`). This can be used to render smoother steps of rotation.
 * `-s`, `-scale`: The scale of sprites to produce (default: `1.0`). `1.0` corresponds to the default zoom level of OpenTTD.
 * `-t`, `-time`: A boolean flag for printing simple execution time statistics on stdout
+* `-d`, `-debug`: A boolean flag for outputting extra debug images (e.g voxel normals and lighting information)
 
 GoRender will look for a JSON palette file (default `files/ttd_palette.json`) on run - if this
 is not present it will exit.

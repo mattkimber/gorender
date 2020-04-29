@@ -7,8 +7,9 @@ import (
 )
 
 type RenderInfo struct {
-	Collision bool
-	Index     byte
+	Collision              bool
+	Index                  byte
+	Normal, AveragedNormal geometry.Vector3
 }
 
 type RenderOutput [][]RenderInfo
@@ -51,13 +52,13 @@ func canTerminateRay(loc geometry.Vector3, ray geometry.Vector3, limits geometry
 		(loc.X > limits.X && ray.X >= 0) || (loc.Y > limits.Y && ray.Y >= 0) || (loc.Z > limits.Z && ray.Z >= 0)
 }
 
-func GetRaycastOutput(object voxelobject.RawVoxelObject, angle int, w int, h int) RenderOutput {
-	size := object.Size()
+func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, angle int, w int, h int, debug bool) RenderOutput {
+	size := object.Size
 
 	limits := geometry.Vector3{X: float64(size.X), Y: float64(size.Y), Z: float64(size.Z)}
 
 	viewport := getViewportPlane(angle, size.X, size.Y)
-	ray := geometry.Zero().Subtract(getRenderDirection(angle))
+	ray := geometry.Zero().Subtract(getRenderDirection(angle)).MultiplyByConstant(0.5)
 
 	result := make(RenderOutput, w)
 
@@ -74,9 +75,13 @@ func GetRaycastOutput(object voxelobject.RawVoxelObject, angle int, w int, h int
 
 				if isInsideBoundingVolume(loc, limits) {
 					lx, ly, lz := byte(loc.X), byte(loc.Y), byte(loc.Z)
-					if object[lx][ly][lz] != 0 {
+					if object.Elements[lx][ly][lz].Index != 0 {
 						result[x][y].Collision = true
-						result[x][y].Index = object[lx][ly][lz]
+						result[x][y].Index = object.Elements[lx][ly][lz].Index
+						if debug {
+							result[x][y].Normal = object.Elements[lx][ly][lz].Normal
+							result[x][y].AveragedNormal = object.Elements[lx][ly][lz].AveragedNormal
+						}
 					}
 				}
 

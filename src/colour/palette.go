@@ -18,6 +18,7 @@ type PaletteRange struct {
 	End                      byte `json:"end"`
 	IsPrimaryCompanyColour   bool `json:"is_primary_company_colour"`
 	IsSecondaryCompanyColour bool `json:"is_secondary_company_colour"`
+	Smoothness               int  `json:"smoothness"`
 }
 
 type Palette struct {
@@ -31,6 +32,14 @@ func (p Palette) GetGoPalette() (pal color.Palette) {
 
 	for i, e := range p.Entries {
 		pal[i] = color.RGBA{R: e.R, G: e.G, B: e.B, A: 255}
+	}
+
+	return
+}
+
+func (p Palette) GetSmoothness(index byte) (smoothness int) {
+	if int(index) < len(p.Entries) && p.Entries[index].Range != nil {
+		smoothness = p.Entries[index].Range.Smoothness
 	}
 
 	return

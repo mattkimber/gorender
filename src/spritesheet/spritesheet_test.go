@@ -13,10 +13,11 @@ import (
 func TestGetSpritesheets(t *testing.T) {
 
 	def := Definition{
-		voxelobject.RawVoxelObject{},
+		voxelobject.ProcessedVoxelObject{},
 		colour.Palette{Entries: []colour.PaletteEntry{{R: 0, G: 0, B: 0}, {R: 255, G: 255, B: 255}}},
 		1.0,
 		2,
+		false,
 	}
 
 	sheets := GetSpritesheets(def)

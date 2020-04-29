@@ -19,10 +19,11 @@ type Spritesheet struct {
 }
 
 type Definition struct {
-	Object     voxelobject.RawVoxelObject
+	Object     voxelobject.ProcessedVoxelObject
 	Palette    colour.Palette
 	Scale      float64
 	NumSprites int
+	Debug      bool
 }
 
 type Spritesheets map[string]Spritesheet
@@ -48,13 +49,18 @@ func GetSpritesheets(def Definition) Spritesheets {
 		angle := ((180 - int(float64(i)*angleStep)) + 360) % 360
 		rect := getSpriteSizeForAngle(angle, def.Scale)
 
-		spriteInfos[i].RenderOutput = raycaster.GetRaycastOutput(def.Object, angle, rect.Max.X, rect.Max.Y)
+		spriteInfos[i].RenderOutput = raycaster.GetRaycastOutput(def.Object, angle, rect.Max.X, rect.Max.Y, def.Debug)
 		spriteInfos[i].Bounds = rect
 	}
 
-	sheets["32bpp"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos)}
+	sheets["32bpp"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "32bpp")}
 	sheets["8bpp"] = Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "8bpp")}
 	sheets["mask"] = Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "mask")}
+
+	if def.Debug {
+		sheets["normals"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "normal")}
+		sheets["avg_normals"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "avg")}
+	}
 
 	return sheets
 }
@@ -72,11 +78,11 @@ func get8bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfos
 	return img
 }
 
-func get32bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfos []SpriteInfo) (img image.Image) {
+func get32bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfos []SpriteInfo, depth string) (img image.Image) {
 	img = imageutils.GetUniformImage(bounds, color.White)
 
 	for i := 0; i < def.NumSprites; i++ {
-		spr := getSprite(def, spriteInfos[i], "32bpp")
+		spr := getSprite(def, spriteInfos[i], depth)
 		compositor.Composite(spr, img, image.Point{X: int(float64(i*spriteSpacing) * def.Scale)}, spr.Bounds())
 	}
 
@@ -90,6 +96,10 @@ func getSprite(def Definition, spriteInfo SpriteInfo, depth string) (spr image.I
 		spr = sprite.GetIndexedSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
 	} else if depth == "mask" {
 		spr = sprite.GetMaskSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
+	} else if depth == "normal" {
+		spr = sprite.GetNormalSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
+	} else if depth == "avg" {
+		spr = sprite.GetAverageNormalSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
 	} else {
 		spr = sprite.Get32bppSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
 	}

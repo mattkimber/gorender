@@ -1,137 +1,185 @@
 {
   "ranges": [
     {
+      "_comment": "flat greys",
       "start": 1,
-      "end": 15
+      "end": 15,
+      "smoothness": -1
     },
     {
+      "_comment": "blue greys",
       "start": 16,
-      "end": 23
+      "end": 23,
+      "smoothness": 1
     },
     {
+      "_comment": "olive greens",
       "start": 24,
       "end": 31
     },
     {
+      "_comment": "golden browns",
       "start": 32,
       "end": 39
     },
     {
+      "_comment": "maroons",
       "start": 40,
       "end": 47
     },
     {
+      "_comment": "pink flesh",
       "start": 48,
-      "end": 53
+      "end": 49
     },
     {
-      "start": 54,
+      "_comment": "light yellows",
+      "start": 50,
+      "end": 52,
+      "smoothness": -3
+    },
+    {
+      "_comment": "tan browns",
+      "start": 53,
       "end": 59
     },
     {
+      "_comment": "yellow browns",
       "start": 60,
-      "end": 63
+      "end": 63,
+      "smoothness": -2
     },
     {
+      "_comment": "yellows",
       "start": 64,
       "end": 69
     },
     {
+      "_comment": "reddish browns",
       "start": 70,
       "end": 79
     },
     {
+      "_comment": "company colour 2",
       "start": 80,
       "end": 87,
-      "is_secondary_company_colour": true
+      "is_secondary_company_colour": true,
+      "smoothness": 2
     },
     {
+      "_comment": "forest greens",
       "start": 88,
       "end": 95
     },
     {
+      "_comment": "mint greens",
       "start": 96,
       "end": 103
     },
     {
+      "_comment": "forest browns",
       "start": 104,
-      "end": 111
+      "end": 111,
+      "smoothness": -1
     },
     {
+      "_comment": "flesh tones",
       "start": 112,
       "end": 121
     },
     {
+      "_comment": "maroon browns",
       "start": 122,
       "end": 127
     },
     {
+      "_comment": "mauve (windows)",
       "start": 128,
-      "end": 135
+      "end": 135,
+      "smoothness": 2
     },
     {
+      "_comment": "purples",
       "start": 136,
       "end": 143
     },
     {
+      "_comment": "bright blues",
       "start": 144,
       "end": 153
     },
     {
+      "_comment": "cyan blues",
       "start": 154,
-      "end": 159
-    },
-    {
-      "start": 160,
       "end": 161
     },
     {
+      "_comment": "pale reds",
       "start": 162,
       "end": 169
     },
     {
+      "_comment": "saturated purples",
       "start": 170,
-      "end": 175
-    },
-    {
-      "start": 176,
       "end": 177
     },
     {
+      "_comment": "deep reds and yellows",
       "start": 178,
       "end": 191
     },
     {
+      "_comment": "golden wheat",
       "start": 192,
       "end": 198
     },
     {
+      "_comment": "company colour 1",
       "start": 199,
       "end": 205,
-      "is_primary_company_colour": true
+      "is_primary_company_colour": true,
+      "smoothness": 2
     },
     {
+      "_comment": "sage greens",
       "start": 206,
       "end": 209
     },
     {
+      "_comment": "icy blues",
       "start": 210,
       "end": 214
     },
     {
+      "_comment": "reserved",
       "start": 215,
       "end": 226
     },
     {
+      "_comment": "block cycle",
       "start": 227,
       "end": 231
     },
     {
+      "_comment": "fire cycle",
       "start": 232,
       "end": 238
     },
     {
+      "_comment": "red flash",
       "start": 239,
+      "end": 240,
+      "smoothness": -2
+    },
+    {
+      "_comment": "yellow blinker",
+      "start": 241,
+      "end": 244,
+      "smoothness": -2
+    },
+    {
+      "_comment": "water cycle",
+      "start": 245,
       "end": 254
     }
   ],
