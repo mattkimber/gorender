@@ -1,42 +1,24 @@
 package voxelobject
 
-type Point struct {
-	X, Y, Z byte
-}
-
-type PointWithColour struct {
-	Point  Point
-	Colour byte
-}
+import (
+	"geometry"
+)
 
 type RawVoxelObject [][][]byte
 
-func MakeRawVoxelObject(size Point) RawVoxelObject {
-	result := make([][][]byte, size.X)
-
-	for x := range result {
-		result[x] = make([][]byte, size.Y)
-		for y := range result[x] {
-			result[x][y] = make([]byte, size.Z)
-		}
+func (v RawVoxelObject) Size() geometry.Point {
+	if v == nil || len(v) == 0 || len(v[0]) == 0 {
+		return geometry.Point{}
 	}
 
-	return result
-}
-
-func (o RawVoxelObject) Size() Point {
-	if o == nil || len(o) == 0 || len(o[0]) == 0 {
-		return Point{}
-	}
-
-	return Point{
-		X: byte(len(o)),
-		Y: byte(len(o[0])),
-		Z: byte(len(o[0][0])),
+	return geometry.Point{
+		X: byte(len(v)),
+		Y: byte(len(v[0])),
+		Z: byte(len(v[0][0])),
 	}
 }
 
-func (o RawVoxelObject) Invalid() bool {
-	size := o.Size()
+func (v RawVoxelObject) Invalid() bool {
+	size := v.Size()
 	return size.X == 0 || size.Y == 0 || size.Z == 0
 }

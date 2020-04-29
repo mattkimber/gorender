@@ -5,7 +5,10 @@ import (
 	"compositor"
 	"image"
 	"image/color"
+	"image/png"
+	"io"
 	"sprite"
+	"utils/fileutils"
 	"utils/imageutils"
 	"voxelobject"
 )
@@ -14,39 +17,72 @@ type Spritesheet struct {
 	Image image.Image
 }
 
+type Definition struct {
+	Object     voxelobject.RawVoxelObject
+	Palette    colour.Palette
+	Scale      float64
+	NumSprites int
+}
+
 type Spritesheets map[string]Spritesheet
 
 const spriteSpacing = 40
 const totalHeight = 40
 
-func GetSpritesheets(object voxelobject.RawVoxelObject, pal colour.Palette, scale float64, numSprites int) Spritesheets {
-	w := int(float64(spriteSpacing*numSprites) * scale)
-	h := int(float64(totalHeight) * scale)
+func GetSpritesheets(def Definition) Spritesheets {
+	sheets := make(Spritesheets)
+
+	w := int(float64(spriteSpacing*def.NumSprites) * def.Scale)
+	h := int(float64(totalHeight) * def.Scale)
 	bounds := image.Rectangle{Max: image.Point{X: w, Y: h}}
 
-	img := imageutils.GetUniformImage(bounds, color.White)
-	angleStep := 360 / numSprites
-
-	for i := 0; i < numSprites; i++ {
-		angle := 180 - (i * angleStep)
-		sw, sh := getSpriteSizeForAngle(angle, scale)
-		rect := image.Rectangle{Max: image.Point{X: sw, Y: sh}}
-		var spr image.Image
-		if object.Invalid() {
-			spr = sprite.GetUniformSprite(rect)
-		} else {
-			spr = sprite.GetRaycastSprite(object, pal, rect, angle)
-		}
-		compositor.Composite(spr, img, image.Point{X: int(float64(i * spriteSpacing) * scale)}, rect)
-	}
-
-	sheets := make(Spritesheets)
-	sheets["32bpp"] = Spritesheet{Image: img}
+	sheets["32bpp"] = Spritesheet{Image: getSpritesheetImage(def, bounds)}
 
 	return sheets
 }
 
-func getSpriteSizeForAngle(angle int, scale float64) (x, y int) {
+func getSpritesheetImage(def Definition, bounds image.Rectangle) (img image.Image) {
+	img = imageutils.GetUniformImage(bounds, color.White)
+	angleStep := 360 / float64(def.NumSprites)
+
+	for i := 0; i < def.NumSprites; i++ {
+		angle := 180 - int(float64(i)*angleStep)
+		spr := getSprite(def, angle)
+		compositor.Composite(spr, img, image.Point{X: int(float64(i*spriteSpacing) * def.Scale)}, spr.Bounds())
+	}
+
+	return
+}
+
+func getSprite(def Definition, angle int) (spr image.Image) {
+	rect := getSpriteSizeForAngle(angle, def.Scale)
+
+	if def.Object.Invalid() {
+		spr = sprite.GetUniformSprite(rect)
+	} else {
+		spr = sprite.GetRaycastSprite(def.Object, def.Palette, rect, angle)
+	}
+
+	return
+}
+
+func (s Spritesheet) OutputToWriter(w io.Writer) (err error) {
+	err = png.Encode(w, s.Image)
+	return
+}
+
+func (sheets Spritesheets) SaveAll(baseFilename string) (err error) {
+	for i, sheet := range sheets {
+		filename := baseFilename + "_" + i + ".png"
+		if err = fileutils.WriteToFile(filename, &sheet); err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+func getSpriteSizeForAngle(angle int, scale float64) image.Rectangle {
 	var fx, fy float64
 
 	switch {
@@ -58,5 +94,5 @@ func getSpriteSizeForAngle(angle int, scale float64) (x, y int) {
 		fx, fy = 26, 26
 	}
 
-	return int(fx * scale), int(fy * scale)
+	return image.Rectangle{Max: image.Point{X: int(fx * scale), Y: int(fy * scale)}}
 }

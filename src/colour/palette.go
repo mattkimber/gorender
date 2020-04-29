@@ -2,6 +2,7 @@ package colour
 
 import (
 	"encoding/json"
+	"fmt"
 	"image/color"
 	"io"
 	"io/ioutil"
@@ -9,12 +10,13 @@ import (
 
 type PaletteEntry struct {
 	R, G, B byte
+	Range   *PaletteRange
 }
 
 type PaletteRange struct {
-	Start byte `json:"start"`
-	End   byte `json:"end"`
-	IsPrimaryCompanyColour bool `json:"is_primary_company_colour"`
+	Start                    byte `json:"start"`
+	End                      byte `json:"end"`
+	IsPrimaryCompanyColour   bool `json:"is_primary_company_colour"`
 	IsSecondaryCompanyColour bool `json:"is_secondary_company_colour"`
 }
 
@@ -29,12 +31,10 @@ func (p Palette) GetRGB(index byte) (r, g, b uint32) {
 		rgba := color.RGBA{R: entry.R, B: entry.B, G: entry.G}
 		r, g, b, _ = rgba.RGBA()
 
-		for _, rng := range p.Ranges {
-			if index >= rng.Start && index <= rng.End {
-				if rng.IsPrimaryCompanyColour || rng.IsSecondaryCompanyColour {
-					y := (19595*uint32(entry.R) + 38470*uint32(entry.G) + 7471*uint32(entry.B) + 1<<15) >> 8
-					return y,y,y
-				}
+		if entry.Range != nil {
+			if entry.Range.IsPrimaryCompanyColour || entry.Range.IsSecondaryCompanyColour {
+				y := (19595*uint32(entry.R) + 38470*uint32(entry.G) + 7471*uint32(entry.B) + 1<<15) >> 8
+				return y, y, y
 			}
 		}
 
@@ -54,16 +54,44 @@ func (p *PaletteEntry) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func GetPaletteFromJson(handle io.Reader) (p Palette) {
+func GetPaletteFromJson(handle io.Reader) (p Palette, err error) {
 	data, err := ioutil.ReadAll(handle)
 
 	if err != nil {
-		return Palette{}
+		return Palette{}, err
 	}
 
 	if err := json.Unmarshal(data, &p); err != nil {
-		return Palette{}
+		return Palette{}, err
+	}
+
+	if err := p.SetRanges(p.Ranges); err != nil {
+		return Palette{}, err
 	}
 
 	return
+}
+
+func (p *Palette) SetRanges(ranges []PaletteRange) (err error) {
+	p.Ranges = ranges
+
+	for i := range p.Entries {
+		p.Entries[i].Range = nil
+	}
+
+	for i, r := range ranges {
+		for j := r.Start; j <= r.End; j++ {
+			if p.Entries[j].Range != nil {
+				return fmt.Errorf("range %d overlaps colour %d", i, j)
+			}
+			p.Entries[j].Range = &ranges[i]
+		}
+	}
+
+	return nil
+}
+
+func (p *Palette) GetFromReader(handle io.Reader) (err error) {
+	*p, err = GetPaletteFromJson(handle)
+	return err
 }

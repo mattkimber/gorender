@@ -3,12 +3,15 @@ package vox
 import (
 	"encoding/binary"
 	"fmt"
+	"geometry"
 	"io"
 	"io/ioutil"
-	"voxelobject"
+	"utils/byteutils"
 )
 
 const magic = "VOX "
+
+type MagicaVoxelObject [][][]byte
 
 func isHeaderValid(handle io.Reader) bool {
 	result, err := getChunkHeader(handle)
@@ -21,32 +24,32 @@ func getChunkHeader(handle io.Reader) (string, error) {
 	return string(result), err
 }
 
-func getSizeFromChunk(handle io.Reader) (voxelobject.Point, error) {
+func getSizeFromChunk(handle io.Reader) (geometry.Point, error) {
 	data, err := getChunkData(handle, 12)
 
 	if err != nil {
-		return voxelobject.Point{}, err
+		return geometry.Point{}, err
 	}
 
-	return voxelobject.Point{
+	return geometry.Point{
 		X: byte(binary.LittleEndian.Uint32(data[0:4])),
 		Y: byte(binary.LittleEndian.Uint32(data[4:8])),
 		Z: byte(binary.LittleEndian.Uint32(data[8:12])),
 	}, nil
 }
 
-func getPointDataFromChunk(handle io.Reader) ([]voxelobject.PointWithColour, error) {
+func getPointDataFromChunk(handle io.Reader) ([]geometry.PointWithColour, error) {
 	data, err := getChunkData(handle, 4)
 
 	if err != nil {
 		return getNilValueForPointDataFromChunk(), err
 	}
 
-	result := make([]voxelobject.PointWithColour, len(data)/4)
+	result := make([]geometry.PointWithColour, len(data)/4)
 
 	for i := 0; i < len(data); i += 4 {
-		point := voxelobject.PointWithColour{
-			Point: voxelobject.Point{X: data[i], Y: data[i+1], Z: data[i+2]}, Colour: data[i+3],
+		point := geometry.PointWithColour{
+			Point: geometry.Point{X: data[i], Y: data[i+1], Z: data[i+2]}, Colour: data[i+3],
 		}
 
 		result[i/4] = point
@@ -55,12 +58,12 @@ func getPointDataFromChunk(handle io.Reader) ([]voxelobject.PointWithColour, err
 	return result, nil
 }
 
-func getRawVoxelsFromPointData(size voxelobject.Point, data []voxelobject.PointWithColour) voxelobject.RawVoxelObject {
-	result := voxelobject.MakeRawVoxelObject(size)
+func getVoxelObjectFromPointData(size geometry.Point, data []geometry.PointWithColour) MagicaVoxelObject {
+	result := byteutils.Make3DByteSlice(size)
 
 	for _, p := range data {
 		if p.Point.X < size.X && p.Point.Y < size.Y && p.Point.Z < size.Z {
-			result[p.Point.X][p.Point.Y][size.Z - (1 + p.Point.Z)] = p.Colour - 2
+			result[p.Point.X][p.Point.Y][size.Z-(1+p.Point.Z)] = p.Colour - 2
 		}
 	}
 
@@ -102,18 +105,18 @@ func getSize(handle io.Reader) int64 {
 	return parsedSize
 }
 
-func getNilValueForPointDataFromChunk() []voxelobject.PointWithColour {
-	return []voxelobject.PointWithColour{}
+func getNilValueForPointDataFromChunk() []geometry.PointWithColour {
+	return []geometry.PointWithColour{}
 }
 
-func GetRawVoxels(handle io.Reader) (voxelobject.RawVoxelObject, error) {
+func GetMagicaVoxelObject(handle io.Reader) (MagicaVoxelObject, error) {
 	if !isHeaderValid(handle) {
 		return nil, fmt.Errorf("header not valid")
 	}
 	getChunkHeader(handle)
 
-	size := voxelobject.Point{}
-	pointData := make([]voxelobject.PointWithColour, 0)
+	size := geometry.Point{}
+	pointData := make([]geometry.PointWithColour, 0)
 
 	for {
 		chunkType, err := getChunkHeader(handle)
@@ -151,6 +154,11 @@ func GetRawVoxels(handle io.Reader) (voxelobject.RawVoxelObject, error) {
 		return nil, fmt.Errorf("invalid size %v", size)
 	}
 
-	rawVoxels := getRawVoxelsFromPointData(size, pointData)
+	rawVoxels := getVoxelObjectFromPointData(size, pointData)
 	return rawVoxels, nil
+}
+
+func (v *MagicaVoxelObject) GetFromReader(handle io.Reader) (err error) {
+	*v, err = GetMagicaVoxelObject(handle)
+	return
 }

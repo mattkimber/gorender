@@ -3,9 +3,9 @@ package vox
 import (
 	"bytes"
 	"encoding/binary"
+	"geometry"
 	"strings"
 	"testing"
-	"voxelobject"
 )
 
 func TestIsHeaderValid(t *testing.T) {
@@ -41,17 +41,17 @@ func TestIsHeaderValid(t *testing.T) {
 func TestGetSizeFromChunk(t *testing.T) {
 	var testCases = []struct {
 		input    []byte
-		expected voxelobject.Point
+		expected geometry.Point
 		error    bool
 	}{
 		{getSizedByteSlice(12, []byte{1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0}),
-			voxelobject.Point{X: 1, Y: 2, Z: 3}, false},
+			geometry.Point{X: 1, Y: 2, Z: 3}, false},
 		{getSizedByteSlice(1, []byte{1}),
-			voxelobject.Point{X: 0, Y: 0, Z: 0}, true},
+			geometry.Point{X: 0, Y: 0, Z: 0}, true},
 		{getSizedByteSlice(200, []byte{1}),
-			voxelobject.Point{X: 0, Y: 0, Z: 0}, true},
+			geometry.Point{X: 0, Y: 0, Z: 0}, true},
 		{getSizedByteSlice(16, []byte{3, 0, 0, 0, 5, 0, 0, 0, 1, 0, 0, 0, 2, 4, 6, 8}),
-			voxelobject.Point{X: 3, Y: 5, Z: 1}, false},
+			geometry.Point{X: 3, Y: 5, Z: 1}, false},
 	}
 
 	for _, testCase := range testCases {
@@ -75,18 +75,18 @@ func TestGetSizeFromChunk(t *testing.T) {
 func TestGetPointDataFromChunk(t *testing.T) {
 	var testCases = []struct {
 		input    []byte
-		expected []voxelobject.PointWithColour
+		expected []geometry.PointWithColour
 		error    bool
 	}{
 		{getSizedByteSlice(4, []byte{1, 2, 3, 64}),
-			[]voxelobject.PointWithColour{{voxelobject.Point{X: 1, Y: 2, Z: 3}, 64}}, false},
+			[]geometry.PointWithColour{{geometry.Point{X: 1, Y: 2, Z: 3}, 64}}, false},
 		{getSizedByteSlice(8, []byte{1, 2, 3, 64, 4, 5, 6, 128}),
-			[]voxelobject.PointWithColour{
-				{voxelobject.Point{X: 1, Y: 2, Z: 3}, 64},
-				{voxelobject.Point{X: 4, Y: 5, Z: 6}, 128},
+			[]geometry.PointWithColour{
+				{geometry.Point{X: 1, Y: 2, Z: 3}, 64},
+				{geometry.Point{X: 4, Y: 5, Z: 6}, 128},
 			}, false},
 		{getSizedByteSlice(5, []byte{1, 2, 3, 4, 5}),
-			[]voxelobject.PointWithColour{}, true},
+			[]geometry.PointWithColour{}, true},
 	}
 
 	for _, testCase := range testCases {
@@ -123,15 +123,15 @@ func TestSkipUnhandledChunk(t *testing.T) {
 }
 
 func TestGetRawVoxelDataFromXyzi(t *testing.T) {
-	size := voxelobject.Point{X: 2, Y: 2, Z: 2}
-	data := []voxelobject.PointWithColour{
-		{voxelobject.Point{X: 1, Y: 1, Z: 1}, 255},
-		{voxelobject.Point{X: 0, Y: 1, Z: 1}, 1},
-		{voxelobject.Point{X: 20, Y: 31, Z: 11}, 1},
+	size := geometry.Point{X: 2, Y: 2, Z: 2}
+	data := []geometry.PointWithColour{
+		{geometry.Point{X: 1, Y: 1, Z: 1}, 255},
+		{geometry.Point{X: 0, Y: 1, Z: 1}, 1},
+		{geometry.Point{X: 20, Y: 31, Z: 11}, 1},
 	}
 
-	result := getRawVoxelsFromPointData(size, data)
-	testRawVoxelObject(result, t)
+	result := getVoxelObjectFromPointData(size, data)
+	testMagicaVoxelObject(result, t)
 }
 
 func TestGetRawVoxels(t *testing.T) {
@@ -145,16 +145,16 @@ func TestGetRawVoxels(t *testing.T) {
 	testData = append(testData, getSizedByteSlice(2, []byte{1, 2})...)
 
 	reader := bytes.NewReader(testData)
-	result, err := GetRawVoxels(reader)
+	result, err := GetMagicaVoxelObject(reader)
 
 	if err != nil {
 		t.Errorf("Encountered error %v", err)
 	}
 
-	testRawVoxelObject(result, t)
+	testMagicaVoxelObject(result, t)
 }
 
-func testRawVoxelObject(object voxelobject.RawVoxelObject, t *testing.T) {
+func testMagicaVoxelObject(object MagicaVoxelObject, t *testing.T) {
 	if len(object) != 2 {
 		t.Error("x dimension not correctly sized")
 		return
@@ -182,7 +182,7 @@ func testRawVoxelObject(object voxelobject.RawVoxelObject, t *testing.T) {
 	}
 }
 
-func arePointWithColourSlicesEqual(a []voxelobject.PointWithColour, b []voxelobject.PointWithColour) bool {
+func arePointWithColourSlicesEqual(a []geometry.PointWithColour, b []geometry.PointWithColour) bool {
 	if len(a) != len(b) {
 		return false
 	}

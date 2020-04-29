@@ -32,7 +32,7 @@ func TestPlane_BiLerpWithinPlane(t *testing.T) {
 	}{
 		{plane, 0, 0, Vector3{}},
 		{plane, 1, 0, Vector3{X: 2}},
-		{plane, 0, 1, Vector3{Y:2}},
+		{plane, 0, 1, Vector3{Y: 2}},
 		{plane, 1, 1, Vector3{X: 2, Y: 2}},
 		{plane, 0.5, 0.5, Vector3{X: 1, Y: 1}},
 	}

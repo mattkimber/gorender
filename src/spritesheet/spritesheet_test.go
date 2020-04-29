@@ -15,7 +15,8 @@ func TestGetSpritesheets(t *testing.T) {
 	spriteRect := getTestSpriteRectangle(0, 1.0)
 	expectedImg := getTestSpriteImage(spriteRect)
 
-	sheets := GetSpritesheets(voxelobject.RawVoxelObject{}, colour.Palette{}, 1.0, 2)
+	def := Definition{voxelobject.RawVoxelObject{}, colour.Palette{}, 1.0, 2}
+	sheets := GetSpritesheets(def)
 	sheet, ok := sheets["32bpp"]
 
 	if !ok {
@@ -36,9 +37,7 @@ func TestGetSpritesheets(t *testing.T) {
 }
 
 func getTestSpriteRectangle(angle int, scale float64) image.Rectangle {
-	x, y := getSpriteSizeForAngle(angle, scale)
-	rect := image.Rectangle{Max: image.Point{X: x, Y: y}}
-	return rect
+	return getSpriteSizeForAngle(angle, scale)
 }
 
 func getTestSpriteImage(rect image.Rectangle) image.Image {
@@ -65,9 +64,9 @@ func TestGetSpriteSizeForAngle(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		x, y := getSpriteSizeForAngle(testCase.angle, 1.0)
-		if x != testCase.expectedX || y != testCase.expectedY {
-			t.Errorf("output for angle %d was [%d,%d] (expected [%d,%d]", testCase.angle, x, y, testCase.expectedX, testCase.expectedY)
+		rect := getSpriteSizeForAngle(testCase.angle, 1.0)
+		if rect.Max.X != testCase.expectedX || rect.Max.Y != testCase.expectedY {
+			t.Errorf("output for angle %d was [%d,%d] (expected [%d,%d]", testCase.angle, rect.Max.X, rect.Max.Y, testCase.expectedX, testCase.expectedY)
 		}
 	}
 }

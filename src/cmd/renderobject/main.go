@@ -2,73 +2,97 @@ package main
 
 import (
 	"colour"
+	"flag"
 	"fmt"
-	"image/png"
-	"os"
 	"spritesheet"
+	"time"
+	"utils/fileutils"
+	"voxelobject"
 	"voxelobject/vox"
 )
 
+type Flags struct {
+	Scale                         float64
+	InputFilename, OutputFilename string
+	NumSprites                    int
+	OutputTime                    bool
+}
+
+var flags Flags
+
+func init() {
+	// Long format
+	flag.Float64Var(&flags.Scale, "scale", 1.0, "scale to render sprites at")
+	flag.StringVar(&flags.InputFilename, "input", "", "voxel file to process")
+	flag.StringVar(&flags.OutputFilename, "output", "", "base file name of output PNG files, bit depth will be appended")
+	flag.IntVar(&flags.NumSprites, "num_sprites", 8, "number of sprite rotations to render")
+	flag.BoolVar(&flags.OutputTime, "time", false, "output basic profiling information")
+
+	// Short format
+	flag.Float64Var(&flags.Scale, "s", 1.0, "scale to render sprites at")
+	flag.StringVar(&flags.InputFilename, "i", "", "voxel file to process")
+	flag.StringVar(&flags.OutputFilename, "o", "", "base file name of output PNG files, bit depth will be appended")
+	flag.IntVar(&flags.NumSprites, "n", 8, "number of sprite rotations to render")
+	flag.BoolVar(&flags.OutputTime, "t", false, "output basic profiling information")
+}
+
 func main() {
-	paletteFile, err := os.Open("files/ttd_palette.json")
+	if err := setupFlags(); err != nil {
+		return
+	}
 
+	startTime := time.Now()
+
+	palette, err := getPalette("files/ttd_palette.json")
 	if err != nil {
-		s := fmt.Sprintf("could not open palette file: %s", err)
-		panic(s)
+		panic(err)
 	}
 
-	palette := colour.GetPaletteFromJson(paletteFile)
-
-	if err := paletteFile.Close(); err != nil {
-		s := fmt.Sprintf("error closing palette file: %s", err)
-		panic(s)
-	}
-
-	if len(os.Args) < 2 {
-		s := fmt.Sprintf("no command line argument given for voxel file source")
-		panic(s)
-	}
-
-	voxFile, err := os.Open(os.Args[1])
-
+	object, err := getVoxelObject(flags.InputFilename)
 	if err != nil {
-		s := fmt.Sprintf("could not open input file: %s", err)
-		panic(s)
+		panic(err)
 	}
 
-	object, err := vox.GetRawVoxels(voxFile)
-	if err != nil {
-		s := fmt.Sprintf("could not read voxel file: %s", err)
-		panic(s)
+	def := spritesheet.Definition{
+		Object:     object,
+		Palette:    palette,
+		Scale:      flags.Scale,
+		NumSprites: flags.NumSprites,
+	}
+	sheets := spritesheet.GetSpritesheets(def)
+	if err := sheets.SaveAll(flags.OutputFilename); err != nil {
+		panic(err)
 	}
 
-	if err := voxFile.Close(); err != nil {
-		s := fmt.Sprintf("error closing voxel file: %s", err)
-		panic(s)
+	if flags.OutputTime {
+		fmt.Printf("Time taken: %d ms", time.Since(startTime).Milliseconds())
+	}
+}
+
+func setupFlags() error {
+	flag.Parse()
+
+	if flags.InputFilename == "" {
+		flag.Usage()
+		return fmt.Errorf("input flag not set")
 	}
 
-	sheets := spritesheet.GetSpritesheets(object, palette, 2.0, 8)
-	sheet, ok := sheets["32bpp"]
-
-	if !ok {
-		panic("no 32bpp sprite sheet available")
+	if flags.OutputFilename == "" {
+		flags.OutputFilename = fileutils.GetBaseFilename(flags.InputFilename)
+	} else {
+		flags.OutputFilename = fileutils.GetBaseFilename(flags.OutputFilename)
 	}
 
-	imgFile, err := os.Create("output.png")
+	return nil
+}
 
-	if err != nil {
-		s := fmt.Sprintf("could not open output image file: %s", err)
-		panic(s)
-	}
+func getVoxelObject(filename string) (object voxelobject.RawVoxelObject, err error) {
+	var mv vox.MagicaVoxelObject
+	err = fileutils.InstantiateFromFile(filename, &mv)
+	return voxelobject.RawVoxelObject(mv), err
+}
 
-	if err := png.Encode(imgFile, sheet.Image); err != nil {
-		imgFile.Close()
-		s := fmt.Sprintf("error writing image file: %s", err)
-		panic(s)
-	}
-
-	if err := imgFile.Close(); err != nil {
-		s := fmt.Sprintf("error closing image file: %s", err)
-		panic(s)
-	}
+func getPalette(filename string) (palette colour.Palette, err error) {
+	err = fileutils.InstantiateFromFile(filename, &palette)
+	return
 }
