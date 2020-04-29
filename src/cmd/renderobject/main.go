@@ -65,7 +65,7 @@ func main() {
 	}
 
 	if flags.OutputTime {
-		fmt.Printf("Time taken: %d ms", time.Since(startTime).Milliseconds())
+		fmt.Printf("Time taken: %d ms\n", time.Since(startTime).Milliseconds())
 	}
 }
 

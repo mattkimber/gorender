@@ -1,7 +1,7 @@
 package geometry
 
 type Point struct {
-	X, Y, Z byte
+	X, Y, Z int
 }
 
 type PointWithColour struct {

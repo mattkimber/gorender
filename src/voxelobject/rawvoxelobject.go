@@ -12,9 +12,9 @@ func (v RawVoxelObject) Size() geometry.Point {
 	}
 
 	return geometry.Point{
-		X: byte(len(v)),
-		Y: byte(len(v[0])),
-		Z: byte(len(v[0][0])),
+		X: len(v),
+		Y: len(v[0]),
+		Z: len(v[0][0]),
 	}
 }
 

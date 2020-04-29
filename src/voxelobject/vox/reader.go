@@ -32,9 +32,9 @@ func getSizeFromChunk(handle io.Reader) (geometry.Point, error) {
 	}
 
 	return geometry.Point{
-		X: byte(binary.LittleEndian.Uint32(data[0:4])),
-		Y: byte(binary.LittleEndian.Uint32(data[4:8])),
-		Z: byte(binary.LittleEndian.Uint32(data[8:12])),
+		X: int(binary.LittleEndian.Uint32(data[0:4])),
+		Y: int(binary.LittleEndian.Uint32(data[4:8])),
+		Z: int(binary.LittleEndian.Uint32(data[8:12])),
 	}, nil
 }
 
@@ -49,7 +49,7 @@ func getPointDataFromChunk(handle io.Reader) ([]geometry.PointWithColour, error)
 
 	for i := 0; i < len(data); i += 4 {
 		point := geometry.PointWithColour{
-			Point: geometry.Point{X: data[i], Y: data[i+1], Z: data[i+2]}, Colour: data[i+3],
+			Point: geometry.Point{X: int(data[i]), Y: int(data[i+1]), Z: int(data[i+2])}, Colour: data[i+3],
 		}
 
 		result[i/4] = point

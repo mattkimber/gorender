@@ -22,7 +22,7 @@ func degToRad(angle int) float64 {
 	return (float64(angle) / 180.0) * math.Pi
 }
 
-func getViewportPlane(angle int, x byte, y byte) geometry.Plane {
+func getViewportPlane(angle int, x int, y int) geometry.Plane {
 	midpoint := geometry.Vector3{X: float64(x) / 2.0, Y: float64(y) / 2.0, Z: float64(y) / 2.0}
 	viewpoint := midpoint.Add(getRenderDirection(angle).MultiplyByConstant(100.0))
 

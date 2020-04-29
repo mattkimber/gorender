@@ -25,7 +25,7 @@ func TestGetRenderDirection(t *testing.T) {
 func TestGetViewportPlane(t *testing.T) {
 	testCases := []struct {
 		angle    int
-		x, y     byte
+		x, y     int
 		expected geometry.Plane
 	}{
 		{0, 126, 40, geometry.Plane{

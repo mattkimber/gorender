@@ -56,7 +56,7 @@ func TestPalette_GetMaskColour(t *testing.T) {
 	palette, _ := GetPaletteFromJson(strings.NewReader(exampleJson))
 	palette.SetRanges([]PaletteRange{{Start: 2, End: 2, IsPrimaryCompanyColour: true}})
 
-	expected := []byte{0,0,2}
+	expected := []byte{0, 0, 2}
 
 	for i, e := range expected {
 		if idx := palette.GetMaskColour(byte(i)); idx != e {

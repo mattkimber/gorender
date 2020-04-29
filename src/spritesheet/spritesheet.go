@@ -45,7 +45,7 @@ func GetSpritesheets(def Definition) Spritesheets {
 
 	angleStep := 360 / float64(def.NumSprites)
 	for i := 0; i < def.NumSprites; i++ {
-		angle := 180 - int(float64(i)*angleStep)
+		angle := ((180 - int(float64(i)*angleStep)) + 360) % 360
 		rect := getSpriteSizeForAngle(angle, def.Scale)
 
 		spriteInfos[i].RenderOutput = raycaster.GetRaycastOutput(def.Object, angle, rect.Max.X, rect.Max.Y)
