@@ -10,7 +10,11 @@ type RenderInfo struct {
 	Collision              bool
 	Index                  byte
 	Normal, AveragedNormal geometry.Vector3
+	Depth int
+	LightAmount float64
 }
+
+const lightingAngle = 60
 
 type RenderOutput [][]RenderInfo
 
@@ -21,6 +25,11 @@ func getRenderDirection(angle int) geometry.Vector3 {
 
 func degToRad(angle int) float64 {
 	return (float64(angle) / 180.0) * math.Pi
+}
+
+func getLightingDirection(angle int) geometry.Vector3 {
+	x, y, z := -math.Cos(degToRad(angle)), math.Sin(degToRad(angle)), math.Sin(degToRad(-45))
+	return geometry.Zero().Subtract(geometry.Vector3{X: x, Y: y, Z: z}).Normalise()
 }
 
 func getViewportPlane(angle int, x int, y int) geometry.Plane {
@@ -60,6 +69,7 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, angle int, w int,
 	viewport := getViewportPlane(angle, size.X, size.Y)
 	ray := geometry.Zero().Subtract(getRenderDirection(angle)).MultiplyByConstant(0.5)
 
+	lighting := getLightingDirection(angle + lightingAngle)
 	result := make(RenderOutput, w)
 
 	for x := 0; x < w; x++ {
@@ -67,6 +77,7 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, angle int, w int,
 		for y := 0; y < h; y++ {
 			u, v := float64(x)/float64(w), float64(y)/float64(h)
 			loc := viewport.BiLerpWithinPlane(u, v)
+			depth := 0
 
 			for {
 				if canTerminateRay(loc, ray, limits) {
@@ -78,6 +89,8 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, angle int, w int,
 					if object.Elements[lx][ly][lz].Index != 0 {
 						result[x][y].Collision = true
 						result[x][y].Index = object.Elements[lx][ly][lz].Index
+						result[x][y].Depth = depth
+						result[x][y].LightAmount = getLightingValue(object.Elements[lx][ly][lz].AveragedNormal, lighting)
 						if debug {
 							result[x][y].Normal = object.Elements[lx][ly][lz].Normal
 							result[x][y].AveragedNormal = object.Elements[lx][ly][lz].AveragedNormal
@@ -86,9 +99,14 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, angle int, w int,
 				}
 
 				loc = loc.Add(ray)
+				depth++
 			}
 		}
 	}
 
 	return result
+}
+
+func getLightingValue(normal, lighting geometry.Vector3) float64 {
+	return normal.Dot(lighting)
 }

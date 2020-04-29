@@ -58,6 +58,8 @@ func GetSpritesheets(def Definition) Spritesheets {
 	sheets["mask"] = Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "mask")}
 
 	if def.Debug {
+		sheets["lighting"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "lighting")}
+		sheets["depth"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "depth")}
 		sheets["normals"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "normal")}
 		sheets["avg_normals"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "avg")}
 	}
@@ -96,9 +98,13 @@ func getSprite(def Definition, spriteInfo SpriteInfo, depth string) (spr image.I
 		spr = sprite.GetIndexedSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
 	} else if depth == "mask" {
 		spr = sprite.GetMaskSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
+	} else if depth == "lighting" {
+		spr = sprite.GetLightingSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
+	}  else if depth == "depth" {
+		spr = sprite.GetDepthSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
 	} else if depth == "normal" {
 		spr = sprite.GetNormalSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
-	} else if depth == "avg" {
+	}  else if depth == "avg" {
 		spr = sprite.GetAverageNormalSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
 	} else {
 		spr = sprite.Get32bppSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
