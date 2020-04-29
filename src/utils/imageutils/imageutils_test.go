@@ -3,6 +3,7 @@ package imageutils
 import (
 	"image"
 	"image/color"
+	"image/color/palette"
 	"image/draw"
 	"testing"
 )
@@ -58,5 +59,20 @@ func TestIsImageEqualToSubImage(t *testing.T) {
 
 	if IsImageEqualToSubImage(img2, img1, rect2.Add(image.Point{X: 1})) {
 		t.Errorf("Expected equality at %v but was not equal", rect2.Add(image.Point{X: 1}))
+	}
+}
+
+func TestClearToColourIndex(t *testing.T) {
+	const expected = 5
+	rect := image.Rectangle{Max: image.Point{X: 3, Y: 3}}
+	img := image.NewPaletted(rect, palette.Plan9)
+	ClearToColourIndex(img, expected)
+
+	for x := rect.Min.X; x < rect.Max.X; x++ {
+		for y := rect.Min.Y; y < rect.Max.Y; y++ {
+			if img.ColorIndexAt(x, y) != expected {
+				t.Errorf("colour at %d %d is %d - expected %d", x, y, img.ColorIndexAt(x, y), expected)
+			}
+		}
 	}
 }

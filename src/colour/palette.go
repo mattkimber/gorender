@@ -25,6 +25,30 @@ type Palette struct {
 	Ranges  []PaletteRange `json:"ranges"`
 }
 
+// Get a Go palette
+func (p Palette) GetGoPalette() (pal color.Palette) {
+	pal = make([]color.Color, len(p.Entries))
+
+	for i, e := range p.Entries {
+		pal[i] = color.RGBA{R: e.R, G: e.G, B: e.B, A: 255}
+	}
+
+	return
+}
+
+func (p Palette) GetMaskColour(index byte) (msk byte) {
+	if int(index) < len(p.Entries) {
+		entry := p.Entries[index]
+		if entry.Range != nil {
+			if entry.Range.IsPrimaryCompanyColour || entry.Range.IsSecondaryCompanyColour {
+				return index
+			}
+		}
+	}
+
+	return
+}
+
 func (p Palette) GetRGB(index byte) (r, g, b uint32) {
 	if int(index) < len(p.Entries) {
 		entry := p.Entries[index]

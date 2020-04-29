@@ -11,17 +11,29 @@ import (
 )
 
 func TestGetSpritesheets(t *testing.T) {
+
+	def := Definition{
+		voxelobject.RawVoxelObject{},
+		colour.Palette{Entries: []colour.PaletteEntry{{R: 0, G: 0, B: 0}, {R: 255, G: 255, B: 255}}},
+		1.0,
+		2,
+	}
+
+	sheets := GetSpritesheets(def)
+	testSpritesheet(t, sheets, "32bpp")
+	testSpritesheet(t, sheets, "8bpp")
+}
+
+func testSpritesheet(t *testing.T, sheets Spritesheets, bpp string) {
+	sheet, ok := sheets[bpp]
+
+	if !ok {
+		t.Fatalf("no " + bpp + "spritesheet present in result")
+	}
+
 	expectedRect := image.Rectangle{Max: image.Point{X: spriteSpacing * 2, Y: totalHeight}}
 	spriteRect := getTestSpriteRectangle(0, 1.0)
 	expectedImg := getTestSpriteImage(spriteRect)
-
-	def := Definition{voxelobject.RawVoxelObject{}, colour.Palette{}, 1.0, 2}
-	sheets := GetSpritesheets(def)
-	sheet, ok := sheets["32bpp"]
-
-	if !ok {
-		t.Fatalf("no 32bpp spritesheet present in result")
-	}
 
 	if sheet.Image.Bounds() != expectedRect {
 		t.Errorf("spritesheet size %v did not match expected size %v", sheet.Image.Bounds(), expectedRect)

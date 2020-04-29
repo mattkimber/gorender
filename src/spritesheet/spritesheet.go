@@ -7,6 +7,7 @@ import (
 	"image/color"
 	"image/png"
 	"io"
+	"raycaster"
 	"sprite"
 	"utils/fileutils"
 	"utils/imageutils"
@@ -26,6 +27,11 @@ type Definition struct {
 
 type Spritesheets map[string]Spritesheet
 
+type SpriteInfo struct {
+	RenderOutput raycaster.RenderOutput
+	Bounds       image.Rectangle
+}
+
 const spriteSpacing = 40
 const totalHeight = 40
 
@@ -35,32 +41,57 @@ func GetSpritesheets(def Definition) Spritesheets {
 	w := int(float64(spriteSpacing*def.NumSprites) * def.Scale)
 	h := int(float64(totalHeight) * def.Scale)
 	bounds := image.Rectangle{Max: image.Point{X: w, Y: h}}
+	spriteInfos := make([]SpriteInfo, def.NumSprites)
 
-	sheets["32bpp"] = Spritesheet{Image: getSpritesheetImage(def, bounds)}
+	angleStep := 360 / float64(def.NumSprites)
+	for i := 0; i < def.NumSprites; i++ {
+		angle := 180 - int(float64(i)*angleStep)
+		rect := getSpriteSizeForAngle(angle, def.Scale)
+
+		spriteInfos[i].RenderOutput = raycaster.GetRaycastOutput(def.Object, angle, rect.Max.X, rect.Max.Y)
+		spriteInfos[i].Bounds = rect
+	}
+
+	sheets["32bpp"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos)}
+	sheets["8bpp"] = Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "8bpp")}
+	sheets["mask"] = Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "mask")}
 
 	return sheets
 }
 
-func getSpritesheetImage(def Definition, bounds image.Rectangle) (img image.Image) {
-	img = imageutils.GetUniformImage(bounds, color.White)
-	angleStep := 360 / float64(def.NumSprites)
+func get8bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfos []SpriteInfo, depth string) image.Image {
+	palette := def.Palette.GetGoPalette()
+	img := image.NewPaletted(bounds, palette)
+	imageutils.ClearToColourIndex(img, byte(len(palette)-1))
 
 	for i := 0; i < def.NumSprites; i++ {
-		angle := 180 - int(float64(i)*angleStep)
-		spr := getSprite(def, angle)
+		spr := getSprite(def, spriteInfos[i], depth)
+		compositor.Composite(spr, img, image.Point{X: int(float64(i*spriteSpacing) * def.Scale)}, spr.Bounds())
+	}
+
+	return img
+}
+
+func get32bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfos []SpriteInfo) (img image.Image) {
+	img = imageutils.GetUniformImage(bounds, color.White)
+
+	for i := 0; i < def.NumSprites; i++ {
+		spr := getSprite(def, spriteInfos[i], "32bpp")
 		compositor.Composite(spr, img, image.Point{X: int(float64(i*spriteSpacing) * def.Scale)}, spr.Bounds())
 	}
 
 	return
 }
 
-func getSprite(def Definition, angle int) (spr image.Image) {
-	rect := getSpriteSizeForAngle(angle, def.Scale)
-
+func getSprite(def Definition, spriteInfo SpriteInfo, depth string) (spr image.Image) {
 	if def.Object.Invalid() {
-		spr = sprite.GetUniformSprite(rect)
+		spr = sprite.GetUniformSprite(spriteInfo.Bounds)
+	} else if depth == "8bpp" {
+		spr = sprite.GetIndexedSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
+	} else if depth == "mask" {
+		spr = sprite.GetMaskSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
 	} else {
-		spr = sprite.GetRaycastSprite(def.Object, def.Palette, rect, angle)
+		spr = sprite.Get32bppSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
 	}
 
 	return

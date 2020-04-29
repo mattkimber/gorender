@@ -12,6 +12,14 @@ func GetUniformImage(bounds image.Rectangle, colour color.Color) image.Image {
 	return img
 }
 
+func ClearToColourIndex(img *image.Paletted, index byte) {
+	for x := img.Bounds().Min.X; x < img.Bounds().Max.X; x++ {
+		for y := img.Bounds().Min.Y; y < img.Bounds().Max.Y; y++ {
+			img.SetColorIndex(x, y, index)
+		}
+	}
+}
+
 func IsColourEqual(img image.Image, x int, y int, r uint32, g uint32, b uint32) bool {
 	ir, ig, ib, _ := img.At(x, y).RGBA()
 	if ir != r || ig != g || ib != b {
