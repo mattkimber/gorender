@@ -61,7 +61,7 @@ func canTerminateRay(loc geometry.Vector3, ray geometry.Vector3, limits geometry
 		(loc.X > limits.X && ray.X >= 0) || (loc.Y > limits.Y && ray.Y >= 0) || (loc.Z > limits.Z && ray.Z >= 0)
 }
 
-func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, angle int, w int, h int, debug bool) RenderOutput {
+func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, angle int, w int, h int) RenderOutput {
 	size := object.Size
 
 	limits := geometry.Vector3{X: float64(size.X), Y: float64(size.Y), Z: float64(size.Z)}
@@ -87,14 +87,7 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, angle int, w int,
 				if isInsideBoundingVolume(loc, limits) {
 					lx, ly, lz := byte(loc.X), byte(loc.Y), byte(loc.Z)
 					if object.Elements[lx][ly][lz].Index != 0 {
-						result[x][y].Collision = true
-						result[x][y].Index = object.Elements[lx][ly][lz].Index
-						result[x][y].Depth = depth
-						result[x][y].LightAmount = getLightingValue(object.Elements[lx][ly][lz].AveragedNormal, lighting)
-						if debug {
-							result[x][y].Normal = object.Elements[lx][ly][lz].Normal
-							result[x][y].AveragedNormal = object.Elements[lx][ly][lz].AveragedNormal
-						}
+						setResult(&result[x][y], object.Elements[lx][ly][lz], lighting, depth)
 					}
 				}
 
@@ -105,6 +98,15 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, angle int, w int,
 	}
 
 	return result
+}
+
+func setResult(result *RenderInfo, element voxelobject.ProcessedElement, lighting geometry.Vector3, depth int) {
+	result.Collision = true
+	result.Index = element.Index
+	result.Depth = depth
+	result.LightAmount = getLightingValue(element.AveragedNormal, lighting)
+	result.Normal = element.Normal
+	result.AveragedNormal = element.AveragedNormal
 }
 
 func getLightingValue(normal, lighting geometry.Vector3) float64 {

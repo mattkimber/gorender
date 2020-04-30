@@ -7,17 +7,14 @@ import (
 	"sprite"
 	"testing"
 	"utils/imageutils"
-	"voxelobject"
 )
 
 func TestGetSpritesheets(t *testing.T) {
 
 	def := Definition{
-		voxelobject.ProcessedVoxelObject{},
-		colour.Palette{Entries: []colour.PaletteEntry{{R: 0, G: 0, B: 0}, {R: 255, G: 255, B: 255}}},
-		1.0,
-		2,
-		false,
+		Palette:    colour.Palette{Entries: []colour.PaletteEntry{{R: 0, G: 0, B: 0}, {R: 255, G: 255, B: 255}}},
+		Scale:      1.0,
+		NumSprites: 2,
 	}
 
 	sheets := GetSpritesheets(def)

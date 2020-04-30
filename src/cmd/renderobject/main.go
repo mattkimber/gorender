@@ -5,8 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"spritesheet"
-	"time"
 	"utils/fileutils"
+	timeutils "utils/timingutils"
 	"voxelobject"
 	"voxelobject/vox"
 )
@@ -45,8 +45,10 @@ func main() {
 		return
 	}
 
-	startTime := time.Now()
+	timeutils.Time("Total", flags.OutputTime, process)
+}
 
+func process() {
 	palette, err := getPalette("files/ttd_palette.json")
 	if err != nil {
 		panic(err)
@@ -57,21 +59,26 @@ func main() {
 		panic(err)
 	}
 
-	def := spritesheet.Definition{
-		Object:     object.GetProcessedVoxelObject(&palette),
-		Palette:    palette,
-		Scale:      flags.Scale,
-		NumSprites: flags.NumSprites,
-		Debug:      flags.Debug,
-	}
-	sheets := spritesheet.GetSpritesheets(def)
-	if err := sheets.SaveAll(flags.OutputFilename); err != nil {
-		panic(err)
-	}
+	var def spritesheet.Definition
 
-	if flags.OutputTime {
-		fmt.Printf("Time taken: %d ms\n", time.Since(startTime).Milliseconds())
-	}
+	timeutils.Time("Voxel processing", flags.OutputTime, func() {
+		def = spritesheet.Definition{
+			Object:     object.GetProcessedVoxelObject(&palette),
+			Palette:    palette,
+			Scale:      flags.Scale,
+			NumSprites: flags.NumSprites,
+			Debug:      flags.Debug,
+			Time:       flags.OutputTime,
+		}
+	})
+
+	sheets := spritesheet.GetSpritesheets(def)
+
+	timeutils.Time("PNG output", flags.OutputTime, func() {
+		if err := sheets.SaveAll(flags.OutputFilename); err != nil {
+			panic(err)
+		}
+	})
 }
 
 func setupFlags() error {

@@ -11,6 +11,7 @@ import (
 	"sprite"
 	"utils/fileutils"
 	"utils/imageutils"
+	timeutils "utils/timingutils"
 	"voxelobject"
 )
 
@@ -24,6 +25,7 @@ type Definition struct {
 	Scale      float64
 	NumSprites int
 	Debug      bool
+	Time       bool
 }
 
 type Spritesheets map[string]Spritesheet
@@ -46,26 +48,31 @@ func GetSpritesheets(def Definition) Spritesheets {
 	bounds := image.Rectangle{Max: image.Point{X: w, Y: h}}
 	spriteInfos := make([]SpriteInfo, def.NumSprites)
 
-	angleStep := 360 / float64(def.NumSprites)
-	for i := 0; i < def.NumSprites; i++ {
-		angle := ((180 - int(float64(i)*angleStep)) + 360) % 360
-		rect := getSpriteSizeForAngle(angle, def.Scale)
+	timeutils.Time("Raycasting", def.Time, func() {
+		angleStep := 360 / float64(def.NumSprites)
+		for i := 0; i < def.NumSprites; i++ {
+			angle := ((180 - int(float64(i)*angleStep)) + 360) % 360
+			rect := getSpriteSizeForAngle(angle, def.Scale)
 
-		rw, rh := rect.Max.X*antiAliasFactor, rect.Max.Y*antiAliasFactor
-		spriteInfos[i].SpriteBounds = rect
-		spriteInfos[i].RenderBounds = image.Rectangle{Max: image.Point{X: rw, Y: rh}}
-		spriteInfos[i].RenderOutput = raycaster.GetRaycastOutput(def.Object, angle, rw, rh, def.Debug)
-	}
+			rw, rh := rect.Max.X*antiAliasFactor, rect.Max.Y*antiAliasFactor
+			spriteInfos[i].SpriteBounds = rect
+			spriteInfos[i].RenderBounds = image.Rectangle{Max: image.Point{X: rw, Y: rh}}
+			spriteInfos[i].RenderOutput = raycaster.GetRaycastOutput(def.Object, angle, rw, rh)
+		}
+	})
 
-	sheets["32bpp"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "32bpp")}
-	sheets["8bpp"] = Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "8bpp")}
-	sheets["mask"] = Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "mask")}
-
+	timeutils.Time("Spritesheets", def.Time, func() {
+		sheets["32bpp"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "32bpp")}
+		sheets["8bpp"] = Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "8bpp")}
+		sheets["mask"] = Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "mask")}
+	})
 	if def.Debug {
-		sheets["lighting"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "lighting")}
-		sheets["depth"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "depth")}
-		sheets["normals"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "normal")}
-		sheets["avg_normals"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "avg")}
+		timeutils.Time("Debug output", def.Time, func() {
+			sheets["lighting"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "lighting")}
+			sheets["depth"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "depth")}
+			sheets["normals"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "normal")}
+			sheets["avg_normals"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "avg")}
+		})
 	}
 
 	return sheets
