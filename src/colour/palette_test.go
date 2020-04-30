@@ -56,19 +56,19 @@ func TestPalette_GetLitRGB(t *testing.T) {
 	palette := Palette{Entries: []PaletteEntry{{R: 255, G: 0, B: 0}, {R: 64, G: 255, B: 128}}}
 
 	testCases := []struct {
-		index byte
+		index    byte
 		lighting float64
 		expected []uint16
 	}{
-		{0, 0, []uint16{65535,0,0}},
-		{0, 1, []uint16{65535,65535,65535}},
-		{0, -1, []uint16{0,0,0}},
-		{0, 0.5, []uint16{65535,32767,32767}},
+		{0, 0, []uint16{65535, 0, 0}},
+		{0, 1, []uint16{65535, 65535, 65535}},
+		{0, -1, []uint16{0, 0, 0}},
+		{0, 0.5, []uint16{65535, 32767, 32767}},
 	}
 
 	for _, testCase := range testCases {
-		r,g,b := palette.GetLitRGB(testCase.index, testCase.lighting)
-		result := []uint16{r,g,b}
+		r, g, b := palette.GetLitRGB(testCase.index, testCase.lighting)
+		result := []uint16{r, g, b}
 		if result[0] != testCase.expected[0] || result[1] != testCase.expected[1] || result[2] != testCase.expected[2] {
 			t.Errorf("index %d with lighting %f returned %v, expected %v", testCase.index, testCase.lighting, result, testCase.expected)
 		}

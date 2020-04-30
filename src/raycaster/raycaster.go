@@ -10,8 +10,8 @@ type RenderInfo struct {
 	Collision              bool
 	Index                  byte
 	Normal, AveragedNormal geometry.Vector3
-	Depth int
-	LightAmount float64
+	Depth                  int
+	LightAmount            float64
 }
 
 const lightingAngle = 60

@@ -78,8 +78,8 @@ func (p Palette) GetRGB(index byte) (r, g, b uint16) {
 	return 0, 0, 0
 }
 
-func (p Palette) GetLitRGB(index byte, l float64) (r, g, b uint16)  {
-	r,g,b = p.GetRGB(index)
+func (p Palette) GetLitRGB(index byte, l float64) (r, g, b uint16) {
+	r, g, b = p.GetRGB(index)
 
 	// clamp to [-1,1]
 	if l > 1 {
@@ -90,14 +90,14 @@ func (p Palette) GetLitRGB(index byte, l float64) (r, g, b uint16)  {
 
 	if l > 0 {
 		// interpolate towards white
-		r = uint16((float64(r) * (1-l)) + (65535 * l))
-		g = uint16((float64(g) * (1-l)) + (65535 * l))
-		b = uint16((float64(b) * (1-l)) + (65535 * l))
+		r = uint16((float64(r) * (1 - l)) + (65535 * l))
+		g = uint16((float64(g) * (1 - l)) + (65535 * l))
+		b = uint16((float64(b) * (1 - l)) + (65535 * l))
 	} else if l < 0 {
 		// interpolate towards black
-		r = uint16(float64(r) * (1+l))
-		g = uint16(float64(g) * (1+l))
-		b = uint16(float64(b) * (1+l))
+		r = uint16(float64(r) * (1 + l))
+		g = uint16(float64(g) * (1 + l))
+		b = uint16(float64(b) * (1 + l))
 	}
 
 	return

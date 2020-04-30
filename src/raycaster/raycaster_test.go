@@ -99,7 +99,7 @@ func Test_getLightingValue(t *testing.T) {
 		expected         float64
 	}{
 		{geometry.Vector3{}, geometry.UnitX(), 0.0},
-		{ geometry.UnitX(), geometry.UnitX(), 1.0},
+		{geometry.UnitX(), geometry.UnitX(), 1.0},
 		{geometry.Vector3{X: 0.5, Y: 1}.Normalise(), geometry.Vector3{X: 1, Y: 0.5, Z: 1}.Normalise(), 0.5962847939999438},
 	}
 	for _, testCase := range testCases {

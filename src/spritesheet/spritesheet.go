@@ -30,11 +30,13 @@ type Spritesheets map[string]Spritesheet
 
 type SpriteInfo struct {
 	RenderOutput raycaster.RenderOutput
-	Bounds       image.Rectangle
+	RenderBounds image.Rectangle
+	SpriteBounds image.Rectangle
 }
 
 const spriteSpacing = 40
 const totalHeight = 40
+const antiAliasFactor = 2
 
 func GetSpritesheets(def Definition) Spritesheets {
 	sheets := make(Spritesheets)
@@ -49,8 +51,10 @@ func GetSpritesheets(def Definition) Spritesheets {
 		angle := ((180 - int(float64(i)*angleStep)) + 360) % 360
 		rect := getSpriteSizeForAngle(angle, def.Scale)
 
-		spriteInfos[i].RenderOutput = raycaster.GetRaycastOutput(def.Object, angle, rect.Max.X, rect.Max.Y, def.Debug)
-		spriteInfos[i].Bounds = rect
+		rw, rh := rect.Max.X*antiAliasFactor, rect.Max.Y*antiAliasFactor
+		spriteInfos[i].SpriteBounds = rect
+		spriteInfos[i].RenderBounds = image.Rectangle{Max: image.Point{X: rw, Y: rh}}
+		spriteInfos[i].RenderOutput = raycaster.GetRaycastOutput(def.Object, angle, rw, rh, def.Debug)
 	}
 
 	sheets["32bpp"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "32bpp")}
@@ -74,7 +78,7 @@ func get8bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfos
 
 	for i := 0; i < def.NumSprites; i++ {
 		spr := getSprite(def, spriteInfos[i], depth)
-		compositor.Composite(spr, img, image.Point{X: int(float64(i*spriteSpacing) * def.Scale)}, spr.Bounds())
+		compositor.Composite(spr, img, image.Point{X: int(float64(i*spriteSpacing) * def.Scale)}, spriteInfos[i].SpriteBounds)
 	}
 
 	return img
@@ -85,7 +89,7 @@ func get32bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfo
 
 	for i := 0; i < def.NumSprites; i++ {
 		spr := getSprite(def, spriteInfos[i], depth)
-		compositor.Composite(spr, img, image.Point{X: int(float64(i*spriteSpacing) * def.Scale)}, spr.Bounds())
+		compositor.Composite(spr, img, image.Point{X: int(float64(i*spriteSpacing) * def.Scale)}, spriteInfos[i].SpriteBounds)
 	}
 
 	return
@@ -93,21 +97,21 @@ func get32bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfo
 
 func getSprite(def Definition, spriteInfo SpriteInfo, depth string) (spr image.Image) {
 	if def.Object.Invalid() {
-		spr = sprite.GetUniformSprite(spriteInfo.Bounds)
+		spr = sprite.GetUniformSprite(spriteInfo.RenderBounds)
 	} else if depth == "8bpp" {
-		spr = sprite.GetIndexedSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
+		spr = sprite.GetIndexedSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else if depth == "mask" {
-		spr = sprite.GetMaskSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
+		spr = sprite.GetMaskSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else if depth == "lighting" {
-		spr = sprite.GetLightingSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
-	}  else if depth == "depth" {
-		spr = sprite.GetDepthSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
+		spr = sprite.GetLightingSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
+	} else if depth == "depth" {
+		spr = sprite.GetDepthSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else if depth == "normal" {
-		spr = sprite.GetNormalSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
-	}  else if depth == "avg" {
-		spr = sprite.GetAverageNormalSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
+		spr = sprite.GetNormalSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
+	} else if depth == "avg" {
+		spr = sprite.GetAverageNormalSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else {
-		spr = sprite.Get32bppSprite(def.Palette, spriteInfo.Bounds, spriteInfo.RenderOutput)
+		spr = sprite.Get32bppSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	}
 
 	return
