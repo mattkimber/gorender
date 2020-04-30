@@ -23,6 +23,7 @@ func TestGetSpritesheets(t *testing.T) {
 	sheets := GetSpritesheets(def)
 	testSpritesheet(t, sheets, "32bpp")
 	testSpritesheet(t, sheets, "8bpp")
+	testSpritesheet(t, sheets, "mask")
 }
 
 func testSpritesheet(t *testing.T, sheets Spritesheets, bpp string) {
@@ -56,7 +57,7 @@ func getTestSpriteRectangle(angle int, scale float64) image.Rectangle {
 func getTestSpriteImage(rect image.Rectangle) image.Image {
 	spr := sprite.GetUniformSprite(rect)
 	img := image.NewRGBA(rect)
-	compositor.Composite(spr, img, image.Point{}, rect)
+	compositor.Composite32bpp(spr, img, image.Point{}, rect)
 	return img
 }
 

@@ -58,6 +58,14 @@ func (p Palette) GetMaskColour(index byte) (msk byte) {
 	return
 }
 
+func (p Palette) IsCompanyColour(index byte) bool {
+	if int(index) < len(p.Entries) && p.Entries[index].Range != nil {
+		return p.Entries[index].Range.IsPrimaryCompanyColour || p.Entries[index].Range.IsSecondaryCompanyColour
+	}
+
+	return false
+}
+
 func (p Palette) GetRGB(index byte) (r, g, b uint16) {
 	if int(index) < len(p.Entries) {
 		entry := p.Entries[index]

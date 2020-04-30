@@ -32,8 +32,8 @@ func getLightingDirection(angle int) geometry.Vector3 {
 	return geometry.Zero().Subtract(geometry.Vector3{X: x, Y: y, Z: z}).Normalise()
 }
 
-func getViewportPlane(angle int, x int, y int) geometry.Plane {
-	midpoint := geometry.Vector3{X: float64(x) / 2.0, Y: float64(y) / 2.0, Z: float64(y) / 2.0}
+func getViewportPlane(angle int, size geometry.Point) geometry.Plane {
+	midpoint := geometry.Vector3{X: float64(size.X) / 2.0, Y: float64(size.Y) / 2.0, Z: float64(size.Z) - (float64(size.Y) / 2.0)}
 	viewpoint := midpoint.Add(getRenderDirection(angle).MultiplyByConstant(100.0))
 
 	planeNormal := geometry.UnitZ().MultiplyByConstant(midpoint.X)
@@ -66,7 +66,7 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, angle int, w int,
 
 	limits := geometry.Vector3{X: float64(size.X), Y: float64(size.Y), Z: float64(size.Z)}
 
-	viewport := getViewportPlane(angle, size.X, size.Y)
+	viewport := getViewportPlane(angle, size)
 	ray := geometry.Zero().Subtract(getRenderDirection(angle)).MultiplyByConstant(0.5)
 
 	lighting := getLightingDirection(angle + lightingAngle)

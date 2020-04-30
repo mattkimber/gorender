@@ -12,6 +12,12 @@ func GetUniformImage(bounds image.Rectangle, colour color.Color) image.Image {
 	return img
 }
 
+func GetUniformPalettedImage(bounds image.Rectangle, pal color.Palette, index byte) *image.Paletted {
+	img := image.NewPaletted(bounds, pal)
+	ClearToColourIndex(img, index)
+	return img
+}
+
 func ClearToColourIndex(img *image.Paletted, index byte) {
 	for x := img.Bounds().Min.X; x < img.Bounds().Max.X; x++ {
 		for y := img.Bounds().Min.Y; y < img.Bounds().Max.Y; y++ {

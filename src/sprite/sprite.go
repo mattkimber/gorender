@@ -30,7 +30,7 @@ func get32bppImage(bounds image.Rectangle, shader shadeFunc32bpp, info raycaster
 	return img
 }
 
-func getIndexedImage(pal colour.Palette, bounds image.Rectangle, shader shadeFuncIndexed, info raycaster.RenderOutput) image.Image {
+func getIndexedImage(pal colour.Palette, bounds image.Rectangle, shader shadeFuncIndexed, info raycaster.RenderOutput) *image.Paletted {
 	img := image.NewPaletted(bounds, pal.GetGoPalette())
 
 	for x := bounds.Min.X; x < bounds.Max.X; x++ {
@@ -55,7 +55,7 @@ func Get32bppSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.R
 	return get32bppImage(bounds, shader, info)
 }
 
-func GetIndexedSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
+func GetIndexedSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput) *image.Paletted {
 	shader := func(x, y int) byte {
 		return info[x][y].Index
 	}
@@ -63,7 +63,7 @@ func GetIndexedSprite(pal colour.Palette, bounds image.Rectangle, info raycaster
 	return getIndexedImage(pal, bounds, shader, info)
 }
 
-func GetMaskSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
+func GetMaskSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput) *image.Paletted {
 	shader := func(x, y int) byte {
 		return pal.GetMaskColour(info[x][y].Index)
 	}

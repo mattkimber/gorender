@@ -77,8 +77,8 @@ func get8bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfos
 	imageutils.ClearToColourIndex(img, byte(len(palette)-1))
 
 	for i := 0; i < def.NumSprites; i++ {
-		spr := getSprite(def, spriteInfos[i], depth)
-		compositor.Composite(spr, img, image.Point{X: int(float64(i*spriteSpacing) * def.Scale)}, spriteInfos[i].SpriteBounds)
+		spr := getSprite8bpp(def, spriteInfos[i], depth)
+		compositor.Composite8bpp(spr, img, image.Point{X: int(float64(i*spriteSpacing) * def.Scale)}, spriteInfos[i].SpriteBounds, def.Palette)
 	}
 
 	return img
@@ -88,20 +88,26 @@ func get32bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfo
 	img = imageutils.GetUniformImage(bounds, color.White)
 
 	for i := 0; i < def.NumSprites; i++ {
-		spr := getSprite(def, spriteInfos[i], depth)
-		compositor.Composite(spr, img, image.Point{X: int(float64(i*spriteSpacing) * def.Scale)}, spriteInfos[i].SpriteBounds)
+		spr := getSprite32bpp(def, spriteInfos[i], depth)
+		compositor.Composite32bpp(spr, img, image.Point{X: int(float64(i*spriteSpacing) * def.Scale)}, spriteInfos[i].SpriteBounds)
 	}
 
 	return
 }
 
-func getSprite(def Definition, spriteInfo SpriteInfo, depth string) (spr image.Image) {
-	if def.Object.Invalid() {
-		spr = sprite.GetUniformSprite(spriteInfo.RenderBounds)
-	} else if depth == "8bpp" {
+func getSprite8bpp(def Definition, spriteInfo SpriteInfo, depth string) (spr *image.Paletted) {
+	if depth == "8bpp" {
 		spr = sprite.GetIndexedSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else if depth == "mask" {
 		spr = sprite.GetMaskSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
+	}
+
+	return
+}
+
+func getSprite32bpp(def Definition, spriteInfo SpriteInfo, depth string) (spr image.Image) {
+	if def.Object.Invalid() {
+		spr = sprite.GetUniformSprite(spriteInfo.RenderBounds)
 	} else if depth == "lighting" {
 		spr = sprite.GetLightingSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else if depth == "depth" {

@@ -49,7 +49,7 @@ func TestGetViewportPlane(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		if result := getViewportPlane(testCase.angle, testCase.x, testCase.y); !result.Equals(testCase.expected) {
+		if result := getViewportPlane(testCase.angle, geometry.Point{testCase.x, testCase.y, testCase.y}); !result.Equals(testCase.expected) {
 			t.Errorf("Angle %d expected viewport plane %v, got %v", testCase.angle, testCase.expected, result)
 		}
 	}
