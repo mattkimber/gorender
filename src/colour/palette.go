@@ -58,15 +58,16 @@ func (p Palette) GetMaskColour(index byte) (msk byte) {
 	return
 }
 
-func (p Palette) GetRGB(index byte) (r, g, b uint32) {
+func (p Palette) GetRGB(index byte) (r, g, b uint16) {
 	if int(index) < len(p.Entries) {
 		entry := p.Entries[index]
 		rgba := color.RGBA{R: entry.R, B: entry.B, G: entry.G}
-		r, g, b, _ = rgba.RGBA()
+		r32, g32, b32, _ := rgba.RGBA()
+		r, g, b = uint16(r32), uint16(g32), uint16(b32)
 
 		if entry.Range != nil {
 			if entry.Range.IsPrimaryCompanyColour || entry.Range.IsSecondaryCompanyColour {
-				y := (19595*uint32(entry.R) + 38470*uint32(entry.G) + 7471*uint32(entry.B) + 1<<15) >> 8
+				y := uint16((19595*uint32(entry.R) + 38470*uint32(entry.G) + 7471*uint32(entry.B) + 1<<15) >> 8)
 				return y, y, y
 			}
 		}
@@ -75,6 +76,31 @@ func (p Palette) GetRGB(index byte) (r, g, b uint32) {
 	}
 
 	return 0, 0, 0
+}
+
+func (p Palette) GetLitRGB(index byte, l float64) (r, g, b uint16)  {
+	r,g,b = p.GetRGB(index)
+
+	// clamp to [-1,1]
+	if l > 1 {
+		l = 1
+	} else if l < -1 {
+		l = -1
+	}
+
+	if l > 0 {
+		// interpolate towards white
+		r = uint16((float64(r) * (1-l)) + (65535 * l))
+		g = uint16((float64(g) * (1-l)) + (65535 * l))
+		b = uint16((float64(b) * (1-l)) + (65535 * l))
+	} else if l < 0 {
+		// interpolate towards black
+		r = uint16(float64(r) * (1+l))
+		g = uint16(float64(g) * (1+l))
+		b = uint16(float64(b) * (1+l))
+	}
+
+	return
 }
 
 func (p *PaletteEntry) UnmarshalJSON(data []byte) error {

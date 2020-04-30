@@ -43,11 +43,34 @@ func TestPalette_GetRGB(t *testing.T) {
 	palette, _ := GetPaletteFromJson(strings.NewReader(exampleJson))
 	palette.SetRanges([]PaletteRange{{Start: 2, End: 2, IsPrimaryCompanyColour: true}})
 
-	expected := [][]uint32{{0, 0, 0}, {65535, 65535, 65535}, {38731, 38731, 38731}, {0, 0, 0}}
+	expected := [][]uint16{{0, 0, 0}, {65535, 65535, 65535}, {38731, 38731, 38731}, {0, 0, 0}}
 
 	for i, e := range expected {
 		if r, g, b := palette.GetRGB(byte(i)); r != e[0] || g != e[1] || b != e[2] {
 			t.Errorf("entry at %d not returned correctly: was [%d %d %d], expected %v", i, r, g, b, e)
+		}
+	}
+}
+
+func TestPalette_GetLitRGB(t *testing.T) {
+	palette := Palette{Entries: []PaletteEntry{{R: 255, G: 0, B: 0}, {R: 64, G: 255, B: 128}}}
+
+	testCases := []struct {
+		index byte
+		lighting float64
+		expected []uint16
+	}{
+		{0, 0, []uint16{65535,0,0}},
+		{0, 1, []uint16{65535,65535,65535}},
+		{0, -1, []uint16{0,0,0}},
+		{0, 0.5, []uint16{65535,32767,32767}},
+	}
+
+	for _, testCase := range testCases {
+		r,g,b := palette.GetLitRGB(testCase.index, testCase.lighting)
+		result := []uint16{r,g,b}
+		if result[0] != testCase.expected[0] || result[1] != testCase.expected[1] || result[2] != testCase.expected[2] {
+			t.Errorf("index %d with lighting %f returned %v, expected %v", testCase.index, testCase.lighting, result, testCase.expected)
 		}
 	}
 }
