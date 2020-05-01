@@ -88,7 +88,7 @@ func GetSpritesheets(def Definition) Spritesheets {
 	if def.Debug {
 		timeutils.Time("Debug output", def.Time, func() {
 			var wg sync.WaitGroup
-			wg.Add(5)
+			wg.Add(6)
 
 			go func() {
 				sheets.Store("lighting", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "lighting")})
@@ -104,6 +104,10 @@ func GetSpritesheets(def Definition) Spritesheets {
 			}()
 			go func() {
 				sheets.Store("occlusion", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "occlusion")})
+				wg.Done()
+			}()
+			go func() {
+				sheets.Store("shadow", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "shadow")})
 				wg.Done()
 			}()
 			go func() {
@@ -161,6 +165,8 @@ func getSprite32bpp(def Definition, spriteInfo SpriteInfo, depth string) (spr im
 		spr = sprite.GetDepthSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else if depth == "occlusion" {
 		spr = sprite.GetOcclusionSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
+	} else if depth == "shadow" {
+		spr = sprite.GetShadowSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else if depth == "normal" {
 		spr = sprite.GetNormalSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else if depth == "avg" {

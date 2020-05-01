@@ -6,9 +6,7 @@ import (
 	"voxelobject"
 )
 
-func castFpRay(object voxelobject.ProcessedVoxelObject, u, v float64, viewport geometry.Plane, ray geometry.Vector3, limits geometry.Vector3) (result RayResult) {
-	loc0 := viewport.BiLerpWithinPlane(u, v)
-	loc := getIntersectionWithBounds(loc0, ray, limits)
+func castFpRay(object voxelobject.ProcessedVoxelObject, loc0 geometry.Vector3, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3) (result RayResult) {
 
 	for {
 		if canTerminateRay(loc, ray, limits) {

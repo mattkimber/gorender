@@ -12,6 +12,7 @@ type RenderInfo struct {
 	Normal, AveragedNormal geometry.Vector3
 	Depth, Occlusion       int
 	LightAmount            float64
+	Shadowing              float64
 }
 
 type RayResult struct {
@@ -20,7 +21,8 @@ type RayResult struct {
 	Depth       int
 }
 
-const lightingAngle = 60
+const lightingAngle = 80
+const lightingElevationAngle = 60
 
 type RenderOutput [][]RenderInfo
 
@@ -42,9 +44,24 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, angle int, w int,
 		go func() {
 			result[thisX] = make([]RenderInfo, h)
 			for y := 0; y < h; y++ {
-				rayResult := castFpRay(object, float64(thisX)/float64(w), float64(y)/float64(h), viewport, ray, limits)
+				loc0 := viewport.BiLerpWithinPlane(float64(thisX)/float64(w), float64(y)/float64(h))
+				loc := getIntersectionWithBounds(loc0, ray, limits)
+				rayResult := castFpRay(object, loc0, loc, ray, limits)
+
 				if rayResult.HasGeometry {
-					setResult(&result[thisX][y], object.Elements[rayResult.X][rayResult.Y][rayResult.Z], lighting, rayResult.Depth)
+					shadowLoc := geometry.Vector3{X: float64(rayResult.X), Y: float64(rayResult.Y), Z: float64(rayResult.Z)}
+					shadowVec := geometry.Zero().Subtract(lighting).Normalise()
+
+					for {
+						if byte(shadowLoc.X) != rayResult.X && byte(shadowLoc.Y) != rayResult.Y && byte(shadowLoc.Z) != rayResult.Z {
+							break
+						}
+						shadowLoc = shadowLoc.Add(shadowVec)
+					}
+
+					shadowResult := castFpRay(object, shadowLoc, shadowLoc, shadowVec, limits).Depth
+
+					setResult(&result[thisX][y], object.Elements[rayResult.X][rayResult.Y][rayResult.Z], lighting, rayResult.Depth, shadowResult)
 				}
 			}
 			wg.Done()
@@ -56,7 +73,14 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, angle int, w int,
 	return result
 }
 
-func setResult(result *RenderInfo, element voxelobject.ProcessedElement, lighting geometry.Vector3, depth int) {
+func setResult(result *RenderInfo, element voxelobject.ProcessedElement, lighting geometry.Vector3, depth int, shadowLength int) {
+
+	if shadowLength > 0 && shadowLength < 10 {
+		result.Shadowing = 1.0
+	} else if shadowLength > 0 && shadowLength < 80 {
+		result.Shadowing = float64(70-(shadowLength-10)) / 80.0
+	}
+
 	result.Collision = true
 	result.Index = element.Index
 	result.Depth = depth

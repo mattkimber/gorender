@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"io"
 	"io/ioutil"
+	"math"
 )
 
 type PaletteEntry struct {
@@ -84,6 +85,28 @@ func (p Palette) GetRGB(index byte) (r, g, b uint16) {
 	}
 
 	return 0, 0, 0
+}
+
+func (p Palette) GetLitIndexed(index byte, l float64) (idx byte) {
+	if int(index) < len(p.Entries) {
+		rng := p.Entries[index].Range
+		if rng != nil {
+			min, max := rng.Start, rng.End
+			spread := max - min
+			offsetIndex := float64(index) + math.Round(float64(spread)*(l/2))
+
+			if offsetIndex < float64(min) {
+				return min
+			}
+			if offsetIndex > float64(max) {
+				return max
+			}
+
+			return byte(offsetIndex)
+		}
+	}
+
+	return index
 }
 
 func (p Palette) GetLitRGB(index byte, l float64) (r, g, b uint16) {

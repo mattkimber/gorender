@@ -46,9 +46,8 @@ func getIndexedImage(pal colour.Palette, bounds image.Rectangle, shader shadeFun
 
 func Get32bppSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
 	shader := func(x, y int) color.RGBA64 {
-		lightingOffset := (info[x][y].LightAmount * 0.6) +
-			((-(float64(info[x][y].Depth-120) / 40)) * 0.1) +
-			((-float64(info[x][y].Occlusion) / 10.0) * 0.2) - 0.2
+		lightingOffset := getLightingOffset(x, y, info)
+
 		r, g, b := pal.GetLitRGB(info[x][y].Index, lightingOffset)
 		return color.RGBA64{R: r, G: g, B: b, A: 65535}
 	}
@@ -58,7 +57,9 @@ func Get32bppSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.R
 
 func GetIndexedSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput) *image.Paletted {
 	shader := func(x, y int) byte {
-		return info[x][y].Index
+		lightingOffset := getLightingOffset(x, y, info)
+		idx := pal.GetLitIndexed(info[x][y].Index, lightingOffset)
+		return idx
 	}
 
 	return getIndexedImage(pal, bounds, shader, info)
@@ -110,6 +111,15 @@ func GetOcclusionSprite(pal colour.Palette, bounds image.Rectangle, info raycast
 	return get32bppImage(bounds, shader, info)
 }
 
+func GetShadowSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
+	shader := func(x, y int) color.RGBA64 {
+		v := 65535 - (info[x][y].Shadowing * 65535)
+		return color.RGBA64{R: uint16(v), G: uint16(v), B: uint16(v), A: 65535}
+	}
+
+	return get32bppImage(bounds, shader, info)
+}
+
 func GetLightingSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
 	shader := func(x, y int) color.RGBA64 {
 		v := 32767 + (info[x][y].LightAmount * 32767)
@@ -117,4 +127,13 @@ func GetLightingSprite(pal colour.Palette, bounds image.Rectangle, info raycaste
 	}
 
 	return get32bppImage(bounds, shader, info)
+}
+
+func getLightingOffset(x int, y int, info raycaster.RenderOutput) float64 {
+	lightingOffset := -0.2
+	lightingOffset += info[x][y].LightAmount * 0.6
+	lightingOffset += (-(float64(info[x][y].Depth-120) / 40)) * 0.1
+	lightingOffset += (-float64(info[x][y].Occlusion) / 10.0) * 0.2
+	lightingOffset -= info[x][y].Shadowing * 0.2
+	return lightingOffset
 }

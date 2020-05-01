@@ -114,3 +114,26 @@ func TestPalette_GetGoPalette(t *testing.T) {
 		}
 	}
 }
+
+func TestPalette_GetLitIndexed(t *testing.T) {
+	palette, _ := GetPaletteFromJson(strings.NewReader(exampleJson))
+	palette.SetRanges([]PaletteRange{{Start: 0, End: 2}})
+
+	testCases := []struct {
+		index    byte
+		lighting float64
+		expected byte
+	}{
+		{1, 0, 1},
+		{1, -1, 0},
+		{1, 1, 2},
+		{1, 5, 2},
+	}
+
+	for _, testCase := range testCases {
+		if result := palette.GetLitIndexed(testCase.index, testCase.lighting); result != testCase.expected {
+			t.Errorf("Get lit indexed colour for %d %f returned %d, expected %d", testCase.index, testCase.lighting, result, testCase.expected)
+		}
+	}
+
+}

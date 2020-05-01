@@ -48,15 +48,9 @@ func Test_castFpRay(t *testing.T) {
 	size := object.Size
 	limits := geometry.Vector3{X: float64(size.X), Y: float64(size.Y), Z: float64(size.Z)}
 
-	viewport := geometry.Plane{
-		A: geometry.Vector3{X: 8, Z: 5},
-		B: geometry.Vector3{X: 8, Y: 4, Z: 5},
-		C: geometry.Vector3{X: 8, Y: 4, Z: 1},
-		D: geometry.Vector3{X: 8, Z: 1},
-	}
-
 	ray := geometry.Vector3{X: -1, Y: 0, Z: -0.125}.Normalise()
-	result := castFpRay(object, 0.5, 0.5, viewport, ray, limits)
+	loc := geometry.Vector3{X: 8, Y: 2, Z: 3}
+	result := castFpRay(object, loc, loc, ray, limits)
 
 	if !result.HasGeometry {
 		t.Errorf("did not find geometry")
