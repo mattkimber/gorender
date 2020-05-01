@@ -87,33 +87,18 @@ func GetSpritesheets(def Definition) Spritesheets {
 	})
 	if def.Debug {
 		timeutils.Time("Debug output", def.Time, func() {
-			var wg sync.WaitGroup
-			wg.Add(6)
 
-			go func() {
-				sheets.Store("lighting", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "lighting")})
-				wg.Done()
-			}()
-			go func() {
-				sheets.Store("depth", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "depth")})
-				wg.Done()
-			}()
-			go func() {
-				sheets.Store("normals", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "normal")})
-				wg.Done()
-			}()
-			go func() {
-				sheets.Store("occlusion", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "occlusion")})
-				wg.Done()
-			}()
-			go func() {
-				sheets.Store("shadow", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "shadow")})
-				wg.Done()
-			}()
-			go func() {
-				sheets.Store("avg_normals", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "avg")})
-				wg.Done()
-			}()
+			debugOutputs := []string{"lighting", "depth", "normals", "occlusion", "shadow", "avg_normals"}
+			var wg sync.WaitGroup
+			wg.Add(len(debugOutputs))
+
+			for _, s := range debugOutputs {
+				thisS := s
+				go func() {
+					sheets.Store(thisS, Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, thisS)})
+					wg.Done()
+				}()
+			}
 
 			wg.Wait()
 		})
