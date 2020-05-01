@@ -4,26 +4,31 @@ import (
 	"colour"
 	"flag"
 	"fmt"
+	"os"
 	"spritesheet"
+	"strconv"
+	"strings"
 	"utils/fileutils"
-	timeutils "utils/timingutils"
+	"utils/timingutils"
 	"voxelobject"
 	"voxelobject/vox"
 )
 
 type Flags struct {
-	Scale                         float64
+	Scales                        string
 	InputFilename, OutputFilename string
 	NumSprites                    int
 	OutputTime                    bool
 	Debug                         bool
+	SubDirs                       bool
 }
 
 var flags Flags
 
 func init() {
 	// Long format
-	flag.Float64Var(&flags.Scale, "scale", 1.0, "scale to render sprites at")
+	flag.StringVar(&flags.Scales, "scale", "1.0", "comma-separated list of scales to render sprites at")
+	flag.BoolVar(&flags.SubDirs, "subdirs", false, "output each scale in its own subdirectory.")
 	flag.StringVar(&flags.InputFilename, "input", "", "voxel file to process")
 	flag.StringVar(&flags.OutputFilename, "output", "", "base file name of output PNG files, bit depth will be appended")
 	flag.IntVar(&flags.NumSprites, "num_sprites", 8, "number of sprite rotations to render")
@@ -31,7 +36,8 @@ func init() {
 	flag.BoolVar(&flags.Debug, "debug", false, "output extra debugging spritesheets")
 
 	// Short format
-	flag.Float64Var(&flags.Scale, "s", 1.0, "shorthand for -scale")
+	flag.StringVar(&flags.Scales, "s", "1.0", "shorthand for -scale")
+	flag.BoolVar(&flags.SubDirs, "u", false, "shorthand for -subdirs")
 	flag.StringVar(&flags.InputFilename, "i", "", "shorthand for -input")
 	flag.StringVar(&flags.OutputFilename, "o", "", "shorthand for -output")
 	flag.IntVar(&flags.NumSprites, "n", 8, "shorthand for -num_sprites")
@@ -45,7 +51,7 @@ func main() {
 		return
 	}
 
-	timeutils.Time("Total", flags.OutputTime, process)
+	timeutils.Time("\nTotal", flags.OutputTime, process)
 }
 
 func process() {
@@ -59,26 +65,67 @@ func process() {
 		panic(err)
 	}
 
-	var def spritesheet.Definition
-
+	var processedObject voxelobject.ProcessedVoxelObject
 	timeutils.Time("Voxel processing", flags.OutputTime, func() {
-		def = spritesheet.Definition{
-			Object:     object.GetProcessedVoxelObject(&palette),
-			Palette:    palette,
-			Scale:      flags.Scale,
-			NumSprites: flags.NumSprites,
-			Debug:      flags.Debug,
-			Time:       flags.OutputTime,
-		}
+		processedObject = object.GetProcessedVoxelObject(&palette)
 	})
+
+	splitScales := strings.Split(flags.Scales, ",")
+	numScales := len(splitScales)
+
+	for _, scale := range splitScales {
+		timeutils.Time(fmt.Sprintf("Total (%sx)", scale), flags.OutputTime, func() {
+			renderScale(scale, processedObject, palette, numScales)
+		})
+	}
+}
+
+func renderScale(scale string, processedObject voxelobject.ProcessedVoxelObject, palette colour.Palette, numScales int) {
+	if flags.OutputTime {
+		fmt.Printf("\n=== Scale %sx ===\n", scale)
+	}
+
+	scaleF, err := strconv.ParseFloat(scale, 64)
+	if err != nil {
+		fmt.Errorf("Could not interpret scale %s: %v\n", scale, err)
+	}
+
+	def := spritesheet.Definition{
+		Object:     processedObject,
+		Palette:    palette,
+		Scale:      scaleF,
+		NumSprites: flags.NumSprites,
+		Debug:      flags.Debug,
+		Time:       flags.OutputTime,
+	}
 
 	sheets := spritesheet.GetSpritesheets(def)
 
+	outputFilename := getOutputFilename(scale, numScales)
+
 	timeutils.Time("PNG output", flags.OutputTime, func() {
-		if err := sheets.SaveAll(flags.OutputFilename); err != nil {
+		if err := sheets.SaveAll(outputFilename); err != nil {
 			panic(err)
 		}
 	})
+}
+
+func getOutputFilename(scale string, numScales int) string {
+	outputFilename := flags.OutputFilename
+
+	if numScales > 1 || flags.SubDirs {
+		if flags.SubDirs {
+			outputFilename = scale + "x/" + outputFilename
+			if _, err := os.Stat(scale + "x/"); os.IsNotExist(err) {
+				if err := os.Mkdir(scale+"x/", 0755); err != nil {
+					panic(err)
+				}
+			}
+		} else {
+			outputFilename = outputFilename + "_" + scale + "x"
+		}
+	}
+	return outputFilename
 }
 
 func setupFlags() error {

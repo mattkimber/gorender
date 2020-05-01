@@ -19,9 +19,10 @@ GoRender supports the following command line flags:
 * `-i`, `-input`: A MagicaVoxel file to process
 * `-o`, `-output`: The base name of output files. e.g. if `-o test` is set, the files `test_8bpp.png`, `test_32bpp.png` and `test_mask.png` will be output.
 * `-n`, `-num_sprites`: How many sprites of rotation to produce (default: `8`). This can be used to render smoother steps of rotation.
-* `-s`, `-scale`: The scale of sprites to produce (default: `1.0`). `1.0` corresponds to the default zoom level of OpenTTD.
+* `-s`, `-scale`: The scale of sprites to produce (default: `1.0`). `1.0` corresponds to the default zoom level of OpenTTD. A comma-separated list can be passed to generate multiple scales.
 * `-t`, `-time`: A boolean flag for printing simple execution time statistics on stdout
 * `-d`, `-debug`: A boolean flag for outputting extra debug images (e.g voxel normals and lighting information)
+* `-u`, `-subdirs`: A boolean flag for outputting multiple scales in their own subdirectory (e.g. `1x/`, `2x/`) instead of appending the scale to the filename when outputting multiple scales
 
 GoRender will look for a JSON palette file (default `files/ttd_palette.json`) on run - if this
 is not present it will exit.

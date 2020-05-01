@@ -54,57 +54,68 @@ func GetSpritesheets(def Definition) Spritesheets {
 	spriteInfos := make([]SpriteInfo, def.NumSprites)
 
 	timeutils.Time("Raycasting", def.Time, func() {
-		angleStep := 360 / float64(def.NumSprites)
-		for i := 0; i < def.NumSprites; i++ {
-			angle := ((int(float64(i) * angleStep)) + 360) % 360
-			rect := getSpriteSizeForAngle(angle, def.Scale)
-
-			rw, rh := rect.Max.X*antiAliasFactor, rect.Max.Y*antiAliasFactor
-			spriteInfos[i].SpriteBounds = rect
-			spriteInfos[i].RenderBounds = image.Rectangle{Max: image.Point{X: rw, Y: rh}}
-			spriteInfos[i].RenderOutput = raycaster.GetRaycastOutput(def.Object, angle, rw, rh)
-		}
+		raycast(def, spriteInfos)
 	})
 
 	timeutils.Time("Spritesheets", def.Time, func() {
-		var wg sync.WaitGroup
-		wg.Add(3)
-
-		go func() {
-			sheets.Store("32bpp", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "32bpp")})
-			wg.Done()
-		}()
-		go func() {
-			sheets.Store("8bpp", Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "8bpp")})
-			wg.Done()
-		}()
-		go func() {
-			sheets.Store("mask", Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "mask")})
-			wg.Done()
-		}()
-
-		wg.Wait()
+		getRegularSheets(sheets, def, bounds, spriteInfos)
 	})
 	if def.Debug {
 		timeutils.Time("Debug output", def.Time, func() {
-
-			debugOutputs := []string{"lighting", "depth", "normals", "occlusion", "shadow", "avg_normals"}
-			var wg sync.WaitGroup
-			wg.Add(len(debugOutputs))
-
-			for _, s := range debugOutputs {
-				thisS := s
-				go func() {
-					sheets.Store(thisS, Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, thisS)})
-					wg.Done()
-				}()
-			}
-
-			wg.Wait()
+			getDebugSheets(sheets, def, bounds, spriteInfos)
 		})
 	}
 
 	return sheets
+}
+
+func getDebugSheets(sheets Spritesheets, def Definition, bounds image.Rectangle, spriteInfos []SpriteInfo) {
+	debugOutputs := []string{"lighting", "depth", "normals", "occlusion", "shadow", "avg_normals"}
+	var wg sync.WaitGroup
+	wg.Add(len(debugOutputs))
+
+	for _, s := range debugOutputs {
+		thisS := s
+		go func() {
+			sheets.Store(thisS, Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, thisS)})
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+}
+
+func getRegularSheets(sheets Spritesheets, def Definition, bounds image.Rectangle, spriteInfos []SpriteInfo) {
+	var wg sync.WaitGroup
+	wg.Add(3)
+
+	go func() {
+		sheets.Store("32bpp", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "32bpp")})
+		wg.Done()
+	}()
+	go func() {
+		sheets.Store("8bpp", Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "8bpp")})
+		wg.Done()
+	}()
+	go func() {
+		sheets.Store("mask", Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "mask")})
+		wg.Done()
+	}()
+
+	wg.Wait()
+}
+
+func raycast(def Definition, spriteInfos []SpriteInfo) {
+	angleStep := 360 / float64(def.NumSprites)
+	for i := 0; i < def.NumSprites; i++ {
+		angle := ((int(float64(i) * angleStep)) + 360) % 360
+		rect := getSpriteSizeForAngle(angle, def.Scale)
+
+		rw, rh := rect.Max.X*antiAliasFactor, rect.Max.Y*antiAliasFactor
+		spriteInfos[i].SpriteBounds = rect
+		spriteInfos[i].RenderBounds = image.Rectangle{Max: image.Point{X: rw, Y: rh}}
+		spriteInfos[i].RenderOutput = raycaster.GetRaycastOutput(def.Object, angle, rw, rh)
+	}
 }
 
 func get8bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfos []SpriteInfo, depth string) image.Image {
