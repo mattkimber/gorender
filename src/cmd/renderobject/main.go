@@ -23,7 +23,7 @@ type Flags struct {
 	OutputTime                    bool
 	Debug                         bool
 	SubDirs                       bool
-	ProfileFile					  string
+	ProfileFile                   string
 }
 
 var flags Flags

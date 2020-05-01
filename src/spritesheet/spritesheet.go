@@ -163,9 +163,9 @@ func getSprite32bpp(def Definition, spriteInfo SpriteInfo, depth string) (spr im
 		spr = sprite.GetOcclusionSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else if depth == "shadow" {
 		spr = sprite.GetShadowSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
-	} else if depth == "normal" {
+	} else if depth == "normals" {
 		spr = sprite.GetNormalSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
-	} else if depth == "avg" {
+	} else if depth == "avg_normals" {
 		spr = sprite.GetAverageNormalSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else {
 		spr = sprite.Get32bppSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)

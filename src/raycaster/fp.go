@@ -29,7 +29,7 @@ func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Ve
 
 	for {
 		// CanTerminate is an expensive check but we don't need to run it every cycle
-		if i % 4 == 0 && canTerminateRay(loc, ray, limits) {
+		if i%4 == 0 && canTerminateRay(loc, ray, limits) {
 			break
 		}
 

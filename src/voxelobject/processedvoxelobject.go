@@ -15,14 +15,16 @@ type ProcessedElement struct {
 }
 
 type ProcessedVoxelObject struct {
-	Elements [][][]ProcessedElement
-	Size     geometry.Point
-	Palette  *colour.Palette
+	Elements         [][][]ProcessedElement
+	borderedElements [][][]byte
+	Size             geometry.Point
+	Palette          *colour.Palette
 }
 
 const normalRadius = 3
 const normalAverageDistance = 1
 const occlusionRadius = 4
+const accessBorder = 8
 
 func (r RawVoxelObject) GetProcessedVoxelObject(pal *colour.Palette) (p ProcessedVoxelObject) {
 	p.Size = r.Size()
@@ -79,13 +81,14 @@ func (p *ProcessedVoxelObject) calculateNormal(x, y, z int) (normal geometry.Vec
 	}
 
 	radius := p.getNormalRadius(p.Elements[x][y][z].Index)
+	x += accessBorder
+	y += accessBorder
+	z += accessBorder
 
-	minI, maxI, minJ, maxJ, minK, maxK := p.getSafeDistance(x, y, z, radius)
-
-	for i := minI; i <= maxI; i++ {
-		for j := minJ; j <= maxJ; j++ {
-			for k := minK; k <= maxK; k++ {
-				if (i*i)+(j*j)+(k*k) <= (radius*radius) && p.Elements[x+i][y+j][z+k].Index == 0 {
+	for i := -radius; i <= radius; i++ {
+		for j := -radius; j <= radius; j++ {
+			for k := -radius; k <= radius; k++ {
+				if (i*i)+(j*j)+(k*k) <= (radius*radius) && p.borderedElements[x+i][y+j][z+k] == 0 {
 					normal = normal.Subtract(geometry.Vector3{X: float64(i), Y: float64(j), Z: float64(k)})
 				}
 			}
@@ -211,15 +214,26 @@ func (p *ProcessedVoxelObject) isSurface(x, y, z int) bool {
 
 func (p *ProcessedVoxelObject) setElements(r RawVoxelObject) {
 	p.Elements = make([][][]ProcessedElement, p.Size.X)
+	p.borderedElements = make([][][]byte, p.Size.X+(accessBorder*2))
+
+	for x := 0; x < p.Size.X+(accessBorder*2); x++ {
+		p.borderedElements[x] = make([][]byte, p.Size.Y+(accessBorder*2))
+		for y := 0; y < p.Size.Y+(accessBorder*2); y++ {
+			p.borderedElements[x][y] = make([]byte, p.Size.Z+(accessBorder*2))
+		}
+	}
+
 	for x := 0; x < p.Size.X; x++ {
 		p.Elements[x] = make([][]ProcessedElement, p.Size.Y)
 		for y := 0; y < p.Size.Y; y++ {
 			p.Elements[x][y] = make([]ProcessedElement, p.Size.Z)
 			for z := 0; z < p.Size.Z; z++ {
 				p.Elements[x][y][z].Index = r[x][y][z]
+				p.borderedElements[x+accessBorder][y+accessBorder][z+accessBorder] = r[x][y][z]
 			}
 		}
 	}
+
 }
 
 func (pv *ProcessedVoxelObject) SafeGetData(x, y, z int) (pe ProcessedElement) {
