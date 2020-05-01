@@ -169,11 +169,11 @@ func testMagicaVoxelObject(object MagicaVoxelObject, t *testing.T) {
 		return
 	}
 
-	if object[1][1][0] != 253 {
+	if object[1][1][1] != 253 {
 		t.Error("Point at (1,1,1) was not set")
 	}
 
-	if object[0][1][0] != 255 {
+	if object[0][1][1] != 255 {
 		t.Error("Point at (0,1,1) was not set")
 	}
 

@@ -63,7 +63,7 @@ func getVoxelObjectFromPointData(size geometry.Point, data []geometry.PointWithC
 
 	for _, p := range data {
 		if p.Point.X < size.X && p.Point.Y < size.Y && p.Point.Z < size.Z {
-			result[p.Point.X][p.Point.Y][size.Z-(1+p.Point.Z)] = p.Colour - 2
+			result[p.Point.X][p.Point.Y][p.Point.Z] = p.Colour - 2
 		}
 	}
 

@@ -28,12 +28,7 @@ func TestRawVoxelObject_GetProcessedVoxelObject(t *testing.T) {
 }
 
 func TestRawVoxelObject_GetProcessedVoxelObject_Normals(t *testing.T) {
-	var mv vox.MagicaVoxelObject
-	if err := fileutils.InstantiateFromFile("testdata/testcube", &mv); err != nil {
-		t.Fatalf("error loading test file: %v", err)
-	}
-
-	v := RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{})
+	v := getObject("testcube", t)
 
 	testCases := []struct {
 		loc      geometry.Point
@@ -59,23 +54,18 @@ func TestRawVoxelObject_GetProcessedVoxelObject_Normals(t *testing.T) {
 }
 
 func TestRawVoxelObject_GetProcessedVoxelObject_AveragedNormals(t *testing.T) {
-	var mv vox.MagicaVoxelObject
-	if err := fileutils.InstantiateFromFile("testdata/testcube_big", &mv); err != nil {
-		t.Fatalf("error loading test file: %v", err)
-	}
-
-	v := RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{})
+	v := getObject("testcube_big", t)
 
 	testCases := []struct {
 		loc      geometry.Point
 		expected geometry.Vector3
 	}{
 		{geometry.Point{}, geometry.Vector3{}},
-		{geometry.Point{X: 3, Y: 2, Z: 2}, geometry.Vector3{X: 0.4327658259020278, Y: 0.63746126938479, Z: 0.63746126938479}},
+		{geometry.Point{X: 3, Y: 2, Z: 2}, geometry.Vector3{X: 0.43104479944651053, Y: 0.6403956621583834, Z: 0.635683708111859}},
 		{geometry.Point{X: 9, Y: 2, Z: 2}, geometry.Vector3{X: -1, Y: 1, Z: 1}.Normalise()},
 		{geometry.Point{X: 2, Y: 9, Z: 2}, geometry.Vector3{X: 1, Y: -1, Z: 1}.Normalise()},
 		{geometry.Point{X: 9, Y: 9, Z: 2}, geometry.Vector3{X: -1, Y: -1, Z: 1}.Normalise()},
-		{geometry.Point{X: 2, Y: 2, Z: 9}, geometry.Vector3{X: 0.5751708579267304, Y: 0.5816845952779375, Z: -0.5751708579267303}},
+		{geometry.Point{X: 2, Y: 2, Z: 9}, geometry.Vector3{X: 0.5773502691896258, Y: 0.5773502691896258, Z: -0.5773502691896258}},
 		{geometry.Point{X: 9, Y: 2, Z: 9}, geometry.Vector3{X: -1, Y: 1, Z: -1}.Normalise()},
 		{geometry.Point{X: 2, Y: 9, Z: 9}, geometry.Vector3{X: 1, Y: -1, Z: -1}.Normalise()},
 		{geometry.Point{X: 9, Y: 9, Z: 9}, geometry.Vector3{X: -1, Y: -1, Z: -1}.Normalise()},
@@ -87,4 +77,14 @@ func TestRawVoxelObject_GetProcessedVoxelObject_AveragedNormals(t *testing.T) {
 			t.Errorf("Average normal at %v expected %v, got %v", testCase.loc, testCase.expected, result)
 		}
 	}
+}
+
+func getObject(filename string, t *testing.T) ProcessedVoxelObject {
+	var mv vox.MagicaVoxelObject
+	if err := fileutils.InstantiateFromFile("testdata/" + filename, &mv); err != nil {
+		t.Fatalf("error loading test file: %v", err)
+	}
+
+	v := RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{})
+	return v
 }
