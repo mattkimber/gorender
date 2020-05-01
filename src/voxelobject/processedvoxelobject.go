@@ -74,15 +74,18 @@ func (p *ProcessedVoxelObject) getNormalRadius(index byte) (radius int) {
 }
 
 func (p *ProcessedVoxelObject) calculateNormal(x, y, z int) (normal geometry.Vector3) {
-	if !p.SafeGetData(x, y, z).IsSurface {
+	if !p.Elements[x][y][z].IsSurface {
 		return
 	}
 
-	radius := p.getNormalRadius(p.SafeGetData(x, y, z).Index)
-	for i := -radius; i <= radius; i++ {
-		for j := -radius; j <= radius; j++ {
-			for k := -radius; k <= radius; k++ {
-				if (i*i)+(j*j)+(k*k) <= (radius*radius) && p.SafeGetData(x+i, y+j, z+k).Index == 0 {
+	radius := p.getNormalRadius(p.Elements[x][y][z].Index)
+
+	minI, maxI, minJ, maxJ, minK, maxK := p.getSafeDistance(x, y, z, radius)
+
+	for i := minI; i <= maxI; i++ {
+		for j := minJ; j <= maxJ; j++ {
+			for k := minK; k <= maxK; k++ {
+				if (i*i)+(j*j)+(k*k) <= (radius*radius) && p.Elements[x+i][y+j][z+k].Index == 0 {
 					normal = normal.Subtract(geometry.Vector3{X: float64(i), Y: float64(j), Z: float64(k)})
 				}
 			}
@@ -96,6 +99,33 @@ func (p *ProcessedVoxelObject) calculateNormal(x, y, z int) (normal geometry.Vec
 	return normal
 }
 
+func (p *ProcessedVoxelObject) getSafeDistance(x int, y int, z int, radius int) (int, int, int, int, int, int) {
+	minI, maxI := -radius, radius
+	if (x + minI) < 0 {
+		minI -= x + minI
+	}
+	if (x + maxI) >= p.Size.X-1 {
+		maxI -= (x + maxI) - (p.Size.X - 1)
+	}
+
+	minJ, maxJ := -radius, radius
+	if (y + minJ) < 0 {
+		minJ -= y + minJ
+	}
+	if (y + maxJ) >= p.Size.Y-1 {
+		maxJ -= (y + maxJ) - (p.Size.Y - 1)
+	}
+
+	minK, maxK := -radius, radius
+	if (z + minK) < 0 {
+		minK -= z + minK
+	}
+	if (z + maxK) >= p.Size.Z-1 {
+		maxK -= (z + maxK) - (p.Size.Z - 1)
+	}
+	return minI, maxI, minJ, maxJ, minK, maxK
+}
+
 func (p *ProcessedVoxelObject) getNormalAverageDistance(index byte) (distance int) {
 	distance = normalAverageDistance + (p.Palette.GetSmoothness(index))
 	if distance < 0 {
@@ -105,19 +135,21 @@ func (p *ProcessedVoxelObject) getNormalAverageDistance(index byte) (distance in
 }
 
 func (p *ProcessedVoxelObject) getAverageNormal(x, y, z int) (normal geometry.Vector3) {
-	if !p.SafeGetData(x, y, z).IsSurface {
+	if !p.Elements[x][y][z].IsSurface {
 		return
 	}
 
 	smoothness := p.Palette.GetSmoothness(p.SafeGetData(x, y, z).Index)
 
 	distance := p.getNormalAverageDistance(p.SafeGetData(x, y, z).Index)
-	for i := -distance; i <= distance; i++ {
-		for j := -distance; j <= distance; j++ {
-			for k := -distance; k <= distance; k++ {
-				if p.SafeGetData(x+i, y+j, z+k).Index != 0 {
-					if p.Palette.GetSmoothness(p.SafeGetData(x+i, y+i, z+i).Index) == smoothness {
-						normal = normal.Add(p.SafeGetData(x+i, y+j, z+k).Normal)
+	minI, maxI, minJ, maxJ, minK, maxK := p.getSafeDistance(x, y, z, distance)
+
+	for i := minI; i <= maxI; i++ {
+		for j := minJ; j <= maxJ; j++ {
+			for k := minK; k <= maxK; k++ {
+				if p.Elements[x+i][y+j][z+k].Index != 0 {
+					if p.Palette.GetSmoothness(p.Elements[x+i][y+j][z+k].Index) == smoothness {
+						normal = normal.Add(p.Elements[x+i][y+j][z+k].Normal)
 					}
 				}
 			}
@@ -125,7 +157,7 @@ func (p *ProcessedVoxelObject) getAverageNormal(x, y, z int) (normal geometry.Ve
 	}
 
 	if normal.Length() < 0.01 {
-		return p.SafeGetData(x, y, z).Normal
+		return p.Elements[x][y][z].Normal
 	}
 
 	return normal.Normalise()
@@ -143,13 +175,15 @@ func (p *ProcessedVoxelObject) getOcclusion(x, y, z int) (occlusion int) {
 	distance := occlusionRadius
 	distanceF := float64(distance)
 
-	for i := -distance; i <= distance; i++ {
-		for j := -distance; j <= distance; j++ {
-			for k := -distance; k <= distance; k++ {
+	minI, maxI, minJ, maxJ, minK, maxK := p.getSafeDistance(q, w, e, distance)
+
+	for i := minI; i <= maxI; i++ {
+		for j := minJ; j <= maxJ; j++ {
+			for k := minK; k <= maxK; k++ {
 				vec := geometry.Vector3{X: float64(i), Y: float64(j), Z: float64(k)}
 
 				if vec.Length() < distanceF && vec.Dot(normal) < 0 {
-					if p.SafeGetData(q+i, w+j, e+k).IsSurface {
+					if p.Elements[q+i][w+j][e+k].IsSurface {
 						occlusion++
 						if occlusion >= 10 {
 							return

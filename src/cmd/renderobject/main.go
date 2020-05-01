@@ -4,7 +4,9 @@ import (
 	"colour"
 	"flag"
 	"fmt"
+	"log"
 	"os"
+	"runtime/pprof"
 	"spritesheet"
 	"strconv"
 	"strings"
@@ -21,6 +23,7 @@ type Flags struct {
 	OutputTime                    bool
 	Debug                         bool
 	SubDirs                       bool
+	ProfileFile					  string
 }
 
 var flags Flags
@@ -34,6 +37,7 @@ func init() {
 	flag.IntVar(&flags.NumSprites, "num_sprites", 8, "number of sprite rotations to render")
 	flag.BoolVar(&flags.OutputTime, "time", false, "output basic profiling information")
 	flag.BoolVar(&flags.Debug, "debug", false, "output extra debugging spritesheets")
+	flag.StringVar(&flags.ProfileFile, "profile", "", "output Go profiling information to the specified file")
 
 	// Short format
 	flag.StringVar(&flags.Scales, "s", "1.0", "shorthand for -scale")
@@ -63,6 +67,18 @@ func process() {
 	object, err := getVoxelObject(flags.InputFilename)
 	if err != nil {
 		panic(err)
+	}
+
+	if flags.ProfileFile != "" {
+		f, err := os.Create(flags.ProfileFile)
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		defer f.Close() // error handling omitted for example
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
 	}
 
 	var processedObject voxelobject.ProcessedVoxelObject

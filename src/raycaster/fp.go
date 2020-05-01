@@ -6,25 +6,45 @@ import (
 	"voxelobject"
 )
 
+var jitter []geometry.Vector3
+
 func castFpRay(object voxelobject.ProcessedVoxelObject, loc0 geometry.Vector3, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3) (result RayResult) {
+	if len(jitter) == 0 {
+		jitter = make([]geometry.Vector3, 20)
+		for i := 0; i < 20; i++ {
+			jitter[i] = geometry.Vector3{X: rand.Float64(), Y: rand.Float64(), Z: rand.Float64()}.Normalise().MultiplyByConstant(0.01)
+		}
+	}
+
+	if collision, loc := castRayToCandidate(object, loc, ray, limits); collision {
+		lx, ly, lz := recoverNonSurfaceVoxel(object, loc, ray, limits)
+		return RayResult{X: lx, Y: ly, Z: lz, HasGeometry: true, Depth: int(loc0.Subtract(loc).Length())}
+	}
+
+	return
+}
+
+func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3) (bool, geometry.Vector3) {
+	i := 0
 
 	for {
-		if canTerminateRay(loc, ray, limits) {
+		// CanTerminate is an expensive check but we don't need to run it every cycle
+		if i % 4 == 0 && canTerminateRay(loc, ray, limits) {
 			break
 		}
 
 		if isInsideBoundingVolume(loc, limits) {
 			lx, ly, lz := byte(loc.X), byte(loc.Y), byte(loc.Z)
 			if object.Elements[lx][ly][lz].Index != 0 {
-				lx, ly, lz = recoverNonSurfaceVoxel(object, loc, ray, limits)
-				return RayResult{X: lx, Y: ly, Z: lz, HasGeometry: true, Depth: int(loc0.Subtract(loc).Length())}
+				return true, loc
 			}
 		}
 
+		i++
 		loc = loc.Add(ray)
 	}
 
-	return
+	return false, geometry.Vector3{}
 }
 
 func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3) (lx byte, ly byte, lz byte) {
@@ -49,8 +69,7 @@ func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometr
 		loc2 := loc
 
 		for i := 0; i < 20; i++ {
-			jitter := geometry.Vector3{X: rand.Float64(), Y: rand.Float64(), Z: rand.Float64()}.Normalise().MultiplyByConstant(0.01)
-			loc2 = loc2.Subtract(ray.MultiplyByConstant(0.125).Add(jitter))
+			loc2 = loc2.Subtract(ray.MultiplyByConstant(0.125).Add(jitter[i]))
 			if !isInsideBoundingVolume(loc2, limits) {
 				break
 			}
