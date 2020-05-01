@@ -14,9 +14,9 @@ type RenderInfo struct {
 }
 
 type RayResult struct {
-	X,Y,Z byte
+	X, Y, Z     byte
 	HasGeometry bool
-	Depth int
+	Depth       int
 }
 
 const lightingAngle = 60
@@ -25,11 +25,10 @@ type RenderOutput [][]RenderInfo
 
 func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, angle int, w int, h int) RenderOutput {
 	size := object.Size
-
 	limits := geometry.Vector3{X: float64(size.X), Y: float64(size.Y), Z: float64(size.Z)}
 
 	viewport := getViewportPlane(angle, size)
-	ray := geometry.Zero().Subtract(getRenderDirection(angle))
+	ray := geometry.Zero().Subtract(getRenderDirection(angle)).MultiplyByConstant(0.5)
 
 	lighting := getLightingDirection(angle + lightingAngle)
 	result := make(RenderOutput, w)

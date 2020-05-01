@@ -47,7 +47,7 @@ func getIndexedImage(pal colour.Palette, bounds image.Rectangle, shader shadeFun
 func Get32bppSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
 	shader := func(x, y int) color.RGBA64 {
 		lightingOffset := (info[x][y].LightAmount * 0.6) +
-			((-(float64(info[x][y].Depth - 120) / 40)) * 0.1) - 0.2
+			((-(float64(info[x][y].Depth-120) / 40)) * 0.1) - 0.2
 		r, g, b := pal.GetLitRGB(info[x][y].Index, lightingOffset)
 		return color.RGBA64{R: r, G: g, B: b, A: 65535}
 	}

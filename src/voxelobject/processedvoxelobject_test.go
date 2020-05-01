@@ -81,7 +81,7 @@ func TestRawVoxelObject_GetProcessedVoxelObject_AveragedNormals(t *testing.T) {
 
 func getObject(filename string, t *testing.T) ProcessedVoxelObject {
 	var mv vox.MagicaVoxelObject
-	if err := fileutils.InstantiateFromFile("testdata/" + filename, &mv); err != nil {
+	if err := fileutils.InstantiateFromFile("testdata/"+filename, &mv); err != nil {
 		t.Fatalf("error loading test file: %v", err)
 	}
 

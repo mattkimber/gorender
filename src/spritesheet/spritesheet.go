@@ -51,7 +51,7 @@ func GetSpritesheets(def Definition) Spritesheets {
 	timeutils.Time("Raycasting", def.Time, func() {
 		angleStep := 360 / float64(def.NumSprites)
 		for i := 0; i < def.NumSprites; i++ {
-			angle := ((int(float64(i)*angleStep)) + 360) % 360
+			angle := ((int(float64(i) * angleStep)) + 360) % 360
 			rect := getSpriteSizeForAngle(angle, def.Scale)
 
 			rw, rh := rect.Max.X*antiAliasFactor, rect.Max.Y*antiAliasFactor

@@ -1,12 +1,8 @@
 package raycaster
 
 import (
-	"colour"
 	"geometry"
 	"testing"
-	"utils/fileutils"
-	"voxelobject"
-	"voxelobject/vox"
 )
 
 func TestIsInsideBoundingVolume(t *testing.T) {
@@ -73,14 +69,4 @@ func Test_castFpRay(t *testing.T) {
 	if result.Depth != 6 {
 		t.Errorf("incorrect depth - expected 6, got %d", result.Depth)
 	}
-}
-
-func getObject(filename string, t *testing.T) voxelobject.ProcessedVoxelObject {
-	var mv vox.MagicaVoxelObject
-	if err := fileutils.InstantiateFromFile("testdata/" + filename, &mv); err != nil {
-		t.Fatalf("error loading test file: %v", err)
-	}
-
-	v := voxelobject.RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{})
-	return v
 }
