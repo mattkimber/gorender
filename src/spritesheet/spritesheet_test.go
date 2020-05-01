@@ -24,7 +24,7 @@ func TestGetSpritesheets(t *testing.T) {
 }
 
 func testSpritesheet(t *testing.T, sheets Spritesheets, bpp string) {
-	sheet, ok := sheets[bpp]
+	sheet, ok := sheets.Data[bpp]
 
 	if !ok {
 		t.Fatalf("no " + bpp + "spritesheet present in result")

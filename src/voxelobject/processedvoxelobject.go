@@ -3,11 +3,13 @@ package voxelobject
 import (
 	"colour"
 	"geometry"
+	"sync"
 )
 
 type ProcessedElement struct {
 	Normal         geometry.Vector3
 	AveragedNormal geometry.Vector3
+	Occlusion      int
 	Index          byte
 	IsSurface      bool
 }
@@ -20,37 +22,47 @@ type ProcessedVoxelObject struct {
 
 const normalRadius = 3
 const normalAverageDistance = 1
+const occlusionRadius = 4
 
 func (r RawVoxelObject) GetProcessedVoxelObject(pal *colour.Palette) (p ProcessedVoxelObject) {
 	p.Size = r.Size()
 	p.Palette = pal
 
 	p.setElements(r)
-	p.calculateFirstPassData()
-	p.calculateSecondPassData()
+	p.calculatePass(processFirstPassElement)
+	p.calculatePass(processSecondPassElement)
 
 	return
 }
 
-func (p *ProcessedVoxelObject) calculateFirstPassData() {
+func (p *ProcessedVoxelObject) calculatePass(processor func(*ProcessedVoxelObject, int, int, int)) {
+	wg := sync.WaitGroup{}
+	wg.Add(p.Size.X)
+
 	for x := 0; x < p.Size.X; x++ {
-		for y := 0; y < p.Size.Y; y++ {
-			for z := 0; z < p.Size.Z; z++ {
-				p.Elements[x][y][z].IsSurface = p.isSurface(x, y, z)
-				p.Elements[x][y][z].Normal = p.calculateNormal(x, y, z)
+		thisX := x
+		go func() {
+			for y := 0; y < p.Size.Y; y++ {
+				for z := 0; z < p.Size.Z; z++ {
+					processor(p, thisX, y, z)
+				}
 			}
-		}
+			wg.Done()
+		}()
 	}
+
+	wg.Wait()
+
 }
 
-func (p *ProcessedVoxelObject) calculateSecondPassData() {
-	for x := 0; x < p.Size.X; x++ {
-		for y := 0; y < p.Size.Y; y++ {
-			for z := 0; z < p.Size.Z; z++ {
-				p.Elements[x][y][z].AveragedNormal = p.getAverageNormal(x, y, z)
-			}
-		}
-	}
+func processFirstPassElement(p *ProcessedVoxelObject, x int, y int, z int) {
+	p.Elements[x][y][z].IsSurface = p.isSurface(x, y, z)
+	p.Elements[x][y][z].Normal = p.calculateNormal(x, y, z)
+}
+
+func processSecondPassElement(p *ProcessedVoxelObject, x int, y int, z int) {
+	p.Elements[x][y][z].AveragedNormal = p.getAverageNormal(x, y, z)
+	p.Elements[x][y][z].Occlusion = p.getOcclusion(x, y, z)
 }
 
 func (p *ProcessedVoxelObject) getNormalRadius(index byte) (radius int) {
@@ -117,6 +129,38 @@ func (p *ProcessedVoxelObject) getAverageNormal(x, y, z int) (normal geometry.Ve
 	}
 
 	return normal.Normalise()
+}
+
+func (p *ProcessedVoxelObject) getOcclusion(x, y, z int) (occlusion int) {
+	if !p.Elements[x][y][z].IsSurface {
+		return
+	}
+
+	normal := p.Elements[x][y][z].AveragedNormal
+	n := geometry.Vector3{X: float64(x), Y: float64(y), Z: float64(z)}.Subtract(normal.MultiplyByConstant(2.0))
+	q, w, e := int(n.X), int(n.Y), int(n.Z)
+
+	distance := occlusionRadius
+	distanceF := float64(distance)
+
+	for i := -distance; i <= distance; i++ {
+		for j := -distance; j <= distance; j++ {
+			for k := -distance; k <= distance; k++ {
+				vec := geometry.Vector3{X: float64(i), Y: float64(j), Z: float64(k)}
+
+				if vec.Length() < distanceF && vec.Dot(normal) < 0 {
+					if p.SafeGetData(q+i, w+j, e+k).IsSurface {
+						occlusion++
+						if occlusion >= 10 {
+							return
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return
 }
 
 func (p *ProcessedVoxelObject) isSurface(x, y, z int) bool {

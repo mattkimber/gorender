@@ -66,7 +66,7 @@ func Test_castFpRay(t *testing.T) {
 		t.Errorf("incorrect voxel - expected [2,2,2], got [%d,%d,%d]", result.X, result.Y, result.Z)
 	}
 
-	if result.Depth != 6 {
-		t.Errorf("incorrect depth - expected 6, got %d", result.Depth)
+	if result.Depth != 5 {
+		t.Errorf("incorrect depth - expected 5, got %d", result.Depth)
 	}
 }

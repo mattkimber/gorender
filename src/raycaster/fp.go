@@ -2,6 +2,7 @@ package raycaster
 
 import (
 	"geometry"
+	"math/rand"
 	"voxelobject"
 )
 
@@ -17,6 +18,7 @@ func castFpRay(object voxelobject.ProcessedVoxelObject, u, v float64, viewport g
 		if isInsideBoundingVolume(loc, limits) {
 			lx, ly, lz := byte(loc.X), byte(loc.Y), byte(loc.Z)
 			if object.Elements[lx][ly][lz].Index != 0 {
+				lx, ly, lz = recoverNonSurfaceVoxel(object, loc, ray, limits)
 				return RayResult{X: lx, Y: ly, Z: lz, HasGeometry: true, Depth: int(loc0.Subtract(loc).Length())}
 			}
 		}
@@ -24,6 +26,45 @@ func castFpRay(object voxelobject.ProcessedVoxelObject, u, v float64, viewport g
 		loc = loc.Add(ray)
 	}
 
+	return
+}
+
+func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3) (lx byte, ly byte, lz byte) {
+	if !object.Elements[lx][ly][lz].IsSurface {
+		loc2 := loc
+		lx, ly, lz = byte(loc.X), byte(loc.Y), byte(loc.Z)
+
+		for i := 0; i < 20; i++ {
+			loc2 = loc2.Subtract(ray.MultiplyByConstant(0.125))
+			if !isInsideBoundingVolume(loc2, limits) {
+				break
+			}
+
+			lx, ly, lz = byte(loc2.X), byte(loc2.Y), byte(loc2.Z)
+			if object.Elements[lx][ly][lz].IsSurface {
+				break
+			}
+		}
+	}
+
+	if !object.Elements[lx][ly][lz].IsSurface {
+		loc2 := loc
+
+		for i := 0; i < 20; i++ {
+			jitter := geometry.Vector3{X: rand.Float64(), Y: rand.Float64(), Z: rand.Float64()}.Normalise().MultiplyByConstant(0.01)
+			loc2 = loc2.Subtract(ray.MultiplyByConstant(0.125).Add(jitter))
+			if !isInsideBoundingVolume(loc2, limits) {
+				break
+			}
+
+			lx, ly, lz = byte(loc2.X), byte(loc2.Y), byte(loc2.Z)
+			if object.Elements[lx][ly][lz].IsSurface {
+				break
+			}
+		}
+
+		lx, ly, lz = byte(loc.X), byte(loc.Y), byte(loc.Z)
+	}
 	return
 }
 

@@ -9,6 +9,7 @@ import (
 	"io"
 	"raycaster"
 	"sprite"
+	"sync"
 	"utils/fileutils"
 	"utils/imageutils"
 	timeutils "utils/timingutils"
@@ -19,6 +20,11 @@ type Spritesheet struct {
 	Image image.Image
 }
 
+type Spritesheets struct {
+	sync.RWMutex
+	Data map[string]Spritesheet
+}
+
 type Definition struct {
 	Object     voxelobject.ProcessedVoxelObject
 	Palette    colour.Palette
@@ -27,8 +33,6 @@ type Definition struct {
 	Debug      bool
 	Time       bool
 }
-
-type Spritesheets map[string]Spritesheet
 
 type SpriteInfo struct {
 	RenderOutput raycaster.RenderOutput
@@ -41,7 +45,8 @@ const totalHeight = 40
 const antiAliasFactor = 2
 
 func GetSpritesheets(def Definition) Spritesheets {
-	sheets := make(Spritesheets)
+	sheets := Spritesheets{}
+	sheets.Data = make(map[string]Spritesheet)
 
 	w := int(float64(spriteSpacing*def.NumSprites) * def.Scale)
 	h := int(float64(totalHeight) * def.Scale)
@@ -62,16 +67,51 @@ func GetSpritesheets(def Definition) Spritesheets {
 	})
 
 	timeutils.Time("Spritesheets", def.Time, func() {
-		sheets["32bpp"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "32bpp")}
-		sheets["8bpp"] = Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "8bpp")}
-		sheets["mask"] = Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "mask")}
+		var wg sync.WaitGroup
+		wg.Add(3)
+
+		go func() {
+			sheets.Store("32bpp", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "32bpp")})
+			wg.Done()
+		}()
+		go func() {
+			sheets.Store("8bpp", Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "8bpp")})
+			wg.Done()
+		}()
+		go func() {
+			sheets.Store("mask", Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "mask")})
+			wg.Done()
+		}()
+
+		wg.Wait()
 	})
 	if def.Debug {
 		timeutils.Time("Debug output", def.Time, func() {
-			sheets["lighting"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "lighting")}
-			sheets["depth"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "depth")}
-			sheets["normals"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "normal")}
-			sheets["avg_normals"] = Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "avg")}
+			var wg sync.WaitGroup
+			wg.Add(5)
+
+			go func() {
+				sheets.Store("lighting", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "lighting")})
+				wg.Done()
+			}()
+			go func() {
+				sheets.Store("depth", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "depth")})
+				wg.Done()
+			}()
+			go func() {
+				sheets.Store("normals", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "normal")})
+				wg.Done()
+			}()
+			go func() {
+				sheets.Store("occlusion", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "occlusion")})
+				wg.Done()
+			}()
+			go func() {
+				sheets.Store("avg_normals", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "avg")})
+				wg.Done()
+			}()
+
+			wg.Wait()
 		})
 	}
 
@@ -119,6 +159,8 @@ func getSprite32bpp(def Definition, spriteInfo SpriteInfo, depth string) (spr im
 		spr = sprite.GetLightingSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else if depth == "depth" {
 		spr = sprite.GetDepthSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
+	} else if depth == "occlusion" {
+		spr = sprite.GetOcclusionSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else if depth == "normal" {
 		spr = sprite.GetNormalSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else if depth == "avg" {
@@ -135,14 +177,23 @@ func (s Spritesheet) OutputToWriter(w io.Writer) (err error) {
 	return
 }
 
+func (sheets *Spritesheets) Store(key string, s Spritesheet) {
+	sheets.Lock()
+	sheets.Data[key] = s
+	sheets.Unlock()
+}
+
 func (sheets Spritesheets) SaveAll(baseFilename string) (err error) {
-	for i, sheet := range sheets {
+	var wg sync.WaitGroup
+	wg.Add(len(sheets.Data))
+
+	for i, sheet := range sheets.Data {
 		filename := baseFilename + "_" + i + ".png"
-		if err = fileutils.WriteToFile(filename, &sheet); err != nil {
-			return
-		}
+		thisSheet := sheet
+		go func() { fileutils.WriteToFile(filename, thisSheet); wg.Done() }()
 	}
 
+	wg.Wait()
 	return
 }
 

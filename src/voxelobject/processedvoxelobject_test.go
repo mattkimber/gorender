@@ -88,3 +88,15 @@ func getObject(filename string, t *testing.T) ProcessedVoxelObject {
 	v := RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{})
 	return v
 }
+
+func TestProcessedVoxelObject_getOcclusion(t *testing.T) {
+	p := getObject("occlude", t)
+	if p.getOcclusion(2, 2, 2) != 1 {
+		t.Errorf("Occlusion at 2,2,2 is %d, expected 1\n", p.getOcclusion(2, 2, 2))
+	}
+
+	if p.getOcclusion(3, 3, 3) != 0 {
+		t.Errorf("Occlusion at 3,3,3 is %d, expected 0\n", p.getOcclusion(3, 3, 3))
+	}
+
+}
