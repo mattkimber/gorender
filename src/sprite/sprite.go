@@ -130,10 +130,14 @@ func GetLightingSprite(pal colour.Palette, bounds image.Rectangle, info raycaste
 }
 
 func getLightingOffset(x int, y int, info raycaster.RenderOutput) float64 {
-	lightingOffset := -0.2
+	lightingOffset := -0.3
 	lightingOffset += info[x][y].LightAmount * 0.6
 	lightingOffset += (-(float64(info[x][y].Depth-120) / 40)) * 0.1
 	lightingOffset += (-float64(info[x][y].Occlusion) / 10.0) * 0.2
 	lightingOffset -= info[x][y].Shadowing * 0.2
+
+	if lightingOffset > 0 {
+		lightingOffset = lightingOffset / 1.5
+	}
 	return lightingOffset
 }

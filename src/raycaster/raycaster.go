@@ -21,7 +21,7 @@ type RayResult struct {
 	Depth       int
 }
 
-const lightingAngle = 80
+const lightingAngle = 65
 const lightingElevationAngle = 60
 
 type RenderOutput [][]RenderInfo
