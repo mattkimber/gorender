@@ -85,7 +85,10 @@ func resample8bpp(src *image.Paletted, bounds image.Rectangle, pal colour.Palett
 			if pal.IsCompanyColour(idx) {
 				return idx
 			}
-			values[idx]++
+
+			if idx != 0 {
+				values[idx]++
+			}
 		}
 	}
 
