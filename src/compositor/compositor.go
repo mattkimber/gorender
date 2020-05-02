@@ -58,12 +58,18 @@ func resample32bpp(src image.Image, bounds image.Rectangle) color.RGBA64 {
 	for i := bounds.Min.X; i < bounds.Max.X; i++ {
 		for j := bounds.Min.Y; j < bounds.Max.Y; j++ {
 			cr, cg, cb, ca := src.At(i, j).RGBA()
-			r += int(cr)
-			g += int(cg)
-			b += int(cb)
-			a += int(ca)
-			ct++
+			if ca > 0 {
+				r += int(cr)
+				g += int(cg)
+				b += int(cb)
+				a += int(ca)
+				ct++
+			}
 		}
+	}
+
+	if ct == 0 {
+		ct = 1
 	}
 
 	return color.RGBA64{R: uint16(r / ct), G: uint16(g / ct), B: uint16(b / ct), A: uint16(a / ct)}

@@ -61,7 +61,7 @@ func TestRawVoxelObject_GetProcessedVoxelObject_AveragedNormals(t *testing.T) {
 		expected geometry.Vector3
 	}{
 		{geometry.Point{}, geometry.Vector3{}},
-		{geometry.Point{X: 3, Y: 2, Z: 2}, geometry.Vector3{X: 0.43104479944651053, Y: 0.6403956621583834, Z: 0.635683708111859}},
+		{geometry.Point{X: 3, Y: 2, Z: 2}, geometry.Vector3{X: 0.4327658259020278, Y: 0.63746126938479, Z: 0.63746126938479}},
 		{geometry.Point{X: 9, Y: 2, Z: 2}, geometry.Vector3{X: -1, Y: 1, Z: 1}.Normalise()},
 		{geometry.Point{X: 2, Y: 9, Z: 2}, geometry.Vector3{X: 1, Y: -1, Z: 1}.Normalise()},
 		{geometry.Point{X: 9, Y: 9, Z: 2}, geometry.Vector3{X: -1, Y: -1, Z: 1}.Normalise()},
