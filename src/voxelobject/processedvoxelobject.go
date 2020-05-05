@@ -15,11 +15,24 @@ type ProcessedElement struct {
 }
 
 type ProcessedVoxelObject struct {
-	Elements         [][][]ProcessedElement
-	borderedElements [][][]byte
-	Size             geometry.Point
-	Palette          *colour.Palette
+	Elements [][][]ProcessedElement
+	Size     geometry.Point
+	Palette  *colour.Palette
 }
+
+type startValue struct {
+	min, max int
+}
+
+type radiusStartValues struct {
+	J []startValue
+	K [][]startValue
+}
+
+var startValues map[int]radiusStartValues
+var startValuesLock sync.RWMutex
+
+var borderedElementLookup [][][]int
 
 const normalRadius = 3
 const normalAverageDistance = 1
@@ -29,6 +42,10 @@ const accessBorder = 8
 func (r RawVoxelObject) GetProcessedVoxelObject(pal *colour.Palette) (p ProcessedVoxelObject) {
 	p.Size = r.Size()
 	p.Palette = pal
+
+	if startValues == nil {
+		startValues = map[int]radiusStartValues{}
+	}
 
 	p.setElements(r)
 	p.calculatePass(processFirstPassElement)
@@ -75,25 +92,86 @@ func (p *ProcessedVoxelObject) getNormalRadius(index byte) (radius int) {
 	return
 }
 
+// Pre-calculating the radius start values gives approx 20% speedup by avoiding
+// a branch prediction miss
+func getRadiusStartValues(radius int) (values radiusStartValues) {
+
+	startValuesLock.Lock()
+	if values, ok := startValues[radius]; ok {
+		startValuesLock.Unlock()
+		return values
+	} else {
+		startValuesLock.Unlock()
+	}
+
+	values.J, values.K = make([]startValue, radius*2+1), make([][]startValue, radius*2+1)
+
+	for i := -radius; i <= radius; i++ {
+		jMin, jMax := radius, -radius
+		values.K[i+radius] = make([]startValue, radius*2+1)
+
+		for j := -radius; j <= radius; j++ {
+			if (i*i)+(j*j) <= (radius * radius) {
+				if j < jMin {
+					jMin = j
+				}
+				if j > jMax {
+					jMax = j
+				}
+			}
+
+			kMin, kMax := radius, -radius
+			for k := -radius; k <= radius; k++ {
+				if (i*i)+(j*j)+(k*k) <= (radius * radius) {
+					if k < kMin {
+						kMin = k
+					}
+					if k > kMax {
+						kMax = k
+					}
+				}
+			}
+
+			values.K[i+radius][j+radius] = startValue{min: kMin, max: kMax}
+		}
+
+		values.J[i+radius] = startValue{min: jMin, max: jMax}
+	}
+
+	startValuesLock.Lock()
+	startValues[radius] = values
+	startValuesLock.Unlock()
+
+	return
+}
+
 func (p *ProcessedVoxelObject) calculateNormal(x, y, z int) (normal geometry.Vector3) {
 	if !p.Elements[x][y][z].IsSurface {
 		return
 	}
 
 	radius := p.getNormalRadius(p.Elements[x][y][z].Index)
+
+	values := getRadiusStartValues(radius)
+
 	x += accessBorder
 	y += accessBorder
 	z += accessBorder
 
+	ti, tj, tk := 0, 0, 0
+
 	for i := -radius; i <= radius; i++ {
-		for j := -radius; j <= radius; j++ {
-			for k := -radius; k <= radius; k++ {
-				if (i*i)+(j*j)+(k*k) <= (radius*radius) && p.borderedElements[x+i][y+j][z+k] == 0 {
-					normal = normal.Subtract(geometry.Vector3{X: float64(i), Y: float64(j), Z: float64(k)})
-				}
+		for j := values.J[i+radius].min; j <= values.J[i+radius].max; j++ {
+			for k := values.K[i+radius][j+radius].min; k <= values.K[i+radius][j+radius].max; k++ {
+				v := borderedElementLookup[x+i][y+j][z+k]
+				ti += i * v
+				tj += j * v
+				tk += k * v
 			}
 		}
 	}
+
+	normal = geometry.Vector3{X: float64(ti), Y: float64(tj), Z: float64(tk)}
 
 	if normal.Length() > 0.01 {
 		return normal.Normalise()
@@ -214,12 +292,12 @@ func (p *ProcessedVoxelObject) isSurface(x, y, z int) bool {
 
 func (p *ProcessedVoxelObject) setElements(r RawVoxelObject) {
 	p.Elements = make([][][]ProcessedElement, p.Size.X)
-	p.borderedElements = make([][][]byte, p.Size.X+(accessBorder*2))
+	borderedElementLookup = make([][][]int, p.Size.X+(accessBorder*2))
 
 	for x := 0; x < p.Size.X+(accessBorder*2); x++ {
-		p.borderedElements[x] = make([][]byte, p.Size.Y+(accessBorder*2))
+		borderedElementLookup[x] = make([][]int, p.Size.Y+(accessBorder*2))
 		for y := 0; y < p.Size.Y+(accessBorder*2); y++ {
-			p.borderedElements[x][y] = make([]byte, p.Size.Z+(accessBorder*2))
+			borderedElementLookup[x][y] = make([]int, p.Size.Z+(accessBorder*2))
 		}
 	}
 
@@ -229,7 +307,10 @@ func (p *ProcessedVoxelObject) setElements(r RawVoxelObject) {
 			p.Elements[x][y] = make([]ProcessedElement, p.Size.Z)
 			for z := 0; z < p.Size.Z; z++ {
 				p.Elements[x][y][z].Index = r[x][y][z]
-				p.borderedElements[x+accessBorder][y+accessBorder][z+accessBorder] = r[x][y][z]
+
+				// This is a performance hack which saves ~15% time in the voxel processing by providing
+				// a value that can be multiplied by every time rather than needing an `if thing == 0`
+				borderedElementLookup[x+accessBorder][y+accessBorder][z+accessBorder] = int(r[x][y][z] & 254)
 			}
 		}
 	}
