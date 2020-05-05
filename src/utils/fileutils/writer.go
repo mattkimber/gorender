@@ -1,9 +1,12 @@
 package fileutils
 
 import (
+	"bufio"
 	"io"
 	"os"
 )
+
+const writerSize = 1024 * 32
 
 type FileWriter interface {
 	OutputToWriter(w io.Writer) error
@@ -19,6 +22,8 @@ func (w writer) GetFileHandle(filename string) (f *os.File, err error) {
 }
 
 func (w writer) DoIO(f *os.File) (err error) {
-	err = w.fileWriter.OutputToWriter(f)
+	buf := bufio.NewWriterSize(f, writerSize)
+	err = w.fileWriter.OutputToWriter(buf)
+	buf.Flush()
 	return
 }
