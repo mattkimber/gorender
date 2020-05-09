@@ -221,6 +221,7 @@ func (p *ProcessedVoxelObject) getAverageNormal(x, y, z int) (normal geometry.Ve
 	}
 
 	smoothness := p.Palette.GetSmoothness(p.SafeGetData(x, y, z).Index)
+	thisNormal := p.Elements[x][y][z].Normal
 
 	distance := p.getNormalAverageDistance(p.SafeGetData(x, y, z).Index)
 	minI, maxI, minJ, maxJ, minK, maxK := p.getSafeDistance(x, y, z, distance)
@@ -230,7 +231,10 @@ func (p *ProcessedVoxelObject) getAverageNormal(x, y, z int) (normal geometry.Ve
 			for k := minK; k <= maxK; k++ {
 				if p.Elements[x+i][y+j][z+k].Index != 0 {
 					if p.Palette.GetSmoothness(p.Elements[x+i][y+j][z+k].Index) == smoothness {
-						normal = normal.Add(p.Elements[x+i][y+j][z+k].Normal)
+						normal := p.Elements[x+i][y+j][z+k].Normal
+						if thisNormal.Dot(normal) >= 0 {
+							normal = normal.Add(p.Elements[x+i][y+j][z+k].Normal)
+						}
 					}
 				}
 			}
