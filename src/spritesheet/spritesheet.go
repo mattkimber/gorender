@@ -206,7 +206,7 @@ func getSpriteSizeForAngle(angle int, scale float64) image.Rectangle {
 	case angle == 0 || angle == 180:
 		fx, fy = 24, 26
 	case angle == 90 || angle == 270:
-		fx, fy = 32, 24
+		fx, fy = 32, 26
 	default:
 		fx, fy = 26, 26
 	}

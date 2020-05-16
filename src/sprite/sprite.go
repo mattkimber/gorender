@@ -136,8 +136,7 @@ func getLightingOffset(x int, y int, info raycaster.RenderOutput) float64 {
 	lightingOffset += (-float64(info[x][y].Occlusion) / 10.0) * 0.2
 	lightingOffset -= info[x][y].Shadowing * 0.2
 
-	if lightingOffset > 0 {
-		lightingOffset = lightingOffset / 1.5
-	}
+	lightingOffset = lightingOffset / 1.5
+
 	return lightingOffset
 }

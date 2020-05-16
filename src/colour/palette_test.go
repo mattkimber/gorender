@@ -60,9 +60,9 @@ func TestPalette_GetLitRGB(t *testing.T) {
 		lighting float64
 		expected []uint16
 	}{
-		{0, 0, []uint16{65535, 0, 0}},
+		{0, 0, []uint16{65535, 256, 256}},
 		{0, 1, []uint16{65535, 65535, 65535}},
-		{0, -1, []uint16{0, 0, 0}},
+		{0, -1, []uint16{256, 256, 256}},
 		{0, 0.5, []uint16{65535, 32767, 32767}},
 	}
 

@@ -128,19 +128,29 @@ func (p Palette) GetLitRGB(index byte, l float64) (r, g, b uint16) {
 		l = -1
 	}
 
-	if l > 0 {
+	if l >= 0 {
 		// interpolate towards white
-		r = uint16((float64(r) * (1 - l)) + (65535 * l))
-		g = uint16((float64(g) * (1 - l)) + (65535 * l))
-		b = uint16((float64(b) * (1 - l)) + (65535 * l))
+		r = clamp((float64(r) * (1 - l)) + (65535 * l))
+		g = clamp((float64(g) * (1 - l)) + (65535 * l))
+		b = clamp((float64(b) * (1 - l)) + (65535 * l))
 	} else if l < 0 {
 		// interpolate towards black
-		r = uint16(float64(r) * (1 + l))
-		g = uint16(float64(g) * (1 + l))
-		b = uint16(float64(b) * (1 + l))
+		r = clamp(float64(r) * (1 + l))
+		g = clamp(float64(g) * (1 + l))
+		b = clamp(float64(b) * (1 + l))
 	}
 
 	return
+}
+
+func clamp(input float64) uint16 {
+	if input > 65535 {
+		return 65535
+	} else if input < 256 {
+		return 256
+	}
+
+	return uint16(input)
 }
 
 func (p *PaletteEntry) UnmarshalJSON(data []byte) error {
