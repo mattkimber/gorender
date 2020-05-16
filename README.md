@@ -26,3 +26,12 @@ GoRender supports the following command line flags:
 
 GoRender will look for a JSON palette file (default `files/ttd_palette.json`) on run - if this
 is not present it will exit.
+
+## Lighting tweaks
+
+There are several values in the palette file used for tweaking the lighting
+model. These are:
+
+* `company_colour_lighting_contribution` (`0.0`-`1.0`): how much a colour in the "company colours" range will contribute its own lightness to the lighting model.
+* `default_brightness` (`0.0`-`2.0`): the default brightness used to blend with company colour brightness when this happens. 
+* `company_colour_lighting_scale`: (default `2.0`): how responsive colours in the "company colours" range are to the lighting model.

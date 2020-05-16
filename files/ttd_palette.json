@@ -1,4 +1,7 @@
 {
+  "company_colour_lighting_contribution": 0.25,
+  "default_brightness": 1.0,
+  "company_colour_lighting_scale": 2.0,
   "ranges": [
     {
       "_comment": "flat greys",

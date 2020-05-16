@@ -23,8 +23,11 @@ type PaletteRange struct {
 }
 
 type Palette struct {
-	Entries []PaletteEntry `json:"entries"`
-	Ranges  []PaletteRange `json:"ranges"`
+	Entries                           []PaletteEntry `json:"entries"`
+	Ranges                            []PaletteRange `json:"ranges"`
+	CompanyColourLightingContribution float64        `json:"company_colour_lighting_contribution"`
+	DefaultBrightness                 float64        `json:"default_brightness"`
+	CompanyColourLightingScale        float64        `json:"company_colour_lighting_scale"`
 }
 
 // Get a Go palette
@@ -76,7 +79,8 @@ func (p Palette) GetRGB(index byte) (r, g, b uint16) {
 
 		if entry.Range != nil {
 			if entry.Range.IsPrimaryCompanyColour || entry.Range.IsSecondaryCompanyColour {
-				y := uint16((19595*uint32(entry.R) + 38470*uint32(entry.G) + 7471*uint32(entry.B) + 1<<15) >> 8)
+				cc := float64((19595*uint32(entry.R) + 38470*uint32(entry.G) + 7471*uint32(entry.B) + 1<<15) >> 8)
+				y := uint16((p.DefaultBrightness * 32767.0 * (1 - p.CompanyColourLightingContribution)) + (cc * p.CompanyColourLightingContribution))
 				return y, y, y
 			}
 		}
@@ -111,6 +115,11 @@ func (p Palette) GetLitIndexed(index byte, l float64) (idx byte) {
 
 func (p Palette) GetLitRGB(index byte, l float64) (r, g, b uint16) {
 	r, g, b = p.GetRGB(index)
+
+	entry := p.Entries[index]
+	if entry.Range != nil && (entry.Range.IsPrimaryCompanyColour || entry.Range.IsSecondaryCompanyColour) {
+		l = l * p.CompanyColourLightingScale
+	}
 
 	// clamp to [-1,1]
 	if l > 1 {

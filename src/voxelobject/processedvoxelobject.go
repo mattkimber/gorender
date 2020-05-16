@@ -164,9 +164,9 @@ func (p *ProcessedVoxelObject) calculateNormal(x, y, z int) (normal geometry.Vec
 		for j := values.J[i+radius].min; j <= values.J[i+radius].max; j++ {
 			for k := values.K[i+radius][j+radius].min; k <= values.K[i+radius][j+radius].max; k++ {
 				v := borderedElementLookup[x+i][y+j][z+k]
-				ti += i * v
-				tj += j * v
-				tk += k * v
+				ti -= i * v
+				tj -= j * v
+				tk -= k * v
 			}
 		}
 	}
@@ -302,6 +302,9 @@ func (p *ProcessedVoxelObject) setElements(r RawVoxelObject) {
 		borderedElementLookup[x] = make([][]int, p.Size.Y+(accessBorder*2))
 		for y := 0; y < p.Size.Y+(accessBorder*2); y++ {
 			borderedElementLookup[x][y] = make([]int, p.Size.Z+(accessBorder*2))
+			for z := 0; z < p.Size.Z+(accessBorder*2); z++ {
+				borderedElementLookup[x][y][z] = 1
+			}
 		}
 	}
 
@@ -314,7 +317,10 @@ func (p *ProcessedVoxelObject) setElements(r RawVoxelObject) {
 
 				// This is a performance hack which saves ~15% time in the voxel processing by providing
 				// a value that can be multiplied by every time rather than needing an `if thing == 0`
-				borderedElementLookup[x+accessBorder][y+accessBorder][z+accessBorder] = int(r[x][y][z] & 254)
+				// in the inner normal calculation loop
+				if r[x][y][z] != 0 {
+					borderedElementLookup[x+accessBorder][y+accessBorder][z+accessBorder] = 0
+				}
 			}
 		}
 	}
