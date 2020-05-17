@@ -7,6 +7,7 @@ import (
 	"image/color"
 	"image/png"
 	"io"
+	"manifest"
 	"raycaster"
 	"sprite"
 	"sync"
@@ -26,12 +27,12 @@ type Spritesheets struct {
 }
 
 type Definition struct {
-	Object     voxelobject.ProcessedVoxelObject
-	Palette    colour.Palette
-	Scale      float64
-	NumSprites int
-	Debug      bool
-	Time       bool
+	Object   voxelobject.ProcessedVoxelObject
+	Palette  colour.Palette
+	Manifest manifest.Manifest
+	Scale    float64
+	Debug    bool
+	Time     bool
 }
 
 type SpriteInfo struct {
@@ -40,18 +41,24 @@ type SpriteInfo struct {
 	SpriteBounds image.Rectangle
 }
 
-const spriteSpacing = 40
-const totalHeight = 40
+const spriteSpacing = 8
 const antiAliasFactor = 2
 
 func GetSpritesheets(def Definition) Spritesheets {
 	sheets := Spritesheets{}
 	sheets.Data = make(map[string]Spritesheet)
 
-	w := int(float64(spriteSpacing*def.NumSprites) * def.Scale)
-	h := int(float64(totalHeight) * def.Scale)
+	w, h := 0, 0
+	for i, spr := range def.Manifest.Sprites {
+		def.Manifest.Sprites[i].X = w
+		w += int(float64(spr.Width+spriteSpacing) * def.Scale)
+		if int(float64(spr.Height)*def.Scale) > h {
+			h = int(float64(spr.Height) * def.Scale)
+		}
+	}
+
 	bounds := image.Rectangle{Max: image.Point{X: w, Y: h}}
-	spriteInfos := make([]SpriteInfo, def.NumSprites)
+	spriteInfos := make([]SpriteInfo, len(def.Manifest.Sprites))
 
 	timeutils.Time("Raycasting", def.Time, func() {
 		raycast(def, spriteInfos)
@@ -106,15 +113,14 @@ func getRegularSheets(sheets Spritesheets, def Definition, bounds image.Rectangl
 }
 
 func raycast(def Definition, spriteInfos []SpriteInfo) {
-	angleStep := 360 / float64(def.NumSprites)
-	for i := 0; i < def.NumSprites; i++ {
-		angle := ((int(float64(i) * angleStep)) + 360) % 360
-		rect := getSpriteSizeForAngle(angle, def.Scale)
+	for i, spr := range def.Manifest.Sprites {
+		angle := spr.Angle
+		rect := getSpriteSizeForAngle(spr, def.Scale)
 
 		rw, rh := rect.Max.X*antiAliasFactor, rect.Max.Y*antiAliasFactor
 		spriteInfos[i].SpriteBounds = rect
 		spriteInfos[i].RenderBounds = image.Rectangle{Max: image.Point{X: rw, Y: rh}}
-		spriteInfos[i].RenderOutput = raycaster.GetRaycastOutput(def.Object, angle, rw, rh)
+		spriteInfos[i].RenderOutput = raycaster.GetRaycastOutput(def.Object, def.Manifest, angle, rw, rh)
 	}
 }
 
@@ -123,9 +129,9 @@ func get8bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfos
 	img := image.NewPaletted(bounds, palette)
 	imageutils.ClearToColourIndex(img, byte(len(palette)-1))
 
-	for i := 0; i < def.NumSprites; i++ {
+	for i := 0; i < len(def.Manifest.Sprites); i++ {
 		spr := getSprite8bpp(def, spriteInfos[i], depth)
-		compositor.Composite8bpp(spr, img, image.Point{X: int(float64(i*spriteSpacing) * def.Scale)}, spriteInfos[i].SpriteBounds, def.Palette)
+		compositor.Composite8bpp(spr, img, image.Point{X: def.Manifest.Sprites[i].X}, spriteInfos[i].SpriteBounds, def.Palette)
 	}
 
 	return img
@@ -134,9 +140,9 @@ func get8bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfos
 func get32bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfos []SpriteInfo, depth string) (img image.Image) {
 	img = imageutils.GetUniformImage(bounds, color.White)
 
-	for i := 0; i < def.NumSprites; i++ {
+	for i := 0; i < len(def.Manifest.Sprites); i++ {
 		spr := getSprite32bpp(def, spriteInfos[i], depth)
-		compositor.Composite32bpp(spr, img, image.Point{X: int(float64(i*spriteSpacing) * def.Scale)}, spriteInfos[i].SpriteBounds)
+		compositor.Composite32bpp(spr, img, image.Point{X: def.Manifest.Sprites[i].X}, spriteInfos[i].SpriteBounds)
 	}
 
 	return
@@ -156,17 +162,17 @@ func getSprite32bpp(def Definition, spriteInfo SpriteInfo, depth string) (spr im
 	if def.Object.Invalid() {
 		spr = sprite.GetUniformSprite(spriteInfo.RenderBounds)
 	} else if depth == "lighting" {
-		spr = sprite.GetLightingSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
+		spr = sprite.GetLightingSprite(spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else if depth == "depth" {
-		spr = sprite.GetDepthSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
+		spr = sprite.GetDepthSprite(spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else if depth == "occlusion" {
-		spr = sprite.GetOcclusionSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
+		spr = sprite.GetOcclusionSprite(spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else if depth == "shadow" {
-		spr = sprite.GetShadowSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
+		spr = sprite.GetShadowSprite(spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else if depth == "normals" {
-		spr = sprite.GetNormalSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
+		spr = sprite.GetNormalSprite(spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else if depth == "avg_normals" {
-		spr = sprite.GetAverageNormalSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
+		spr = sprite.GetAverageNormalSprite(spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else {
 		spr = sprite.Get32bppSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	}
@@ -199,17 +205,7 @@ func (sheets Spritesheets) SaveAll(baseFilename string) (err error) {
 	return
 }
 
-func getSpriteSizeForAngle(angle int, scale float64) image.Rectangle {
-	var fx, fy float64
-
-	switch {
-	case angle == 0 || angle == 180:
-		fx, fy = 24, 26
-	case angle == 90 || angle == 270:
-		fx, fy = 32, 26
-	default:
-		fx, fy = 26, 26
-	}
-
+func getSpriteSizeForAngle(sprite manifest.Sprite, scale float64) image.Rectangle {
+	fx, fy := float64(sprite.Width), float64(sprite.Height)
 	return image.Rectangle{Max: image.Point{X: int(fx * scale), Y: int(fy * scale)}}
 }

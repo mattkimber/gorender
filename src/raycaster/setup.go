@@ -2,29 +2,39 @@ package raycaster
 
 import (
 	"geometry"
+	"manifest"
 	"math"
 )
 
-func getRenderDirection(angle int) geometry.Vector3 {
-	x, y, z := -math.Cos(degToRad(angle)), math.Sin(degToRad(angle)), math.Sin(degToRad(30))
+func getRenderDirection(angle float64, elevationAngle float64) geometry.Vector3 {
+	x, y, z := -math.Cos(degToRad(angle)), math.Sin(degToRad(angle)), math.Sin(degToRad(elevationAngle))
 	return geometry.Vector3{X: x, Y: y, Z: z}.Normalise()
 }
 
-func degToRad(angle int) float64 {
-	return (float64(angle) / 180.0) * math.Pi
+func degToRad(angle float64) float64 {
+	return (angle / 180.0) * math.Pi
 }
 
-func getLightingDirection(angle int) geometry.Vector3 {
-	x, y, z := -math.Cos(degToRad(angle)), math.Sin(degToRad(angle)), math.Sin(degToRad(lightingElevationAngle))
+func getLightingDirection(angle float64, elevation float64) geometry.Vector3 {
+	x, y, z := -math.Cos(degToRad(angle)), math.Sin(degToRad(angle)), math.Sin(degToRad(elevation))
 	return geometry.Zero().Subtract(geometry.Vector3{X: x, Y: y, Z: z}).Normalise()
 }
 
-func getViewportPlane(angle int, size geometry.Point) geometry.Plane {
-	midpoint := geometry.Vector3{X: float64(size.X) / 2.0, Y: float64(size.Y) / 2.0, Z: float64(size.Y) / 2.0}
-	viewpoint := midpoint.Add(getRenderDirection(angle).MultiplyByConstant(100.0))
+func getViewportPlane(angle float64, m manifest.Manifest, size geometry.Point) geometry.Plane {
+	elevationAngle := getElevationAngle(m)
+	cos, sin := math.Cos(degToRad(angle)), math.Sin(degToRad(angle))
 
-	planeNormal := geometry.UnitZ().MultiplyByConstant(midpoint.X)
-	renderNormal := getRenderNormal(angle).MultiplyByConstant(midpoint.X)
+	midpoint := geometry.Vector3{X: float64(size.X) / 2.0, Y: float64(size.Y) / 2.0, Z: float64(m.Size.Z) / 2.0}
+	viewpoint := midpoint.Add(getRenderDirection(angle, elevationAngle).MultiplyByConstant(100.0))
+
+	planeNormalXComponent := math.Abs((float64(m.Size.X) / 2.0) * cos)
+	planeNormalYComponent := math.Abs((float64(m.Size.Y) / 2.0) * sin)
+	planeNormalZComponent := (float64(m.Size.Z) / 2.0) * math.Sin(degToRad(elevationAngle))
+	planeNormal := geometry.UnitZ().MultiplyByConstant(planeNormalXComponent + planeNormalYComponent + planeNormalZComponent)
+
+	renderNormalXComponent := math.Abs((float64(m.Size.X) / 2.0) * sin)
+	renderNormalYComponent := math.Abs((float64(m.Size.Y) / 2.0) * cos)
+	renderNormal := getRenderNormal(angle).MultiplyByConstant(renderNormalXComponent + renderNormalYComponent)
 
 	a := viewpoint.Subtract(renderNormal).Subtract(planeNormal)
 	b := viewpoint.Add(renderNormal).Subtract(planeNormal)
@@ -34,7 +44,11 @@ func getViewportPlane(angle int, size geometry.Point) geometry.Plane {
 	return geometry.Plane{A: a, B: b, C: c, D: d}
 }
 
-func getRenderNormal(angle int) geometry.Vector3 {
+func getElevationAngle(m manifest.Manifest) float64 {
+	return float64(m.RenderElevationAngle)
+}
+
+func getRenderNormal(angle float64) geometry.Vector3 {
 	x, y := -math.Cos(degToRad(angle)), math.Sin(degToRad(angle))
 	return geometry.Vector3{X: y, Y: -x}.Normalise()
 }

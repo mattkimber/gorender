@@ -18,7 +18,7 @@ GoRender supports the following command line flags:
 
 * `-i`, `-input`: A MagicaVoxel file to process
 * `-o`, `-output`: The base name of output files. e.g. if `-o test` is set, the files `test_8bpp.png`, `test_32bpp.png` and `test_mask.png` will be output.
-* `-n`, `-num_sprites`: How many sprites of rotation to produce (default: `8`). This can be used to render smoother steps of rotation.
+* `-m`, `-manifest`: The path to a JSON **manifest** detailing how to create sprites. Defaults to `files/manifest.json`
 * `-s`, `-scale`: The scale of sprites to produce (default: `1.0`). `1.0` corresponds to the default zoom level of OpenTTD. A comma-separated list can be passed to generate multiple scales.
 * `-t`, `-time`: A boolean flag for printing simple execution time statistics on stdout
 * `-d`, `-debug`: A boolean flag for outputting extra debug images (e.g voxel normals and lighting information)
@@ -26,6 +26,54 @@ GoRender supports the following command line flags:
 
 GoRender will look for a JSON palette file (default `files/ttd_palette.json`) on run - if this
 is not present it will exit.
+
+The `num_sprites` flag from previous versions has been replaced by a new Manifests function.
+
+## Manifest
+
+The Manifest is a JSON file detailing which sprites are to be created and their details. An example manifest:
+
+```json
+{
+  "lighting_angle": 60,
+  "lighting_elevation": 65,
+  "size": {
+    "x": 126,
+    "y": 40,
+    "z": 48
+  },
+  "render_elevation": 30,
+  "sprites": [
+    { "angle": 0,
+      "width": 8,
+      "height": 32
+    },
+    { "angle": 45,
+      "width": 26,
+      "height": 32
+    }
+  ]
+}
+``` 
+
+The fields are as follows:
+
+* `lighting_angle`: the horizontal angle (in degrees) light comes from.
+* `lighting_elevation`: the vertical angle (in degrees) light comes from.
+* `size`: the assumed size of an input object. This allows you to get consistent output across a variety of different
+   input sizes, including the possibility of having "oversize" voxel objects to add details in places which would not
+   overrun the rendering boundaries. Objects will be centred in the rendering area by length and width, but not by
+   height.
+* `render_elevation`: the vertical angle to view sprites from. This is mostly useful for changing proportions.
+* `sprites`: the set of sprites to produce, as an array. Each sprite must have the following properties:
+   * `angle`: the angle of the object for this sprite.
+   * `width`: the width of the output sprite image.
+   * `height`: the height of the output sprite image.
+   
+Rendering sprites to fit a particular game is a careful balance between widths, heights, and angle settings. The
+supplied `manifest.json` file will provide good results for OpenTTD vehicles when used with MagicaVoxel files
+measuring 126x40x40. `house_manifest.json` (and the accompanying `house.vox`) show how this can be adapted to
+produce different graphical layouts.      
 
 ## Lighting tweaks
 

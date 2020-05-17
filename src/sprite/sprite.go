@@ -73,7 +73,7 @@ func GetMaskSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.Re
 	return getIndexedImage(pal, bounds, shader, info)
 }
 
-func GetNormalSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
+func GetNormalSprite(bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
 	shader := func(x, y int) color.RGBA64 {
 		normal := info[x][y].Normal.MultiplyByConstant(32766).Add(geometry.Vector3{X: 32766, Y: 32766, Z: 32766})
 		r, g, b := normal.X, normal.Y, normal.Z
@@ -83,7 +83,7 @@ func GetNormalSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.
 	return get32bppImage(bounds, shader, info)
 }
 
-func GetAverageNormalSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
+func GetAverageNormalSprite(bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
 	shader := func(x, y int) color.RGBA64 {
 		normal := info[x][y].AveragedNormal.MultiplyByConstant(32766).Add(geometry.Vector3{X: 32766, Y: 32766, Z: 32766})
 		r, g, b := normal.X, normal.Y, normal.Z
@@ -93,7 +93,7 @@ func GetAverageNormalSprite(pal colour.Palette, bounds image.Rectangle, info ray
 	return get32bppImage(bounds, shader, info)
 }
 
-func GetDepthSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
+func GetDepthSprite(bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
 	shader := func(x, y int) color.RGBA64 {
 		v := info[x][y].Depth * 400
 		return color.RGBA64{R: uint16(v), G: uint16(v), B: uint16(v), A: 65535}
@@ -102,7 +102,7 @@ func GetDepthSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.R
 	return get32bppImage(bounds, shader, info)
 }
 
-func GetOcclusionSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
+func GetOcclusionSprite(bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
 	shader := func(x, y int) color.RGBA64 {
 		v := info[x][y].Occlusion * 6000
 		return color.RGBA64{R: uint16(v), G: uint16(v), B: uint16(v), A: 65535}
@@ -111,7 +111,7 @@ func GetOcclusionSprite(pal colour.Palette, bounds image.Rectangle, info raycast
 	return get32bppImage(bounds, shader, info)
 }
 
-func GetShadowSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
+func GetShadowSprite(bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
 	shader := func(x, y int) color.RGBA64 {
 		v := 65535 - (info[x][y].Shadowing * 65535)
 		return color.RGBA64{R: uint16(v), G: uint16(v), B: uint16(v), A: 65535}
@@ -120,7 +120,7 @@ func GetShadowSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.
 	return get32bppImage(bounds, shader, info)
 }
 
-func GetLightingSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
+func GetLightingSprite(bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
 	shader := func(x, y int) color.RGBA64 {
 		v := 32767 + (info[x][y].LightAmount * 32767)
 		return color.RGBA64{R: uint16(v), G: uint16(v), B: uint16(v), A: 65535}

@@ -48,6 +48,8 @@ func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Ve
 }
 
 func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3) (lx byte, ly byte, lz byte) {
+	lx, ly, lz = byte(loc.X), byte(loc.Y), byte(loc.Z)
+
 	if !object.Elements[lx][ly][lz].IsSurface {
 		loc2 := loc
 		lx, ly, lz = byte(loc.X), byte(loc.Y), byte(loc.Z)

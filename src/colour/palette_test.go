@@ -12,7 +12,7 @@ func TestGetPaletteFromJson(t *testing.T) {
 	expectedRanges := []PaletteRange{{Start: 0, End: 1, IsPrimaryCompanyColour: true, IsSecondaryCompanyColour: false}}
 	expectedEntries := []PaletteEntry{{R: 0, G: 0, B: 0}, {R: 255, G: 255, B: 255}, {R: 255, G: 127, B: 0}}
 
-	palette, err := GetPaletteFromJson(strings.NewReader(exampleJson))
+	palette, err := FromJson(strings.NewReader(exampleJson))
 
 	if err != nil {
 		t.Errorf("encountered error: %v", err)
@@ -40,7 +40,7 @@ func TestGetPaletteFromJson(t *testing.T) {
 }
 
 func TestPalette_GetRGB(t *testing.T) {
-	palette, _ := GetPaletteFromJson(strings.NewReader(exampleJson))
+	palette, _ := FromJson(strings.NewReader(exampleJson))
 	palette.SetRanges([]PaletteRange{{Start: 2, End: 2, IsPrimaryCompanyColour: true}})
 
 	expected := [][]uint16{{0, 0, 0}, {65535, 65535, 65535}, {38731, 38731, 38731}, {0, 0, 0}}
@@ -76,7 +76,7 @@ func TestPalette_GetLitRGB(t *testing.T) {
 }
 
 func TestPalette_GetMaskColour(t *testing.T) {
-	palette, _ := GetPaletteFromJson(strings.NewReader(exampleJson))
+	palette, _ := FromJson(strings.NewReader(exampleJson))
 	palette.SetRanges([]PaletteRange{{Start: 2, End: 2, IsPrimaryCompanyColour: true}})
 
 	expected := []byte{0, 0, 2}
@@ -91,7 +91,7 @@ func TestPalette_GetMaskColour(t *testing.T) {
 
 func TestPalette_GetFromReader_DetectsDuplicateRanges(t *testing.T) {
 	const json = "{\"entries\": [[0,0,0],[255,255,255],[255,127,0]], \"ranges\": [{\"start\": 0, \"end\": 1},{\"start\": 1, \"end\": 2}]}"
-	_, err := GetPaletteFromJson(strings.NewReader(json))
+	_, err := FromJson(strings.NewReader(json))
 
 	if err == nil || err.Error() != "range 1 overlaps colour 1" {
 		t.Errorf("encountered unexpected error: %v", err)
@@ -101,7 +101,7 @@ func TestPalette_GetFromReader_DetectsDuplicateRanges(t *testing.T) {
 func TestPalette_GetGoPalette(t *testing.T) {
 	expected := []color.RGBA{{0, 0, 0, 255}, {255, 255, 255, 255}, {255, 127, 0, 255}}
 
-	palette, _ := GetPaletteFromJson(strings.NewReader(exampleJson))
+	palette, _ := FromJson(strings.NewReader(exampleJson))
 	goPalette := palette.GetGoPalette()
 
 	if len(goPalette) != len(expected) {
@@ -116,7 +116,7 @@ func TestPalette_GetGoPalette(t *testing.T) {
 }
 
 func TestPalette_GetLitIndexed(t *testing.T) {
-	palette, _ := GetPaletteFromJson(strings.NewReader(exampleJson))
+	palette, _ := FromJson(strings.NewReader(exampleJson))
 	palette.SetRanges([]PaletteRange{{Start: 0, End: 2}})
 
 	testCases := []struct {

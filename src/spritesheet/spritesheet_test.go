@@ -3,7 +3,9 @@ package spritesheet
 import (
 	"colour"
 	"compositor"
+	"geometry"
 	"image"
+	"manifest"
 	"sprite"
 	"testing"
 	"utils/imageutils"
@@ -12,9 +14,18 @@ import (
 func TestGetSpritesheets(t *testing.T) {
 
 	def := Definition{
-		Palette:    colour.Palette{Entries: []colour.PaletteEntry{{R: 0, G: 0, B: 0}, {R: 255, G: 255, B: 255}}},
-		Scale:      1.0,
-		NumSprites: 2,
+		Palette: colour.Palette{Entries: []colour.PaletteEntry{{R: 0, G: 0, B: 0}, {R: 255, G: 255, B: 255}}},
+		Scale:   1.0,
+		Manifest: manifest.Manifest{
+			LightingAngle:        45,
+			LightingElevation:    60,
+			Size:                 geometry.Point{},
+			RenderElevationAngle: 0,
+			Sprites: []manifest.Sprite{
+				{Angle: 0, Width: 32, Height: 32, X: 0},
+				{Angle: 45, Width: 32, Height: 32, X: 40},
+			},
+		},
 	}
 
 	sheets := GetSpritesheets(def)
@@ -30,8 +41,8 @@ func testSpritesheet(t *testing.T, sheets Spritesheets, bpp string) {
 		t.Fatalf("no " + bpp + "spritesheet present in result")
 	}
 
-	expectedRect := image.Rectangle{Max: image.Point{X: spriteSpacing * 2, Y: totalHeight}}
-	spriteRect := getTestSpriteRectangle(0, 1.0)
+	expectedRect := image.Rectangle{Max: image.Point{X: 80, Y: 32}}
+	spriteRect := getTestSpriteRectangle(manifest.Sprite{Width: 32, Height: 32}, 1.0)
 	expectedImg := getTestSpriteImage(spriteRect)
 
 	if sheet.Image.Bounds() != expectedRect {
@@ -42,13 +53,13 @@ func testSpritesheet(t *testing.T, sheets Spritesheets, bpp string) {
 		t.Errorf("sprite at %v not equal to composited output", spriteRect)
 	}
 
-	if !imageutils.IsColourEqual(sheet.Image, spriteSpacing-1, 0, 65535, 65535, 65535) {
+	if !imageutils.IsColourEqual(sheet.Image, 79, 0, 65535, 65535, 65535) {
 		t.Errorf("blank area of spritesheet not set to white")
 	}
 }
 
-func getTestSpriteRectangle(angle int, scale float64) image.Rectangle {
-	return getSpriteSizeForAngle(angle, scale)
+func getTestSpriteRectangle(spr manifest.Sprite, scale float64) image.Rectangle {
+	return getSpriteSizeForAngle(spr, scale)
 }
 
 func getTestSpriteImage(rect image.Rectangle) image.Image {
@@ -56,28 +67,4 @@ func getTestSpriteImage(rect image.Rectangle) image.Image {
 	img := image.NewRGBA(rect)
 	compositor.Composite32bpp(spr, img, image.Point{}, rect)
 	return img
-}
-
-func TestGetSpriteSizeForAngle(t *testing.T) {
-	testCases := []struct {
-		angle     int
-		expectedX int
-		expectedY int
-	}{
-		{0, 24, 26},
-		{45, 26, 26},
-		{90, 32, 26},
-		{135, 26, 26},
-		{180, 24, 26},
-		{225, 26, 26},
-		{270, 32, 26},
-		{315, 26, 26},
-	}
-
-	for _, testCase := range testCases {
-		rect := getSpriteSizeForAngle(testCase.angle, 1.0)
-		if rect.Max.X != testCase.expectedX || rect.Max.Y != testCase.expectedY {
-			t.Errorf("output for angle %d was [%d,%d] (expected [%d,%d]", testCase.angle, rect.Max.X, rect.Max.Y, testCase.expectedX, testCase.expectedY)
-		}
-	}
 }

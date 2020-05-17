@@ -163,7 +163,7 @@ func (p *PaletteEntry) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func GetPaletteFromJson(handle io.Reader) (p Palette, err error) {
+func FromJson(handle io.Reader) (p Palette, err error) {
 	data, err := ioutil.ReadAll(handle)
 
 	if err != nil {
@@ -201,6 +201,6 @@ func (p *Palette) SetRanges(ranges []PaletteRange) (err error) {
 }
 
 func (p *Palette) GetFromReader(handle io.Reader) (err error) {
-	*p, err = GetPaletteFromJson(handle)
+	*p, err = FromJson(handle)
 	return err
 }

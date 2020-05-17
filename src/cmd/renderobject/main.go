@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"manifest"
 	"os"
 	"runtime/pprof"
 	"spritesheet"
@@ -19,7 +20,7 @@ import (
 type Flags struct {
 	Scales                        string
 	InputFilename, OutputFilename string
-	NumSprites                    int
+	ManifestFilename              string
 	OutputTime                    bool
 	Debug                         bool
 	SubDirs                       bool
@@ -34,7 +35,7 @@ func init() {
 	flag.BoolVar(&flags.SubDirs, "subdirs", false, "output each scale in its own subdirectory.")
 	flag.StringVar(&flags.InputFilename, "input", "", "voxel file to process")
 	flag.StringVar(&flags.OutputFilename, "output", "", "base file name of output PNG files, bit depth will be appended")
-	flag.IntVar(&flags.NumSprites, "num_sprites", 8, "number of sprite rotations to render")
+	flag.StringVar(&flags.ManifestFilename, "manifest", "files/manifest.json", "manifest file to use (see documentation)")
 	flag.BoolVar(&flags.OutputTime, "time", false, "output basic profiling information")
 	flag.BoolVar(&flags.Debug, "debug", false, "output extra debugging spritesheets")
 	flag.StringVar(&flags.ProfileFile, "profile", "", "output Go profiling information to the specified file")
@@ -44,7 +45,7 @@ func init() {
 	flag.BoolVar(&flags.SubDirs, "u", false, "shorthand for -subdirs")
 	flag.StringVar(&flags.InputFilename, "i", "", "shorthand for -input")
 	flag.StringVar(&flags.OutputFilename, "o", "", "shorthand for -output")
-	flag.IntVar(&flags.NumSprites, "n", 8, "shorthand for -num_sprites")
+	flag.StringVar(&flags.ManifestFilename, "m", "files/manifest.json", "shorthand for -manifest")
 	flag.BoolVar(&flags.OutputTime, "t", false, "shorthand for -time")
 	flag.BoolVar(&flags.Debug, "d", false, "shorthand for -debug")
 
@@ -60,6 +61,11 @@ func main() {
 
 func process() {
 	palette, err := getPalette("files/ttd_palette.json")
+	if err != nil {
+		panic(err)
+	}
+
+	manifest, err := getManifest(flags.ManifestFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -91,12 +97,12 @@ func process() {
 
 	for _, scale := range splitScales {
 		timeutils.Time(fmt.Sprintf("Total (%sx)", scale), flags.OutputTime, func() {
-			renderScale(scale, processedObject, palette, numScales)
+			renderScale(scale, manifest, processedObject, palette, numScales)
 		})
 	}
 }
 
-func renderScale(scale string, processedObject voxelobject.ProcessedVoxelObject, palette colour.Palette, numScales int) {
+func renderScale(scale string, manifest manifest.Manifest, processedObject voxelobject.ProcessedVoxelObject, palette colour.Palette, numScales int) {
 	if flags.OutputTime {
 		fmt.Printf("\n=== Scale %sx ===\n", scale)
 	}
@@ -107,12 +113,12 @@ func renderScale(scale string, processedObject voxelobject.ProcessedVoxelObject,
 	}
 
 	def := spritesheet.Definition{
-		Object:     processedObject,
-		Palette:    palette,
-		Scale:      scaleF,
-		NumSprites: flags.NumSprites,
-		Debug:      flags.Debug,
-		Time:       flags.OutputTime,
+		Object:   processedObject,
+		Manifest: manifest,
+		Palette:  palette,
+		Scale:    scaleF,
+		Debug:    flags.Debug,
+		Time:     flags.OutputTime,
 	}
 
 	sheets := spritesheet.GetSpritesheets(def)
@@ -169,5 +175,10 @@ func getVoxelObject(filename string) (object voxelobject.RawVoxelObject, err err
 
 func getPalette(filename string) (palette colour.Palette, err error) {
 	err = fileutils.InstantiateFromFile(filename, &palette)
+	return
+}
+
+func getManifest(filename string) (manifest manifest.Manifest, err error) {
+	err = fileutils.InstantiateFromFile(filename, &manifest)
 	return
 }
