@@ -11,6 +11,7 @@ func TestFromJson(t *testing.T) {
 	expected := Manifest{
 		LightingAngle:     60,
 		LightingElevation: 65,
+		DepthInfluence:    0.2,
 		Size: geometry.Point{
 			X: 20,
 			Y: 30,

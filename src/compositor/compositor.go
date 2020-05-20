@@ -16,8 +16,9 @@ func Composite32bpp(src image.Image, dst image.Image, loc image.Point, size imag
 		return fmt.Errorf("could not convert destination image to writable image")
 	}
 
+	useLargeImageLogic := size.Bounds().Max.X >= 64
 	sampler := func(rect image.Rectangle, pt image.Point) {
-		c := resample32bpp(src, rect)
+		c := resample32bpp(src, rect, useLargeImageLogic)
 		writableDst.Set(pt.X, pt.Y, c)
 	}
 
@@ -51,14 +52,14 @@ func composite(srcBounds image.Rectangle, dst DestinationImageSampler, loc image
 	return nil
 }
 
-func resample32bpp(src image.Image, bounds image.Rectangle) color.RGBA64 {
+func resample32bpp(src image.Image, bounds image.Rectangle, useLargeImageLogic bool) color.RGBA64 {
 	ct := 0
 	r, g, b, a := 0, 0, 0, 0
 
 	for i := bounds.Min.X; i < bounds.Max.X; i++ {
 		for j := bounds.Min.Y; j < bounds.Max.Y; j++ {
 			cr, cg, cb, ca := src.At(i, j).RGBA()
-			if ca > 0 {
+			if useLargeImageLogic || ca > 0 {
 				r += int(cr)
 				g += int(cg)
 				b += int(cb)
