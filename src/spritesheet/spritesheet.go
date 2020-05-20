@@ -150,7 +150,7 @@ func get32bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfo
 
 func getSprite8bpp(def Definition, spriteInfo SpriteInfo, depth string) (spr *image.Paletted) {
 	if depth == "8bpp" {
-		spr = sprite.GetIndexedSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
+		spr = sprite.GetIndexedSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput, def.Manifest.DepthInfluence)
 	} else if depth == "mask" {
 		spr = sprite.GetMaskSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	}
@@ -174,7 +174,7 @@ func getSprite32bpp(def Definition, spriteInfo SpriteInfo, depth string) (spr im
 	} else if depth == "avg_normals" {
 		spr = sprite.GetAverageNormalSprite(spriteInfo.RenderBounds, spriteInfo.RenderOutput)
 	} else {
-		spr = sprite.Get32bppSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput)
+		spr = sprite.Get32bppSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput, def.Manifest.DepthInfluence)
 	}
 
 	return

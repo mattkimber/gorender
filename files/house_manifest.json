@@ -1,6 +1,7 @@
 {
   "lighting_angle": 60,
   "lighting_elevation": 65,
+  "depth_influence": 0,
   "size": {
     "x": 64,
     "y": 64,

@@ -20,6 +20,7 @@ type Manifest struct {
 	Size                 geometry.Point `json:"size"`
 	RenderElevationAngle int            `json:"render_elevation"`
 	Sprites              []Sprite       `json:"sprites"`
+	DepthInfluence       float64        `json:"depth_influence"`
 }
 
 func FromJson(handle io.Reader) (manifest Manifest, err error) {

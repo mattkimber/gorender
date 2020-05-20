@@ -44,9 +44,9 @@ func getIndexedImage(pal colour.Palette, bounds image.Rectangle, shader shadeFun
 	return img
 }
 
-func Get32bppSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
+func Get32bppSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput, depthInfluence float64) image.Image {
 	shader := func(x, y int) color.RGBA64 {
-		lightingOffset := getLightingOffset(x, y, info)
+		lightingOffset := getLightingOffset(x, y, info, depthInfluence)
 
 		r, g, b := pal.GetLitRGB(info[x][y].Index, lightingOffset)
 		return color.RGBA64{R: r, G: g, B: b, A: 65535}
@@ -55,9 +55,9 @@ func Get32bppSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.R
 	return get32bppImage(bounds, shader, info)
 }
 
-func GetIndexedSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput) *image.Paletted {
+func GetIndexedSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput, depthInfluence float64) *image.Paletted {
 	shader := func(x, y int) byte {
-		lightingOffset := getLightingOffset(x, y, info)
+		lightingOffset := getLightingOffset(x, y, info, depthInfluence)
 		idx := pal.GetLitIndexed(info[x][y].Index, lightingOffset)
 		return idx
 	}
@@ -129,10 +129,10 @@ func GetLightingSprite(bounds image.Rectangle, info raycaster.RenderOutput) imag
 	return get32bppImage(bounds, shader, info)
 }
 
-func getLightingOffset(x int, y int, info raycaster.RenderOutput) float64 {
+func getLightingOffset(x int, y int, info raycaster.RenderOutput, depthInfluence float64) float64 {
 	lightingOffset := -0.3
 	lightingOffset += info[x][y].LightAmount * 0.6
-	lightingOffset += (-(float64(info[x][y].Depth-120) / 40)) * 0.1
+	lightingOffset += (-(float64(info[x][y].Depth-120) / 40)) * depthInfluence
 	lightingOffset += (-float64(info[x][y].Occlusion) / 10.0) * 0.2
 	lightingOffset -= info[x][y].Shadowing * 0.2
 

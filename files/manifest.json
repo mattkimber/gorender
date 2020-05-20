@@ -1,6 +1,7 @@
 {
   "lighting_angle": 60,
   "lighting_elevation": 65,
+  "depth_influence": 0.1,
   "size": {
     "x": 126,
     "y": 40,
@@ -12,7 +13,7 @@
       "width": 8,
       "height": 32
     },
-    { "angle": 45,
+    {
       "width": 26,
       "height": 24
     },
