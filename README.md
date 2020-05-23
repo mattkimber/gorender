@@ -38,6 +38,7 @@ The Manifest is a JSON file detailing which sprites are to be created and their 
   "lighting_angle": 60,
   "lighting_elevation": 65,
   "depth_influence": 0.1,
+  "tiled_normals": false,
   "size": {
     "x": 126,
     "y": 40,
@@ -62,6 +63,8 @@ The fields are as follows:
 * `lighting_angle`: the horizontal angle (in degrees) light comes from.
 * `lighting_elevation`: the vertical angle (in degrees) light comes from.
 * `depth_influence`: the amount object depth contributes to lighting. Setting this to `0` may be preferable for objects which are to be tiled.
+* `tiled_normals`: whether to treat the object as tiled for the purposes of normal calculation. When set to `true`, this will prevent the edge 
+   voxels from being lit as if they are a corner if they would line up with the opposite edge when placed in a tiled layout.
 * `size`: the assumed size of an input object. This allows you to get consistent output across a variety of different
    input sizes, including the possibility of having "oversize" voxel objects to add details in places which would not
    overrun the rendering boundaries. Objects will be centred in the rendering area by length and width, but not by

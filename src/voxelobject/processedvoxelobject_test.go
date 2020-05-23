@@ -14,8 +14,15 @@ func TestRawVoxelObject_GetProcessedVoxelObject(t *testing.T) {
 		t.Fatalf("error loading test file: %v", err)
 	}
 
-	v := RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{})
+	v := RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{}, false)
+	testObject(t, mv, v)
 
+	v = RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{}, true)
+	testObject(t, mv, v)
+
+}
+
+func testObject(t *testing.T, mv vox.MagicaVoxelObject, v ProcessedVoxelObject) {
 	for x := 0; x < len(mv); x++ {
 		for y := 0; y < len(mv[x]); y++ {
 			for z := 0; z < len(mv[x][y]); z++ {
@@ -85,7 +92,7 @@ func getObject(filename string, t *testing.T) ProcessedVoxelObject {
 		t.Fatalf("error loading test file: %v", err)
 	}
 
-	v := RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{})
+	v := RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{}, false)
 	return v
 }
 

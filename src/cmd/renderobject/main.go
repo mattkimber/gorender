@@ -89,7 +89,7 @@ func process() {
 
 	var processedObject voxelobject.ProcessedVoxelObject
 	timeutils.Time("Voxel processing", flags.OutputTime, func() {
-		processedObject = object.GetProcessedVoxelObject(&palette)
+		processedObject = object.GetProcessedVoxelObject(&palette, manifest.TiledNormals)
 	})
 
 	splitScales := strings.Split(flags.Scales, ",")
@@ -179,6 +179,8 @@ func getPalette(filename string) (palette colour.Palette, err error) {
 }
 
 func getManifest(filename string) (manifest manifest.Manifest, err error) {
+	// Default if empty
+	manifest.DepthInfluence = 0.1
 	err = fileutils.InstantiateFromFile(filename, &manifest)
 	return
 }

@@ -21,6 +21,7 @@ type Manifest struct {
 	RenderElevationAngle int            `json:"render_elevation"`
 	Sprites              []Sprite       `json:"sprites"`
 	DepthInfluence       float64        `json:"depth_influence"`
+	TiledNormals         bool           `json:"tiled_normals"`
 }
 
 func FromJson(handle io.Reader) (manifest Manifest, err error) {

@@ -31,6 +31,6 @@ func getObject(filename string, t *testing.T) voxelobject.ProcessedVoxelObject {
 		t.Fatalf("error loading test file: %v", err)
 	}
 
-	v := voxelobject.RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{})
+	v := voxelobject.RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{}, false)
 	return v
 }

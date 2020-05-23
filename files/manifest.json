@@ -2,6 +2,7 @@
   "lighting_angle": 60,
   "lighting_elevation": 65,
   "depth_influence": 0.1,
+  "tiled_normals": false,
   "size": {
     "x": 126,
     "y": 40,

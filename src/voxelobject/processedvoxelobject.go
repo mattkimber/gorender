@@ -39,7 +39,7 @@ const normalAverageDistance = 1
 const occlusionRadius = 4
 const accessBorder = 8
 
-func (r RawVoxelObject) GetProcessedVoxelObject(pal *colour.Palette) (p ProcessedVoxelObject) {
+func (r RawVoxelObject) GetProcessedVoxelObject(pal *colour.Palette, isTiled bool) (p ProcessedVoxelObject) {
 	p.Size = r.Size()
 	p.Palette = pal
 
@@ -47,7 +47,7 @@ func (r RawVoxelObject) GetProcessedVoxelObject(pal *colour.Palette) (p Processe
 		startValues = map[int]radiusStartValues{}
 	}
 
-	p.setElements(r)
+	p.setElements(r, isTiled)
 	p.calculatePass(processFirstPassElement)
 	p.calculatePass(processSecondPassElement)
 
@@ -294,16 +294,36 @@ func (p *ProcessedVoxelObject) isSurface(x, y, z int) bool {
 		p.Elements[x][y-1][z+1].Index == 0 || p.Elements[x][y+1][z+1].Index == 0)
 }
 
-func (p *ProcessedVoxelObject) setElements(r RawVoxelObject) {
+func (p *ProcessedVoxelObject) setElements(r RawVoxelObject, isTiled bool) {
 	p.Elements = make([][][]ProcessedElement, p.Size.X)
 	borderedElementLookup = make([][][]int, p.Size.X+(accessBorder*2))
+
+	sx, sy, sz := p.Size.X, p.Size.Y, p.Size.Z
+
+	if sx < accessBorder {
+		sx = sx * accessBorder
+	}
+
+	if sy < accessBorder {
+		sy = sy * accessBorder
+	}
+
+	if sz < accessBorder {
+		sz = sz * accessBorder
+	}
 
 	for x := 0; x < p.Size.X+(accessBorder*2); x++ {
 		borderedElementLookup[x] = make([][]int, p.Size.Y+(accessBorder*2))
 		for y := 0; y < p.Size.Y+(accessBorder*2); y++ {
 			borderedElementLookup[x][y] = make([]int, p.Size.Z+(accessBorder*2))
 			for z := 0; z < p.Size.Z+(accessBorder*2); z++ {
-				borderedElementLookup[x][y][z] = 1
+				if isTiled {
+					if r[(x+sx-accessBorder)%p.Size.X][(y+sy-accessBorder)%p.Size.Y][(z+sz-accessBorder)%p.Size.Z] == 0 {
+						borderedElementLookup[x][y][z] = 1
+					}
+				} else {
+					borderedElementLookup[x][y][z] = 1
+				}
 			}
 		}
 	}
@@ -318,7 +338,7 @@ func (p *ProcessedVoxelObject) setElements(r RawVoxelObject) {
 				// This is a performance hack which saves ~15% time in the voxel processing by providing
 				// a value that can be multiplied by every time rather than needing an `if thing == 0`
 				// in the inner normal calculation loop
-				if r[x][y][z] != 0 {
+				if r[x][y][z] != 0 && !isTiled {
 					borderedElementLookup[x+accessBorder][y+accessBorder][z+accessBorder] = 0
 				}
 			}
