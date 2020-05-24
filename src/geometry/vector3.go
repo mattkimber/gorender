@@ -71,6 +71,6 @@ func (a Vector3) Lerp(b Vector3, amt float64) Vector3 {
 }
 
 func (a Vector3) Equals(b Vector3) bool {
-	const epsilon = 1e-14
+	const epsilon = 1e-12
 	return a.Subtract(b).Length() < epsilon
 }
