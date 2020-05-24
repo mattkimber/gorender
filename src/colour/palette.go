@@ -19,6 +19,7 @@ type PaletteRange struct {
 	End                      byte `json:"end"`
 	IsPrimaryCompanyColour   bool `json:"is_primary_company_colour"`
 	IsSecondaryCompanyColour bool `json:"is_secondary_company_colour"`
+	IsAnimatedLight          bool `json:"is_animated_light"`
 	Smoothness               int  `json:"smoothness"`
 }
 
@@ -53,7 +54,7 @@ func (p Palette) GetMaskColour(index byte) (msk byte) {
 	if int(index) < len(p.Entries) {
 		entry := p.Entries[index]
 		if entry.Range != nil {
-			if entry.Range.IsPrimaryCompanyColour || entry.Range.IsSecondaryCompanyColour {
+			if entry.Range.IsPrimaryCompanyColour || entry.Range.IsSecondaryCompanyColour || entry.Range.IsAnimatedLight {
 				return index
 			}
 		}
@@ -62,9 +63,9 @@ func (p Palette) GetMaskColour(index byte) (msk byte) {
 	return
 }
 
-func (p Palette) IsCompanyColour(index byte) bool {
+func (p Palette) IsSpecialColour(index byte) bool {
 	if int(index) < len(p.Entries) && p.Entries[index].Range != nil {
-		return p.Entries[index].Range.IsPrimaryCompanyColour || p.Entries[index].Range.IsSecondaryCompanyColour
+		return p.Entries[index].Range.IsPrimaryCompanyColour || p.Entries[index].Range.IsSecondaryCompanyColour || p.Entries[index].Range.IsAnimatedLight
 	}
 
 	return false
@@ -82,6 +83,10 @@ func (p Palette) GetRGB(index byte) (r, g, b uint16) {
 				cc := float64((19595*uint32(entry.R) + 38470*uint32(entry.G) + 7471*uint32(entry.B) + 1<<15) >> 8)
 				y := uint16((p.DefaultBrightness * 32767.0 * (1 - p.CompanyColourLightingContribution)) + (cc * p.CompanyColourLightingContribution))
 				return y, y, y
+			}
+
+			if entry.Range.IsAnimatedLight {
+				return 32766, 32766, 32766
 			}
 		}
 
@@ -119,6 +124,10 @@ func (p Palette) GetLitRGB(index byte, l float64) (r, g, b uint16) {
 	entry := p.Entries[index]
 	if entry.Range != nil && (entry.Range.IsPrimaryCompanyColour || entry.Range.IsSecondaryCompanyColour) {
 		l = l * p.CompanyColourLightingScale
+	}
+
+	if entry.Range != nil && entry.Range.IsAnimatedLight {
+		l = 1
 	}
 
 	// clamp to [-1,1]

@@ -83,7 +83,7 @@ func resample8bpp(src *image.Paletted, bounds image.Rectangle, pal colour.Palett
 		for j := bounds.Min.Y; j < bounds.Max.Y; j++ {
 			idx := src.ColorIndexAt(i, j)
 
-			if pal.IsCompanyColour(idx) {
+			if pal.IsSpecialColour(idx) {
 				return idx
 			}
 

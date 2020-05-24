@@ -134,11 +134,11 @@
     {
       "_comment": "golden wheat",
       "start": 192,
-      "end": 198
+      "end": 197
     },
     {
       "_comment": "company colour 1",
-      "start": 199,
+      "start": 198,
       "end": 205,
       "is_primary_company_colour": true,
       "smoothness": 2
@@ -161,29 +161,34 @@
     {
       "_comment": "block cycle",
       "start": 227,
-      "end": 231
+      "end": 231,
+      "is_animated_light": true
     },
     {
       "_comment": "fire cycle",
       "start": 232,
-      "end": 238
+      "end": 238,
+      "is_animated_light": true
     },
     {
       "_comment": "red flash",
       "start": 239,
       "end": 240,
-      "smoothness": -2
+      "smoothness": -2,
+      "is_animated_light": true
     },
     {
       "_comment": "yellow blinker",
       "start": 241,
       "end": 244,
-      "smoothness": -2
+      "smoothness": -2,
+      "is_animated_light": true
     },
     {
       "_comment": "water cycle",
       "start": 245,
-      "end": 254
+      "end": 254,
+      "is_animated_light": true
     }
   ],
   "entries": [
