@@ -19,7 +19,7 @@ func TestGetSpritesheets(t *testing.T) {
 		Manifest: manifest.Manifest{
 			LightingAngle:        45,
 			LightingElevation:    60,
-			Size:                 geometry.Point{},
+			Size:                 geometry.Vector3{},
 			RenderElevationAngle: 0,
 			Sprites: []manifest.Sprite{
 				{Angle: 0, Width: 32, Height: 32, X: 0},

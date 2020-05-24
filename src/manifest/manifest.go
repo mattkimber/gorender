@@ -15,13 +15,13 @@ type Sprite struct {
 }
 
 type Manifest struct {
-	LightingAngle        int            `json:"lighting_angle"`
-	LightingElevation    int            `json:"lighting_elevation"`
-	Size                 geometry.Point `json:"size"`
-	RenderElevationAngle int            `json:"render_elevation"`
-	Sprites              []Sprite       `json:"sprites"`
-	DepthInfluence       float64        `json:"depth_influence"`
-	TiledNormals         bool           `json:"tiled_normals"`
+	LightingAngle        int              `json:"lighting_angle"`
+	LightingElevation    int              `json:"lighting_elevation"`
+	Size                 geometry.Vector3 `json:"size"`
+	RenderElevationAngle int              `json:"render_elevation"`
+	Sprites              []Sprite         `json:"sprites"`
+	DepthInfluence       float64          `json:"depth_influence"`
+	TiledNormals         bool             `json:"tiled_normals"`
 }
 
 func FromJson(handle io.Reader) (manifest Manifest, err error) {

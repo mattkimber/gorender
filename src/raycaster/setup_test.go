@@ -30,22 +30,23 @@ func TestGetViewportPlane(t *testing.T) {
 		expected geometry.Plane
 	}{
 		{0, 126, 40, geometry.Plane{
-			A: geometry.Vector3{X: -37.5, Y: 0, Z: -0.5},
-			B: geometry.Vector3{X: -37.5, Y: 39, Z: -0.5},
-			C: geometry.Vector3{X: -37.5, Y: 39, Z: 39.5},
-			D: geometry.Vector3{X: -37.5, Y: 0, Z: 39.5},
+			A: geometry.Vector3{X: -37.5, Y: -0.5, Z: -0.5},
+			B: geometry.Vector3{X: -37.5, Y: 39.5, Z: -0.5},
+			C: geometry.Vector3{X: -37.5, Y: 39.5, Z: 39.5},
+			D: geometry.Vector3{X: -37.5, Y: -0.5, Z: 39.5},
 		}},
 		{45, 126, 40, geometry.Plane{
-			A: geometry.Vector3{X: -49.21067811865475, Y: 49.21067811865474, Z: -0.5},
-			B: geometry.Vector3{X: 32.78932188134524, Y: 131.21067811865476, Z: -0.5},
-			C: geometry.Vector3{X: 32.78932188134524, Y: 131.21067811865476, Z: 39.5},
-			D: geometry.Vector3{X: -49.21067811865475, Y: 49.21067811865474, Z: 39.5},
+			A: geometry.Vector3{X: -49.71067811865475, Y: 48.71067811865474, Z: -0.5},
+			B: geometry.Vector3{X: 33.28932188134524, Y: 131.71067811865476, Z: -0.5},
+			C: geometry.Vector3{X: 33.28932188134524, Y: 131.71067811865476, Z: 39.5},
+			D: geometry.Vector3{X: -49.71067811865475, Y: 48.71067811865474, Z: 39.5},
 		}},
 	}
 
 	for _, testCase := range testCases {
 		size := geometry.Point{X: testCase.x, Y: testCase.y, Z: testCase.y}
-		m := manifest.Manifest{Size: size}
+		mSize := geometry.Vector3{X: float64(testCase.x), Y: float64(testCase.y), Z: float64(testCase.y)}
+		m := manifest.Manifest{Size: mSize}
 		if result := getViewportPlane(testCase.angle, m, size); !result.Equals(testCase.expected) {
 			t.Errorf("Angle %f expected viewport plane %v, got %v", testCase.angle, testCase.expected, result)
 		}
