@@ -86,7 +86,7 @@ func (p Palette) GetRGB(index byte) (r, g, b uint16) {
 			}
 
 			if entry.Range.IsAnimatedLight {
-				return 32766, 32766, 32766
+				return 22000, 22000, 22000
 			}
 		}
 
@@ -127,7 +127,7 @@ func (p Palette) GetLitRGB(index byte, l float64) (r, g, b uint16) {
 	}
 
 	if entry.Range != nil && entry.Range.IsAnimatedLight {
-		l = 1
+		l = 0.5
 	}
 
 	// clamp to [-1,1]
