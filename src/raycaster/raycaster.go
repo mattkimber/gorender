@@ -24,14 +24,14 @@ type RayResult struct {
 
 type RenderOutput [][]RenderInfo
 
-func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manifest, angle float64, w int, h int) RenderOutput {
+func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manifest, spr manifest.Sprite, w int, h int) RenderOutput {
 	size := object.Size
 	limits := geometry.Vector3{X: float64(size.X), Y: float64(size.Y), Z: float64(size.Z)}
 
-	viewport := getViewportPlane(angle, m, size)
-	ray := geometry.Zero().Subtract(getRenderDirection(angle, getElevationAngle(m)))
+	viewport := getViewportPlane(spr.Angle, m, size)
+	ray := geometry.Zero().Subtract(getRenderDirection(spr.Angle, getElevationAngle(m)))
 
-	lighting := getLightingDirection(angle+float64(m.LightingAngle), float64(m.LightingElevation))
+	lighting := getLightingDirection(spr.Angle+float64(m.LightingAngle), float64(m.LightingElevation))
 	result := make(RenderOutput, w)
 
 	wg := sync.WaitGroup{}
@@ -45,7 +45,7 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manife
 				loc0 := viewport.BiLerpWithinPlane(float64(thisX)/float64(w), float64(y)/float64(h))
 				loc := getIntersectionWithBounds(loc0, ray, limits)
 
-				rayResult := castFpRay(object, loc0, loc, ray, limits)
+				rayResult := castFpRay(object, loc0, loc, ray, limits, spr.Flip)
 
 				if rayResult.HasGeometry {
 					shadowLoc := geometry.Vector3{X: float64(rayResult.X), Y: float64(rayResult.Y), Z: float64(rayResult.Z)}
@@ -58,7 +58,7 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manife
 						shadowLoc = shadowLoc.Add(shadowVec)
 					}
 
-					shadowResult := castFpRay(object, shadowLoc, shadowLoc, shadowVec, limits).Depth
+					shadowResult := castFpRay(object, shadowLoc, shadowLoc, shadowVec, limits, spr.Flip).Depth
 
 					setResult(&result[thisX][y], object.Elements[rayResult.X][rayResult.Y][rayResult.Z], lighting, rayResult.Depth, shadowResult)
 				}

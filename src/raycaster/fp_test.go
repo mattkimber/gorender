@@ -50,13 +50,18 @@ func Test_castFpRay(t *testing.T) {
 
 	ray := geometry.Vector3{X: -1, Y: 0, Z: -0.125}.Normalise()
 	loc := geometry.Vector3{X: 8, Y: 2, Z: 3}
-	result := castFpRay(object, loc, loc, ray, limits)
 
+	testFpResult(t, castFpRay(object, loc, loc, ray, limits, false), 2)
+	testFpResult(t, castFpRay(object, loc, loc, ray, limits, true), 1)
+
+}
+
+func testFpResult(t *testing.T, result RayResult, expectedY uint8) {
 	if !result.HasGeometry {
 		t.Errorf("did not find geometry")
 	}
 
-	if result.X != 2 || result.Y != 2 || result.Z != 2 {
+	if result.X != 2 || result.Y != expectedY || result.Z != 2 {
 		t.Errorf("incorrect voxel - expected [2,2,2], got [%d,%d,%d]", result.X, result.Y, result.Z)
 	}
 

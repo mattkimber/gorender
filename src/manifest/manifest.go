@@ -12,6 +12,7 @@ type Sprite struct {
 	Width  int     `json:"width"`
 	Height int     `json:"height"`
 	X      int
+	Flip   bool `json:"flip"`
 }
 
 type Manifest struct {

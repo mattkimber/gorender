@@ -74,6 +74,7 @@ The fields are as follows:
    * `angle`: the angle of the object for this sprite.
    * `width`: the width of the output sprite image.
    * `height`: the height of the output sprite image.
+   * `flip`: flip the voxel object along in Y axis (useful for generating tracks or dealing with reversed files)
    
 Rendering sprites to fit a particular game is a careful balance between widths, heights, and angle settings. The
 supplied `manifest.json` file will provide good results for OpenTTD vehicles when used with MagicaVoxel files

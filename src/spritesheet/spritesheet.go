@@ -114,13 +114,12 @@ func getRegularSheets(sheets Spritesheets, def Definition, bounds image.Rectangl
 
 func raycast(def Definition, spriteInfos []SpriteInfo) {
 	for i, spr := range def.Manifest.Sprites {
-		angle := spr.Angle
 		rect := getSpriteSizeForAngle(spr, def.Scale)
 
 		rw, rh := rect.Max.X*antiAliasFactor, rect.Max.Y*antiAliasFactor
 		spriteInfos[i].SpriteBounds = rect
 		spriteInfos[i].RenderBounds = image.Rectangle{Max: image.Point{X: rw, Y: rh}}
-		spriteInfos[i].RenderOutput = raycaster.GetRaycastOutput(def.Object, def.Manifest, angle, rw, rh)
+		spriteInfos[i].RenderOutput = raycaster.GetRaycastOutput(def.Object, def.Manifest, spr, rw, rh)
 	}
 }
 

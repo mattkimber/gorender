@@ -8,7 +8,7 @@ import (
 
 var jitter []geometry.Vector3
 
-func castFpRay(object voxelobject.ProcessedVoxelObject, loc0 geometry.Vector3, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3) (result RayResult) {
+func castFpRay(object voxelobject.ProcessedVoxelObject, loc0 geometry.Vector3, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3, flipY bool) (result RayResult) {
 	if len(jitter) == 0 {
 		jitter = make([]geometry.Vector3, 20)
 		for i := 0; i < 20; i++ {
@@ -16,16 +16,17 @@ func castFpRay(object voxelobject.ProcessedVoxelObject, loc0 geometry.Vector3, l
 		}
 	}
 
-	if collision, loc := castRayToCandidate(object, loc, ray, limits); collision {
-		lx, ly, lz := recoverNonSurfaceVoxel(object, loc, ray, limits)
+	if collision, loc := castRayToCandidate(object, loc, ray, limits, flipY); collision {
+		lx, ly, lz := recoverNonSurfaceVoxel(object, loc, ray, limits, flipY)
 		return RayResult{X: lx, Y: ly, Z: lz, HasGeometry: true, Depth: int(loc0.Subtract(loc).Length())}
 	}
 
 	return
 }
 
-func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3) (bool, geometry.Vector3) {
+func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3, flipY bool) (bool, geometry.Vector3) {
 	i := 0
+	bSizeY := uint8(object.Size.Y - 1)
 
 	for {
 		// CanTerminate is an expensive check but we don't need to run it every cycle
@@ -35,6 +36,11 @@ func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Ve
 
 		if isInsideBoundingVolume(loc, limits) {
 			lx, ly, lz := byte(loc.X), byte(loc.Y), byte(loc.Z)
+
+			if flipY {
+				ly = bSizeY - ly
+			}
+
 			if object.Elements[lx][ly][lz].Index != 0 {
 				return true, loc
 			}
@@ -47,12 +53,21 @@ func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Ve
 	return false, geometry.Vector3{}
 }
 
-func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3) (lx byte, ly byte, lz byte) {
+func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3, flipY bool) (lx byte, ly byte, lz byte) {
 	lx, ly, lz = byte(loc.X), byte(loc.Y), byte(loc.Z)
+
+	bSizeY := uint8(object.Size.Y - 1)
+	if flipY {
+		ly = bSizeY - ly
+	}
 
 	if !object.Elements[lx][ly][lz].IsSurface {
 		loc2 := loc
 		lx, ly, lz = byte(loc.X), byte(loc.Y), byte(loc.Z)
+
+		if flipY {
+			ly = bSizeY - ly
+		}
 
 		for i := 0; i < 20; i++ {
 			loc2 = loc2.Subtract(ray.MultiplyByConstant(0.125))
@@ -61,6 +76,11 @@ func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometr
 			}
 
 			lx, ly, lz = byte(loc2.X), byte(loc2.Y), byte(loc2.Z)
+
+			if flipY {
+				ly = bSizeY - ly
+			}
+
 			if object.Elements[lx][ly][lz].IsSurface {
 				break
 			}
@@ -77,12 +97,20 @@ func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometr
 			}
 
 			lx, ly, lz = byte(loc2.X), byte(loc2.Y), byte(loc2.Z)
+
+			if flipY {
+				ly = bSizeY - ly
+			}
+
 			if object.Elements[lx][ly][lz].IsSurface {
 				break
 			}
 		}
 
 		lx, ly, lz = byte(loc.X), byte(loc.Y), byte(loc.Z)
+		if flipY {
+			ly = bSizeY - ly
+		}
 	}
 	return
 }
