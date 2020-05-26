@@ -15,8 +15,11 @@ func degToRad(angle float64) float64 {
 	return (angle / 180.0) * math.Pi
 }
 
-func getLightingDirection(angle float64, elevation float64) geometry.Vector3 {
+func getLightingDirection(angle float64, elevation float64, flipY bool) geometry.Vector3 {
 	x, y, z := -math.Cos(degToRad(angle)), math.Sin(degToRad(angle)), math.Sin(degToRad(elevation))
+	if flipY {
+		y = -y
+	}
 	return geometry.Zero().Subtract(geometry.Vector3{X: x, Y: y, Z: z}).Normalise()
 }
 

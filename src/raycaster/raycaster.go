@@ -31,7 +31,7 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manife
 	viewport := getViewportPlane(spr.Angle, m, size)
 	ray := geometry.Zero().Subtract(getRenderDirection(spr.Angle, getElevationAngle(m)))
 
-	lighting := getLightingDirection(spr.Angle+float64(m.LightingAngle), float64(m.LightingElevation))
+	lighting := getLightingDirection(spr.Angle+float64(m.LightingAngle), float64(m.LightingElevation), spr.Flip)
 	result := make(RenderOutput, w)
 
 	wg := sync.WaitGroup{}
