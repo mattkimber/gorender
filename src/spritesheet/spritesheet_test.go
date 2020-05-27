@@ -65,6 +65,6 @@ func getTestSpriteRectangle(spr manifest.Sprite, scale float64) image.Rectangle 
 func getTestSpriteImage(rect image.Rectangle) image.Image {
 	spr := sprite.GetUniformSprite(rect)
 	img := image.NewRGBA(rect)
-	compositor.Composite32bpp(spr, img, image.Point{}, rect)
+	compositor.Composite32bpp(spr, img, image.Point{}, rect, manifest.Manifest{})
 	return img
 }

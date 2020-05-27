@@ -6,19 +6,19 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"manifest"
 )
 
 type DestinationImageSampler func(rect image.Rectangle, loc image.Point)
 
-func Composite32bpp(src image.Image, dst image.Image, loc image.Point, size image.Rectangle) error {
+func Composite32bpp(src image.Image, dst image.Image, loc image.Point, size image.Rectangle, m manifest.Manifest) error {
 	writableDst, ok := dst.(draw.Image)
 	if !ok {
 		return fmt.Errorf("could not convert destination image to writable image")
 	}
 
-	useLargeImageLogic := size.Bounds().Max.X >= 64
 	sampler := func(rect image.Rectangle, pt image.Point) {
-		c := resample32bpp(src, rect, useLargeImageLogic)
+		c := resample32bpp(src, rect, m.SoftenEdges)
 		writableDst.Set(pt.X, pt.Y, c)
 	}
 
@@ -52,14 +52,14 @@ func composite(srcBounds image.Rectangle, dst DestinationImageSampler, loc image
 	return nil
 }
 
-func resample32bpp(src image.Image, bounds image.Rectangle, useLargeImageLogic bool) color.RGBA64 {
+func resample32bpp(src image.Image, bounds image.Rectangle, softenEdges bool) color.RGBA64 {
 	ct := 0
 	r, g, b, a := 0, 0, 0, 0
 
 	for i := bounds.Min.X; i < bounds.Max.X; i++ {
 		for j := bounds.Min.Y; j < bounds.Max.Y; j++ {
 			cr, cg, cb, ca := src.At(i, j).RGBA()
-			if useLargeImageLogic || ca > 0 {
+			if softenEdges || ca > 0 {
 				r += int(cr)
 				g += int(cg)
 				b += int(cb)

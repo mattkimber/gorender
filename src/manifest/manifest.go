@@ -23,6 +23,7 @@ type Manifest struct {
 	Sprites              []Sprite         `json:"sprites"`
 	DepthInfluence       float64          `json:"depth_influence"`
 	TiledNormals         bool             `json:"tiled_normals"`
+	SoftenEdges          bool             `json:"soften_edges"`
 }
 
 func FromJson(handle io.Reader) (manifest Manifest, err error) {

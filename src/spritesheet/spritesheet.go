@@ -141,7 +141,7 @@ func get32bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfo
 
 	for i := 0; i < len(def.Manifest.Sprites); i++ {
 		spr := getSprite32bpp(def, spriteInfos[i], depth)
-		compositor.Composite32bpp(spr, img, image.Point{X: def.Manifest.Sprites[i].X}, spriteInfos[i].SpriteBounds)
+		compositor.Composite32bpp(spr, img, image.Point{X: def.Manifest.Sprites[i].X}, spriteInfos[i].SpriteBounds, def.Manifest)
 	}
 
 	return
