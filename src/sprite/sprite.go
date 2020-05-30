@@ -62,15 +62,17 @@ func get32bppSample(info raycaster.RenderInfo, shader shadeFunc32bpp, softenEdge
 	// makes them more likely to suffer aliasing artifacts but also clearer at small
 	// sizes
 	alpha := 65535
+	divisor := float64(filled)
 	if softenEdges {
 		alpha = (filled * 65535) / (total)
+		divisor = float64(total)
 	}
 
 	// Return the average colour value
 	return color.RGBA64{
-		R: uint16(math.Sqrt(cr / float64(total))),
-		G: uint16(math.Sqrt(cg / float64(total))),
-		B: uint16(math.Sqrt(cb / float64(total))),
+		R: uint16(math.Sqrt(cr / divisor)),
+		G: uint16(math.Sqrt(cg / divisor)),
+		B: uint16(math.Sqrt(cb / divisor)),
 		A: uint16(alpha),
 	}
 }
