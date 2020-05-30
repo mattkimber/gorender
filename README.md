@@ -69,7 +69,8 @@ The fields are as follows:
    input sizes, including the possibility of having "oversize" voxel objects to add details in places which would not
    overrun the rendering boundaries. Objects will be centred in the rendering area by length and width, but not by
    height.
-* `soften_edges`: whether to antialias edges of sprites or not (useful for static objects)
+* `soften_edges`: whether to antialias edges of sprites or not (useful for static objects). This is a floating-point
+   value - scales above the setting will be softened, scaled below will not.
 * `render_elevation`: the vertical angle to view sprites from. This is mostly useful for changing proportions.
 * `sprites`: the set of sprites to produce, as an array. Each sprite must have the following properties:
    * `angle`: the angle of the object for this sprite.

@@ -1,11 +1,22 @@
 package manifest
 
 import (
+	"colour"
 	"encoding/json"
 	"geometry"
 	"io"
 	"io/ioutil"
+	"voxelobject"
 )
+
+type Definition struct {
+	Object   voxelobject.ProcessedVoxelObject
+	Palette  colour.Palette
+	Manifest Manifest
+	Scale    float64
+	Debug    bool
+	Time     bool
+}
 
 type Sprite struct {
 	Angle  float64 `json:"angle"`
@@ -23,7 +34,7 @@ type Manifest struct {
 	Sprites              []Sprite         `json:"sprites"`
 	DepthInfluence       float64          `json:"depth_influence"`
 	TiledNormals         bool             `json:"tiled_normals"`
-	SoftenEdges          bool             `json:"soften_edges"`
+	SoftenEdges          float64          `json:"soften_edges"`
 }
 
 func FromJson(handle io.Reader) (manifest Manifest, err error) {

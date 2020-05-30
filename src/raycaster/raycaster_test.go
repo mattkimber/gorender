@@ -3,6 +3,7 @@ package raycaster
 import (
 	"colour"
 	"geometry"
+	"manifest"
 	"testing"
 	"utils/fileutils"
 	"voxelobject"
@@ -25,10 +26,70 @@ func Test_getLightingValue(t *testing.T) {
 	}
 }
 
+func Test_raycaster(t *testing.T) {
+	object := getObject("cone.vox", t)
+	m := manifest.Manifest{
+		LightingAngle:        45,
+		LightingElevation:    50,
+		Size:                 object.Size.ToVector3(),
+		RenderElevationAngle: 30,
+		Sprites:              []manifest.Sprite{ { Angle:  45, Width:  10, Height: 10 } },
+		DepthInfluence:       0.1,
+		TiledNormals:         false,
+		SoftenEdges:          0,
+	}
+
+	_ = GetRaycastOutput(object, m, m.Sprites[0], 100, 100)
+
+}
+
 func getObject(filename string, t *testing.T) voxelobject.ProcessedVoxelObject {
 	var mv vox.MagicaVoxelObject
 	if err := fileutils.InstantiateFromFile("testdata/"+filename, &mv); err != nil {
 		t.Fatalf("error loading test file: %v", err)
+	}
+
+	v := voxelobject.RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{}, false)
+	return v
+}
+
+
+func Benchmark_castFpRay(b *testing.B) {
+	object := getObjectForBenchmark("cone.vox", b)
+	size := object.Size
+	limits := geometry.Vector3{X: float64(size.X), Y: float64(size.Y), Z: float64(size.Z)}
+
+	ray := geometry.Vector3{X: -1, Y: 0, Z: -0.125}.Normalise()
+	loc := geometry.Vector3{X: 80, Y: 20, Z: 30}
+
+	for i := 0; i < b.N; i++ {
+		_ = castFpRay(object, loc, loc, ray, limits, false)
+	}
+}
+
+func Benchmark_raycaster(b *testing.B) {
+	object := getObjectForBenchmark("cone.vox", b)
+	m := manifest.Manifest{
+		LightingAngle:        45,
+		LightingElevation:    50,
+		Size:                 object.Size.ToVector3(),
+		RenderElevationAngle: 30,
+		Sprites:              []manifest.Sprite{ { Angle:  45, Width:  10, Height: 10 } },
+		DepthInfluence:       0.1,
+		TiledNormals:         false,
+		SoftenEdges:          0,
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = GetRaycastOutput(object, m, m.Sprites[0], 100, 100)
+	}
+}
+
+func getObjectForBenchmark(filename string, b *testing.B) voxelobject.ProcessedVoxelObject {
+	var mv vox.MagicaVoxelObject
+	if err := fileutils.InstantiateFromFile("testdata/"+filename, &mv); err != nil {
+		b.Fatalf("error loading test file: %v", err)
 	}
 
 	v := voxelobject.RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{}, false)

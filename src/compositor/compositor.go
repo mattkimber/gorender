@@ -11,14 +11,16 @@ import (
 
 type DestinationImageSampler func(rect image.Rectangle, loc image.Point)
 
-func Composite32bpp(src image.Image, dst image.Image, loc image.Point, size image.Rectangle, m manifest.Manifest) error {
+func Composite32bpp(src image.Image, dst image.Image, loc image.Point, size image.Rectangle, d manifest.Definition) error {
 	writableDst, ok := dst.(draw.Image)
 	if !ok {
 		return fmt.Errorf("could not convert destination image to writable image")
 	}
 
+	softenEdges := d.Scale >= d.Manifest.SoftenEdges
+
 	sampler := func(rect image.Rectangle, pt image.Point) {
-		c := resample32bpp(src, rect, m.SoftenEdges)
+		c := resample32bpp(src, rect, softenEdges)
 		writableDst.Set(pt.X, pt.Y, c)
 	}
 

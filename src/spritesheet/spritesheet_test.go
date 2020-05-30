@@ -6,14 +6,19 @@ import (
 	"geometry"
 	"image"
 	"manifest"
+	"os"
+	"raycaster"
 	"sprite"
 	"testing"
+	"utils/fileutils"
 	"utils/imageutils"
+	"voxelobject"
+	"voxelobject/vox"
 )
 
 func TestGetSpritesheets(t *testing.T) {
 
-	def := Definition{
+	def := manifest.Definition{
 		Palette: colour.Palette{Entries: []colour.PaletteEntry{{R: 0, G: 0, B: 0}, {R: 255, G: 255, B: 255}}},
 		Scale:   1.0,
 		Manifest: manifest.Manifest{
@@ -65,6 +70,81 @@ func getTestSpriteRectangle(spr manifest.Sprite, scale float64) image.Rectangle 
 func getTestSpriteImage(rect image.Rectangle) image.Image {
 	spr := sprite.GetUniformSprite(rect)
 	img := image.NewRGBA(rect)
-	compositor.Composite32bpp(spr, img, image.Point{}, rect, manifest.Manifest{})
+	compositor.Composite32bpp(spr, img, image.Point{}, rect, manifest.Definition{})
 	return img
+}
+
+
+func Benchmark_32bpp(b *testing.B) {
+	spritesheetImage := get32bppSpritesheetImage
+	benchmarkSpritesheet(b, spritesheetImage, "32bpp")
+}
+
+func Benchmark_8bpp(b *testing.B) {
+	spritesheetImage := get8bppSpritesheetImage
+	benchmarkSpritesheet(b, spritesheetImage, "8bpp")
+}
+
+
+func benchmarkSpritesheet(b *testing.B, spritesheetImage func(def manifest.Definition, bounds image.Rectangle, spriteInfos []SpriteInfo, depth string) (img image.Image), depth string) {
+	object := getObjectForBenchmark("cone.vox", b)
+	palette := getPalette(b)
+
+	def := manifest.Definition{
+		Object:  object,
+		Palette: palette,
+		Scale:   2.0,
+		Manifest: manifest.Manifest{
+			LightingAngle:        45,
+			LightingElevation:    60,
+			Size:                 object.Size.ToVector3(),
+			RenderElevationAngle: 0,
+			Sprites:              []manifest.Sprite{{Angle: 0, Width: 32, Height: 32, X: 0}},
+		},
+	}
+
+	bounds := image.Rectangle{Max: image.Point{
+		X: int(float64(def.Manifest.Sprites[0].Width) * def.Scale),
+		Y: int(float64(def.Manifest.Sprites[0].Height) * def.Scale),
+	}}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		rect := getSpriteSizeForAngle(def.Manifest.Sprites[0], def.Scale)
+
+		rw, rh := rect.Max.X*antiAliasFactor, rect.Max.Y*antiAliasFactor
+		info := SpriteInfo{
+			RenderOutput: raycaster.GetRaycastOutput(def.Object, def.Manifest, def.Manifest.Sprites[0], rw, rh),
+			RenderBounds: image.Rectangle{Max: image.Point{X: rw, Y: rh}},
+			SpriteBounds: rect,
+		}
+
+		spritesheetImage(def, bounds, []SpriteInfo{info}, depth)
+	}
+}
+
+func getPalette(b *testing.B) colour.Palette {
+	pFile, err := os.Open("../../files/ttd_palette.json")
+	if err != nil {
+		b.Fatalf("Could nopt open palette file: %v", err)
+	}
+
+	palette, err := colour.FromJson(pFile)
+	if err != nil {
+		b.Fatalf("Could not open palette file: %v", err)
+	}
+
+	pFile.Close()
+	return palette
+}
+
+func getObjectForBenchmark(filename string, b *testing.B) voxelobject.ProcessedVoxelObject {
+	var mv vox.MagicaVoxelObject
+	if err := fileutils.InstantiateFromFile("../raycaster/testdata/"+filename, &mv); err != nil {
+		b.Fatalf("error loading test file: %v", err)
+	}
+
+	v := voxelobject.RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{}, false)
+	return v
 }

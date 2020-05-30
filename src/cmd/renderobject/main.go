@@ -102,7 +102,7 @@ func process() {
 	}
 }
 
-func renderScale(scale string, manifest manifest.Manifest, processedObject voxelobject.ProcessedVoxelObject, palette colour.Palette, numScales int) {
+func renderScale(scale string, m manifest.Manifest, processedObject voxelobject.ProcessedVoxelObject, palette colour.Palette, numScales int) {
 	if flags.OutputTime {
 		fmt.Printf("\n=== Scale %sx ===\n", scale)
 	}
@@ -112,9 +112,9 @@ func renderScale(scale string, manifest manifest.Manifest, processedObject voxel
 		fmt.Errorf("Could not interpret scale %s: %v\n", scale, err)
 	}
 
-	def := spritesheet.Definition{
+	def := manifest.Definition{
 		Object:   processedObject,
-		Manifest: manifest,
+		Manifest: m,
 		Palette:  palette,
 		Scale:    scaleF,
 		Debug:    flags.Debug,

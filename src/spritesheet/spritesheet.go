@@ -1,7 +1,6 @@
 package spritesheet
 
 import (
-	"colour"
 	"compositor"
 	"image"
 	"image/color"
@@ -13,8 +12,7 @@ import (
 	"sync"
 	"utils/fileutils"
 	"utils/imageutils"
-	timeutils "utils/timingutils"
-	"voxelobject"
+	timingutils "utils/timingutils"
 )
 
 type Spritesheet struct {
@@ -26,15 +24,6 @@ type Spritesheets struct {
 	Data map[string]Spritesheet
 }
 
-type Definition struct {
-	Object   voxelobject.ProcessedVoxelObject
-	Palette  colour.Palette
-	Manifest manifest.Manifest
-	Scale    float64
-	Debug    bool
-	Time     bool
-}
-
 type SpriteInfo struct {
 	RenderOutput raycaster.RenderOutput
 	RenderBounds image.Rectangle
@@ -44,7 +33,7 @@ type SpriteInfo struct {
 const spriteSpacing = 8
 const antiAliasFactor = 2
 
-func GetSpritesheets(def Definition) Spritesheets {
+func GetSpritesheets(def manifest.Definition) Spritesheets {
 	sheets := Spritesheets{}
 	sheets.Data = make(map[string]Spritesheet)
 
@@ -60,15 +49,15 @@ func GetSpritesheets(def Definition) Spritesheets {
 	bounds := image.Rectangle{Max: image.Point{X: w, Y: h}}
 	spriteInfos := make([]SpriteInfo, len(def.Manifest.Sprites))
 
-	timeutils.Time("Raycasting", def.Time, func() {
+	timingutils.Time("Raycasting", def.Time, func() {
 		raycast(def, spriteInfos)
 	})
 
-	timeutils.Time("Spritesheets", def.Time, func() {
+	timingutils.Time("Spritesheets", def.Time, func() {
 		getRegularSheets(sheets, def, bounds, spriteInfos)
 	})
 	if def.Debug {
-		timeutils.Time("Debug output", def.Time, func() {
+		timingutils.Time("Debug output", def.Time, func() {
 			getDebugSheets(sheets, def, bounds, spriteInfos)
 		})
 	}
@@ -76,7 +65,7 @@ func GetSpritesheets(def Definition) Spritesheets {
 	return sheets
 }
 
-func getDebugSheets(sheets Spritesheets, def Definition, bounds image.Rectangle, spriteInfos []SpriteInfo) {
+func getDebugSheets(sheets Spritesheets, def manifest.Definition, bounds image.Rectangle, spriteInfos []SpriteInfo) {
 	debugOutputs := []string{"lighting", "depth", "normals", "occlusion", "shadow", "avg_normals"}
 	var wg sync.WaitGroup
 	wg.Add(len(debugOutputs))
@@ -92,7 +81,7 @@ func getDebugSheets(sheets Spritesheets, def Definition, bounds image.Rectangle,
 	wg.Wait()
 }
 
-func getRegularSheets(sheets Spritesheets, def Definition, bounds image.Rectangle, spriteInfos []SpriteInfo) {
+func getRegularSheets(sheets Spritesheets, def manifest.Definition, bounds image.Rectangle, spriteInfos []SpriteInfo) {
 	var wg sync.WaitGroup
 	wg.Add(3)
 
@@ -112,7 +101,7 @@ func getRegularSheets(sheets Spritesheets, def Definition, bounds image.Rectangl
 	wg.Wait()
 }
 
-func raycast(def Definition, spriteInfos []SpriteInfo) {
+func raycast(def manifest.Definition, spriteInfos []SpriteInfo) {
 	for i, spr := range def.Manifest.Sprites {
 		rect := getSpriteSizeForAngle(spr, def.Scale)
 
@@ -123,7 +112,7 @@ func raycast(def Definition, spriteInfos []SpriteInfo) {
 	}
 }
 
-func get8bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfos []SpriteInfo, depth string) image.Image {
+func get8bppSpritesheetImage(def manifest.Definition, bounds image.Rectangle, spriteInfos []SpriteInfo, depth string) image.Image {
 	palette := def.Palette.GetGoPalette()
 	img := image.NewPaletted(bounds, palette)
 	imageutils.ClearToColourIndex(img, byte(len(palette)-1))
@@ -136,18 +125,18 @@ func get8bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfos
 	return img
 }
 
-func get32bppSpritesheetImage(def Definition, bounds image.Rectangle, spriteInfos []SpriteInfo, depth string) (img image.Image) {
+func get32bppSpritesheetImage(def manifest.Definition, bounds image.Rectangle, spriteInfos []SpriteInfo, depth string) (img image.Image) {
 	img = imageutils.GetUniformImage(bounds, color.White)
 
 	for i := 0; i < len(def.Manifest.Sprites); i++ {
 		spr := getSprite32bpp(def, spriteInfos[i], depth)
-		compositor.Composite32bpp(spr, img, image.Point{X: def.Manifest.Sprites[i].X}, spriteInfos[i].SpriteBounds, def.Manifest)
+		compositor.Composite32bpp(spr, img, image.Point{X: def.Manifest.Sprites[i].X}, spriteInfos[i].SpriteBounds, def)
 	}
 
 	return
 }
 
-func getSprite8bpp(def Definition, spriteInfo SpriteInfo, depth string) (spr *image.Paletted) {
+func getSprite8bpp(def manifest.Definition, spriteInfo SpriteInfo, depth string) (spr *image.Paletted) {
 	if depth == "8bpp" {
 		spr = sprite.GetIndexedSprite(def.Palette, spriteInfo.RenderBounds, spriteInfo.RenderOutput, def.Manifest.DepthInfluence)
 	} else if depth == "mask" {
@@ -157,7 +146,7 @@ func getSprite8bpp(def Definition, spriteInfo SpriteInfo, depth string) (spr *im
 	return
 }
 
-func getSprite32bpp(def Definition, spriteInfo SpriteInfo, depth string) (spr image.Image) {
+func getSprite32bpp(def manifest.Definition, spriteInfo SpriteInfo, depth string) (spr image.Image) {
 	if def.Object.Invalid() {
 		spr = sprite.GetUniformSprite(spriteInfo.RenderBounds)
 	} else if depth == "lighting" {

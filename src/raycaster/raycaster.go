@@ -46,20 +46,20 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manife
 				loc := getIntersectionWithBounds(loc0, ray, limits)
 
 				rayResult := castFpRay(object, loc0, loc, ray, limits, spr.Flip)
-
 				if rayResult.HasGeometry {
-					shadowLoc := geometry.Vector3{X: float64(rayResult.X), Y: float64(rayResult.Y), Z: float64(rayResult.Z)}
+					resultVec := geometry.Vector3{X: float64(rayResult.X), Y: float64(rayResult.Y), Z: float64(rayResult.Z)}
+					shadowLoc := resultVec
 					shadowVec := geometry.Zero().Subtract(lighting).Normalise()
 
 					for {
-						if byte(shadowLoc.X) != rayResult.X && byte(shadowLoc.Y) != rayResult.Y && byte(shadowLoc.Z) != rayResult.Z {
+						if !shadowLoc.Equals(resultVec) {
 							break
 						}
+
 						shadowLoc = shadowLoc.Add(shadowVec)
 					}
 
 					shadowResult := castFpRay(object, shadowLoc, shadowLoc, shadowVec, limits, spr.Flip).Depth
-
 					setResult(&result[thisX][y], object.Elements[rayResult.X][rayResult.Y][rayResult.Z], lighting, rayResult.Depth, shadowResult)
 				}
 			}

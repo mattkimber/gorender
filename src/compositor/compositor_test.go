@@ -16,7 +16,7 @@ func TestComposite32bpp(t *testing.T) {
 	img1 := imageutils.GetUniformImage(r1, color.Black)
 	img2 := imageutils.GetUniformImage(r2, color.White)
 
-	err := Composite32bpp(img1, img2, image.Point{X: 1}, r1, manifest.Manifest{})
+	err := Composite32bpp(img1, img2, image.Point{X: 1}, r1, manifest.Definition{})
 
 	if err != nil {
 		t.Errorf("could not convert image to writable format: %s", err)
