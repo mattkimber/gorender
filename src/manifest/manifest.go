@@ -55,3 +55,7 @@ func (m *Manifest) GetFromReader(handle io.Reader) (err error) {
 	*m, err = FromJson(handle)
 	return err
 }
+
+func (d *Definition) SoftenEdges() bool {
+	return d.Scale >= d.Manifest.SoftenEdges
+}

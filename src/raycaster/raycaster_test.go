@@ -4,6 +4,7 @@ import (
 	"colour"
 	"geometry"
 	"manifest"
+	"sampler"
 	"testing"
 	"utils/fileutils"
 	"voxelobject"
@@ -33,13 +34,14 @@ func Test_raycaster(t *testing.T) {
 		LightingElevation:    50,
 		Size:                 object.Size.ToVector3(),
 		RenderElevationAngle: 30,
-		Sprites:              []manifest.Sprite{ { Angle:  45, Width:  10, Height: 10 } },
+		Sprites:              []manifest.Sprite{{Angle: 45, Width: 10, Height: 10}},
 		DepthInfluence:       0.1,
 		TiledNormals:         false,
 		SoftenEdges:          0,
 	}
 
-	_ = GetRaycastOutput(object, m, m.Sprites[0], 100, 100)
+	smp := sampler.Square(100, 100, 2)
+	_ = GetRaycastOutput(object, m, m.Sprites[0], smp)
 
 }
 
@@ -52,7 +54,6 @@ func getObject(filename string, t *testing.T) voxelobject.ProcessedVoxelObject {
 	v := voxelobject.RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{}, false)
 	return v
 }
-
 
 func Benchmark_castFpRay(b *testing.B) {
 	object := getObjectForBenchmark("cone.vox", b)
@@ -74,15 +75,16 @@ func Benchmark_raycaster(b *testing.B) {
 		LightingElevation:    50,
 		Size:                 object.Size.ToVector3(),
 		RenderElevationAngle: 30,
-		Sprites:              []manifest.Sprite{ { Angle:  45, Width:  10, Height: 10 } },
+		Sprites:              []manifest.Sprite{{Angle: 45, Width: 10, Height: 10}},
 		DepthInfluence:       0.1,
 		TiledNormals:         false,
 		SoftenEdges:          0,
 	}
 
+	smp := sampler.Square(50, 50, 2)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = GetRaycastOutput(object, m, m.Sprites[0], 100, 100)
+		_ = GetRaycastOutput(object, m, m.Sprites[0], smp)
 	}
 }
 

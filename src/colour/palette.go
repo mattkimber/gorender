@@ -71,17 +71,17 @@ func (p Palette) IsSpecialColour(index byte) bool {
 	return false
 }
 
-func (p Palette) GetRGB(index byte) (r, g, b uint16) {
+func (p Palette) GetRGB(index byte) (r, g, b float64) {
 	if int(index) < len(p.Entries) {
 		entry := p.Entries[index]
 		rgba := color.RGBA{R: entry.R, B: entry.B, G: entry.G}
 		r32, g32, b32, _ := rgba.RGBA()
-		r, g, b = uint16(r32), uint16(g32), uint16(b32)
+		r, g, b = float64(r32), float64(g32), float64(b32)
 
 		if entry.Range != nil {
 			if entry.Range.IsPrimaryCompanyColour || entry.Range.IsSecondaryCompanyColour {
 				cc := float64((19595*uint32(entry.R) + 38470*uint32(entry.G) + 7471*uint32(entry.B) + 1<<15) >> 8)
-				y := uint16((p.DefaultBrightness * 32767.0 * (1 - p.CompanyColourLightingContribution)) + (cc * p.CompanyColourLightingContribution))
+				y := (p.DefaultBrightness * 32767.0 * (1 - p.CompanyColourLightingContribution)) + (cc * p.CompanyColourLightingContribution)
 				return y, y, y
 			}
 
@@ -118,7 +118,7 @@ func (p Palette) GetLitIndexed(index byte, l float64) (idx byte) {
 	return index
 }
 
-func (p Palette) GetLitRGB(index byte, l float64) (r, g, b uint16) {
+func (p Palette) GetLitRGB(index byte, l float64) (r, g, b float64) {
 	r, g, b = p.GetRGB(index)
 
 	entry := p.Entries[index]
@@ -139,27 +139,27 @@ func (p Palette) GetLitRGB(index byte, l float64) (r, g, b uint16) {
 
 	if l >= 0 {
 		// interpolate towards white
-		r = clamp((float64(r) * (1 - l)) + (65535 * l))
-		g = clamp((float64(g) * (1 - l)) + (65535 * l))
-		b = clamp((float64(b) * (1 - l)) + (65535 * l))
+		r = clamp((r * (1 - l)) + (65535 * l))
+		g = clamp((g * (1 - l)) + (65535 * l))
+		b = clamp((b * (1 - l)) + (65535 * l))
 	} else if l < 0 {
 		// interpolate towards black
-		r = clamp(float64(r) * (1 + l))
-		g = clamp(float64(g) * (1 + l))
-		b = clamp(float64(b) * (1 + l))
+		r = clamp(r * (1 + l))
+		g = clamp(g * (1 + l))
+		b = clamp(b * (1 + l))
 	}
 
 	return
 }
 
-func clamp(input float64) uint16 {
+func clamp(input float64) float64 {
 	if input > 65535 {
 		return 65535
 	} else if input < 256 {
 		return 256
 	}
 
-	return uint16(input)
+	return input
 }
 
 func (p *PaletteEntry) UnmarshalJSON(data []byte) error {

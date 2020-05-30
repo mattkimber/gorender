@@ -2,13 +2,12 @@ package spritesheet
 
 import (
 	"colour"
-	"compositor"
 	"geometry"
 	"image"
 	"manifest"
 	"os"
 	"raycaster"
-	"sprite"
+	"sampler"
 	"testing"
 	"utils/fileutils"
 	"utils/imageutils"
@@ -17,7 +16,6 @@ import (
 )
 
 func TestGetSpritesheets(t *testing.T) {
-
 	def := manifest.Definition{
 		Palette: colour.Palette{Entries: []colour.PaletteEntry{{R: 0, G: 0, B: 0}, {R: 255, G: 255, B: 255}}},
 		Scale:   1.0,
@@ -47,33 +45,15 @@ func testSpritesheet(t *testing.T, sheets Spritesheets, bpp string) {
 	}
 
 	expectedRect := image.Rectangle{Max: image.Point{X: 80, Y: 32}}
-	spriteRect := getTestSpriteRectangle(manifest.Sprite{Width: 32, Height: 32}, 1.0)
-	expectedImg := getTestSpriteImage(spriteRect)
 
 	if sheet.Image.Bounds() != expectedRect {
 		t.Errorf("spritesheet size %v did not match expected size %v", sheet.Image.Bounds(), expectedRect)
-	}
-
-	if !imageutils.IsImageEqualToSubImage(sheet.Image, expectedImg, spriteRect) {
-		t.Errorf("sprite at %v not equal to composited output", spriteRect)
 	}
 
 	if !imageutils.IsColourEqual(sheet.Image, 79, 0, 65535, 65535, 65535) {
 		t.Errorf("blank area of spritesheet not set to white")
 	}
 }
-
-func getTestSpriteRectangle(spr manifest.Sprite, scale float64) image.Rectangle {
-	return getSpriteSizeForAngle(spr, scale)
-}
-
-func getTestSpriteImage(rect image.Rectangle) image.Image {
-	spr := sprite.GetUniformSprite(rect)
-	img := image.NewRGBA(rect)
-	compositor.Composite32bpp(spr, img, image.Point{}, rect, manifest.Definition{})
-	return img
-}
-
 
 func Benchmark_32bpp(b *testing.B) {
 	spritesheetImage := get32bppSpritesheetImage
@@ -84,7 +64,6 @@ func Benchmark_8bpp(b *testing.B) {
 	spritesheetImage := get8bppSpritesheetImage
 	benchmarkSpritesheet(b, spritesheetImage, "8bpp")
 }
-
 
 func benchmarkSpritesheet(b *testing.B, spritesheetImage func(def manifest.Definition, bounds image.Rectangle, spriteInfos []SpriteInfo, depth string) (img image.Image), depth string) {
 	object := getObjectForBenchmark("cone.vox", b)
@@ -113,10 +92,10 @@ func benchmarkSpritesheet(b *testing.B, spritesheetImage func(def manifest.Defin
 	for i := 0; i < b.N; i++ {
 		rect := getSpriteSizeForAngle(def.Manifest.Sprites[0], def.Scale)
 
-		rw, rh := rect.Max.X*antiAliasFactor, rect.Max.Y*antiAliasFactor
+		smp := sampler.Square(rect.Max.X, rect.Max.Y, antiAliasFactor)
+
 		info := SpriteInfo{
-			RenderOutput: raycaster.GetRaycastOutput(def.Object, def.Manifest, def.Manifest.Sprites[0], rw, rh),
-			RenderBounds: image.Rectangle{Max: image.Point{X: rw, Y: rh}},
+			RenderOutput: raycaster.GetRaycastOutput(def.Object, def.Manifest, def.Manifest.Sprites[0], smp),
 			SpriteBounds: rect,
 		}
 

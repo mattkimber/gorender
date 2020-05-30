@@ -6,7 +6,7 @@ import (
 	"image/draw"
 )
 
-func GetUniformImage(bounds image.Rectangle, colour color.Color) image.Image {
+func GetUniformImage(bounds image.Rectangle, colour color.Color) *image.RGBA {
 	img := image.NewRGBA(bounds)
 	draw.Draw(img, bounds, &image.Uniform{C: colour}, image.Point{}, draw.Src)
 	return img

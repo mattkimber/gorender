@@ -2,141 +2,114 @@ package sprite
 
 import (
 	"colour"
-	"geometry"
 	"image"
 	"image/color"
+	"math"
 	"raycaster"
-	"utils/imageutils"
 )
 
-type shadeFunc32bpp func(int, int) color.RGBA64
-type shadeFuncIndexed func(int, int) byte
+type shadeFunc32bpp func(raycaster.RenderSample) (float64, float64, float64)
+type shadeFuncIndexed func(raycaster.RenderSample) byte
 
-func GetUniformSprite(bounds image.Rectangle) image.Image {
-	return imageutils.GetUniformImage(bounds, color.Black)
+func ApplyUniformSprite(img *image.RGBA, bounds image.Rectangle, loc image.Point) {
+	minX, minY := bounds.Min.X+loc.X, bounds.Min.Y+loc.Y
+	maxX, maxY := bounds.Max.X+loc.X, bounds.Max.Y+loc.Y
+
+	for x := minX; x < maxX; x++ {
+		for y := minY; y < maxY; y++ {
+			img.Set(x, y, color.Black)
+		}
+	}
 }
 
-func get32bppImage(bounds image.Rectangle, shader shadeFunc32bpp, info raycaster.RenderOutput) image.Image {
-	img := image.NewRGBA(bounds)
-
+func apply32bppImage(img *image.RGBA, bounds image.Rectangle, loc image.Point, shader shadeFunc32bpp, info raycaster.RenderOutput, softenEdges bool) {
 	for x := bounds.Min.X; x < bounds.Max.X; x++ {
 		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-			if info[x][y].Collision {
-				img.Set(x, y, shader(x, y))
+			c := get32bppSample(info[x][y], shader, softenEdges)
+			img.Set(x+loc.X, y+loc.Y, c)
+		}
+	}
+}
+
+func get32bppSample(info raycaster.RenderInfo, shader shadeFunc32bpp, softenEdges bool) color.RGBA64 {
+	total, filled := 0, 0
+	cr, cg, cb := 0.0, 0.0, 0.0
+
+	for _, s := range info {
+		total++
+
+		if s.Collision {
+			r, g, b := shader(s)
+			cr += r * r // Summing squares of colours gives more accurate results
+			cg += g * g
+			cb += b * b
+			filled++
+		}
+	}
+
+	// No collisions = transparent
+	if filled == 0 {
+		return color.RGBA64{
+			R: 0,
+			G: 0,
+			B: 0,
+			A: 0,
+		}
+	}
+
+	// Soften edges means that when only some rays collided (typically near edges
+	// of an object) we fade to transparent. Otherwise objects are hard-edged, which
+	// makes them more likely to suffer aliasing artifacts but also clearer at small
+	// sizes
+	alpha := 65535
+	if softenEdges {
+		alpha = (filled * 65535) / (total)
+	}
+
+	// Return the average colour value
+	return color.RGBA64{
+		R: uint16(math.Sqrt(cr / float64(total))),
+		G: uint16(math.Sqrt(cg / float64(total))),
+		B: uint16(math.Sqrt(cb / float64(total))),
+		A: uint16(alpha),
+	}
+}
+
+func applyIndexedImage(img *image.Paletted, pal colour.Palette, bounds image.Rectangle, loc image.Point, shader shadeFuncIndexed, info raycaster.RenderOutput) {
+	for x := bounds.Min.X; x < bounds.Max.X; x++ {
+		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+			img.SetColorIndex(x+loc.X, y+loc.Y, get8bppSample(info[x][y], shader, pal))
+		}
+	}
+}
+
+func get8bppSample(info raycaster.RenderInfo, shader shadeFuncIndexed, pal colour.Palette) byte {
+	values := map[byte]int{}
+
+	for _, s := range info {
+		if s.Collision {
+			idx := shader(s)
+
+			if pal.IsSpecialColour(idx) {
+				return idx
+			}
+
+			if idx != 0 {
+				values[idx]++
 			}
 		}
 	}
 
-	return img
-}
+	// TODO: something better than returning the modal index, which produces heavily aliased results
+	max := 0
+	modalIndex := byte(0)
 
-func getIndexedImage(pal colour.Palette, bounds image.Rectangle, shader shadeFuncIndexed, info raycaster.RenderOutput) *image.Paletted {
-	img := image.NewPaletted(bounds, pal.GetGoPalette())
-
-	for x := bounds.Min.X; x < bounds.Max.X; x++ {
-		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-			if info[x][y].Collision {
-				img.SetColorIndex(x, y, shader(x, y))
-			}
+	for k, v := range values {
+		if v > max {
+			max = v
+			modalIndex = k
 		}
 	}
 
-	return img
-}
-
-func Get32bppSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput, depthInfluence float64) image.Image {
-	shader := func(x, y int) color.RGBA64 {
-		lightingOffset := getLightingOffset(x, y, info, depthInfluence)
-
-		r, g, b := pal.GetLitRGB(info[x][y].Index, lightingOffset)
-		return color.RGBA64{R: r, G: g, B: b, A: 65535}
-	}
-
-	return get32bppImage(bounds, shader, info)
-}
-
-func GetIndexedSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput, depthInfluence float64) *image.Paletted {
-	shader := func(x, y int) byte {
-		lightingOffset := getLightingOffset(x, y, info, depthInfluence)
-		idx := pal.GetLitIndexed(info[x][y].Index, lightingOffset)
-		return idx
-	}
-
-	return getIndexedImage(pal, bounds, shader, info)
-}
-
-func GetMaskSprite(pal colour.Palette, bounds image.Rectangle, info raycaster.RenderOutput) *image.Paletted {
-	shader := func(x, y int) byte {
-		return pal.GetMaskColour(info[x][y].Index)
-	}
-
-	return getIndexedImage(pal, bounds, shader, info)
-}
-
-func GetNormalSprite(bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
-	shader := func(x, y int) color.RGBA64 {
-		normal := info[x][y].Normal.MultiplyByConstant(32766).Add(geometry.Vector3{X: 32766, Y: 32766, Z: 32766})
-		r, g, b := normal.X, normal.Y, normal.Z
-		return color.RGBA64{R: uint16(r), G: uint16(g), B: uint16(b), A: 65535}
-	}
-
-	return get32bppImage(bounds, shader, info)
-}
-
-func GetAverageNormalSprite(bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
-	shader := func(x, y int) color.RGBA64 {
-		normal := info[x][y].AveragedNormal.MultiplyByConstant(32766).Add(geometry.Vector3{X: 32766, Y: 32766, Z: 32766})
-		r, g, b := normal.X, normal.Y, normal.Z
-		return color.RGBA64{R: uint16(r), G: uint16(g), B: uint16(b), A: 65535}
-	}
-
-	return get32bppImage(bounds, shader, info)
-}
-
-func GetDepthSprite(bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
-	shader := func(x, y int) color.RGBA64 {
-		v := info[x][y].Depth * 400
-		return color.RGBA64{R: uint16(v), G: uint16(v), B: uint16(v), A: 65535}
-	}
-
-	return get32bppImage(bounds, shader, info)
-}
-
-func GetOcclusionSprite(bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
-	shader := func(x, y int) color.RGBA64 {
-		v := info[x][y].Occlusion * 6000
-		return color.RGBA64{R: uint16(v), G: uint16(v), B: uint16(v), A: 65535}
-	}
-
-	return get32bppImage(bounds, shader, info)
-}
-
-func GetShadowSprite(bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
-	shader := func(x, y int) color.RGBA64 {
-		v := 65535 - (info[x][y].Shadowing * 65535)
-		return color.RGBA64{R: uint16(v), G: uint16(v), B: uint16(v), A: 65535}
-	}
-
-	return get32bppImage(bounds, shader, info)
-}
-
-func GetLightingSprite(bounds image.Rectangle, info raycaster.RenderOutput) image.Image {
-	shader := func(x, y int) color.RGBA64 {
-		v := 32767 + (info[x][y].LightAmount * 32767)
-		return color.RGBA64{R: uint16(v), G: uint16(v), B: uint16(v), A: 65535}
-	}
-
-	return get32bppImage(bounds, shader, info)
-}
-
-func getLightingOffset(x int, y int, info raycaster.RenderOutput, depthInfluence float64) float64 {
-	lightingOffset := -0.3
-	lightingOffset += info[x][y].LightAmount * 0.6
-	lightingOffset += (-(float64(info[x][y].Depth-120) / 40)) * depthInfluence
-	lightingOffset += (-float64(info[x][y].Occlusion) / 10.0) * 0.2
-	lightingOffset -= info[x][y].Shadowing * 0.2
-
-	lightingOffset = lightingOffset / 1.5
-
-	return lightingOffset
+	return modalIndex
 }

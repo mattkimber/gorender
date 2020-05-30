@@ -46,12 +46,7 @@ func TestIsImageEqualToSubImage(t *testing.T) {
 	img1 := GetUniformImage(rect1, color.Black)
 	img2 := GetUniformImage(rect2, color.White)
 
-	writableImg, ok := img1.(draw.Image)
-	if !ok {
-		t.Fatalf("could not write to image")
-	}
-
-	draw.Draw(writableImg, rect2, img2, image.Point{}, draw.Src)
+	draw.Draw(img1, rect2, img2, image.Point{}, draw.Src)
 
 	if !IsImageEqualToSubImage(img2, img1, rect2) {
 		t.Errorf("Expected equality at %v but was not equal", rect2)

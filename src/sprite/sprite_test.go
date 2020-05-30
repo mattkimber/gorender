@@ -2,13 +2,15 @@ package sprite
 
 import (
 	"image"
+	"image/color"
 	"testing"
 	"utils/imageutils"
 )
 
-func TestGetSprite(t *testing.T) {
+func TestApplySprite(t *testing.T) {
 	rect := image.Rectangle{Max: image.Point{X: 2, Y: 2}}
-	img := GetUniformSprite(rect)
+	img := imageutils.GetUniformImage(rect, color.White)
+	ApplyUniformSprite(img, rect, image.Point{})
 
 	if img.Bounds() != rect {
 		t.Errorf("Image bounds %v not equal to expected %v", img.Bounds(), rect)

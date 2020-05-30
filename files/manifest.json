@@ -1,8 +1,6 @@
 {
   "lighting_angle": 60,
   "lighting_elevation": 65,
-  "depth_influence": 0.1,
-  "tiled_normals": false,
   "size": {
     "x": 126,
     "y": 40,
@@ -11,10 +9,10 @@
   "render_elevation": 30,
   "sprites": [
     { "angle": 0,
-      "width": 8,
+      "width": 9,
       "height": 32
     },
-    {
+    { "angle": 45,
       "width": 26,
       "height": 24
     },
@@ -27,7 +25,7 @@
       "height": 24
     },
     { "angle": 180,
-      "width": 8,
+      "width": 9,
       "height": 32
     },
     { "angle": 225,

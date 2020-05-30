@@ -6,6 +6,10 @@ type Vector3 struct {
 	X, Y, Z float64
 }
 
+type Vector2 struct {
+	X, Y float64
+}
+
 func Zero() Vector3 {
 	return Vector3{0, 0, 0}
 }
