@@ -11,7 +11,7 @@ func TestSquare(t *testing.T) {
 		[]Sample{{{0.5, 0}, {0.5, 0.5}, {0.75, 0}, {0.75, 0.5}}},
 	}
 
-	if gotResult := Square(2, 1, 2); !reflect.DeepEqual(gotResult, expected) {
+	if gotResult := Square(2, 1, 2, 0); !reflect.DeepEqual(gotResult, expected) {
 		t.Errorf("Square() = %v, want %v", gotResult, expected)
 	}
 }

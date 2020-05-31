@@ -30,7 +30,6 @@ type SpriteInfo struct {
 }
 
 const spriteSpacing = 8
-const antiAliasFactor = 2
 
 func GetSpritesheets(def manifest.Definition) Spritesheets {
 	sheets := Spritesheets{}
@@ -104,7 +103,8 @@ func raycast(def manifest.Definition, spriteInfos []SpriteInfo) {
 	for i, spr := range def.Manifest.Sprites {
 		rect := getSpriteSizeForAngle(spr, def.Scale)
 
-		smp := sampler.Square(rect.Max.X, rect.Max.Y, antiAliasFactor)
+		smpFunc := sampler.Get(def.Manifest.Sampler)
+		smp := smpFunc(rect.Max.X, rect.Max.Y, def.Manifest.Accuracy, def.Manifest.Overlap)
 
 		spriteInfos[i].SpriteBounds = rect
 		spriteInfos[i].RenderOutput = raycaster.GetRaycastOutput(def.Object, def.Manifest, spr, smp)

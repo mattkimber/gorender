@@ -40,7 +40,7 @@ func Test_raycaster(t *testing.T) {
 		SoftenEdges:          0,
 	}
 
-	smp := sampler.Square(100, 100, 2)
+	smp := sampler.Square(100, 100, 2, 0)
 	_ = GetRaycastOutput(object, m, m.Sprites[0], smp)
 
 }
@@ -81,7 +81,7 @@ func Benchmark_raycaster(b *testing.B) {
 		SoftenEdges:          0,
 	}
 
-	smp := sampler.Square(50, 50, 2)
+	smp := sampler.Square(50, 50, 2, 0)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = GetRaycastOutput(object, m, m.Sprites[0], smp)

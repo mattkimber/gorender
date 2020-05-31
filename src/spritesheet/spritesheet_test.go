@@ -24,6 +24,7 @@ func TestGetSpritesheets(t *testing.T) {
 			LightingElevation:    60,
 			Size:                 geometry.Vector3{},
 			RenderElevationAngle: 0,
+			Accuracy:             2,
 			Sprites: []manifest.Sprite{
 				{Angle: 0, Width: 32, Height: 32, X: 0},
 				{Angle: 45, Width: 32, Height: 32, X: 40},
@@ -77,7 +78,8 @@ func benchmarkSpritesheet(b *testing.B, spritesheetImage func(def manifest.Defin
 			LightingAngle:        45,
 			LightingElevation:    60,
 			Size:                 object.Size.ToVector3(),
-			RenderElevationAngle: 0,
+			RenderElevationAngle: 30,
+			Accuracy:             2,
 			Sprites:              []manifest.Sprite{{Angle: 0, Width: 32, Height: 32, X: 0}},
 		},
 	}
@@ -92,7 +94,7 @@ func benchmarkSpritesheet(b *testing.B, spritesheetImage func(def manifest.Defin
 	for i := 0; i < b.N; i++ {
 		rect := getSpriteSizeForAngle(def.Manifest.Sprites[0], def.Scale)
 
-		smp := sampler.Square(rect.Max.X, rect.Max.Y, antiAliasFactor)
+		smp := sampler.Disc(rect.Max.X, rect.Max.Y, def.Manifest.Accuracy, 0)
 
 		info := SpriteInfo{
 			RenderOutput: raycaster.GetRaycastOutput(def.Object, def.Manifest, def.Manifest.Sprites[0], smp),

@@ -10,6 +10,26 @@ type Vector2 struct {
 	X, Y float64
 }
 
+func (a Vector2) Add(b Vector2) Vector2 {
+	return Vector2{a.X + b.X, a.Y + b.Y}
+}
+
+func (a Vector2) DistanceSquared(b Vector2) float64 {
+	return ((a.X - b.X) * (a.X - b.X)) + ((a.Y - b.Y) * (a.Y - b.Y))
+}
+
+func (a Vector2) LengthSquared() float64 {
+	return a.Dot(a)
+}
+
+func (a Vector2) Dot(b Vector2) float64 {
+	return (a.X * b.X) + (a.Y * b.Y)
+}
+
+func (a Vector2) DivideByVector(by Vector2) Vector2 {
+	return Vector2{a.X / by.X, a.Y / by.Y}
+}
+
 func Zero() Vector3 {
 	return Vector3{0, 0, 0}
 }

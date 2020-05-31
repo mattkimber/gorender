@@ -23,6 +23,7 @@ GoRender supports the following command line flags:
 * `-t`, `-time`: A boolean flag for printing simple execution time statistics on stdout
 * `-d`, `-debug`: A boolean flag for outputting extra debug images (e.g voxel normals and lighting information)
 * `-u`, `-subdirs`: A boolean flag for outputting multiple scales in their own subdirectory (e.g. `1x/`, `2x/`) instead of appending the scale to the filename when outputting multiple scales
+* `-f`, `-fast`: A boolean flag to force the fastest rendering settings, useful for debugging situations where image quality is less important
 
 GoRender will look for a JSON palette file (default `files/ttd_palette.json`) on run - if this
 is not present it will exit.
@@ -72,6 +73,9 @@ The fields are as follows:
 * `soften_edges`: whether to antialias edges of sprites or not (useful for static objects). This is a floating-point
    value - scales above the setting will be softened, scaled below will not.
 * `render_elevation`: the vertical angle to view sprites from. This is mostly useful for changing proportions.
+* `sampler`: (see "Supersampling" below)
+* `overlap`: (see "Supersampling" below)
+* `accuracy`: (see "Supersampling" below)
 * `sprites`: the set of sprites to produce, as an array. Each sprite must have the following properties:
    * `angle`: the angle of the object for this sprite.
    * `width`: the width of the output sprite image.
@@ -82,6 +86,33 @@ Rendering sprites to fit a particular game is a careful balance between widths, 
 supplied `manifest.json` file will provide good results for OpenTTD vehicles when used with MagicaVoxel files
 measuring 126x40x40. `house_manifest.json` (and the accompanying `house.vox`) show how this can be adapted to
 produce different graphical layouts.      
+
+## Supersampling
+
+GoRender uses supersampling to improve the quality of rendered output. The default renderer uses a square pattern
+of double the output resolution. This produces "good enough" results over a wide range of input objects without
+adversely affecting rendering speed.
+
+However in some situations you may want to use a different kernel, particularly when tiling rotated objects where
+the artifacts of the square grid will become obvious.
+
+GoRender offers two samplers, set with the `sampler` manifest directive:
+
+* `square`: the default square sampling grid
+* `disc`: a Poisson disc sampler which is slower but produces nicer results
+
+There are also two parameters which can be used to tune the behaviour of the renderer. `accuracy` increases the number
+of samples used to generate each output point. Higher values will cause a significant slowdown but improve the recovery
+of small details, especially when using the disc renderer.
+
+You can also allow overlapping sample sets for adjacent output pixels. `overlap` controls how much sets overlap. If it
+is set to a value greater than 0, samples will overlap by this amount. If it is set to less than 0, samples will only
+be taken close to the centre of each pixel. Values in the range [-0.5, 0.5] produce the best results, although large
+positive values can be used to produce output with a gaussian blur pre-applied. 
+
+As an example of why you might want to use this, consider an example of rendering a chain link fence at small
+resolution. Overlap <= 0 will produce a "grainy" result in which individual links can be seen, whereas overlap >0 will 
+produce a "smooth" result where the fence links resolve to a uniform transparent surface.
 
 ## Lighting tweaks
 

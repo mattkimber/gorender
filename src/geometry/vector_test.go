@@ -11,6 +11,12 @@ func testVector(expected Vector3, vector Vector3, t *testing.T) {
 	}
 }
 
+func testVector2(expected Vector2, vector Vector2, t *testing.T) {
+	if vector != expected {
+		t.Errorf("Expected %v, got %v", expected, vector)
+	}
+}
+
 func TestZero(t *testing.T) {
 	testVector(Vector3{0, 0, 0}, Zero(), t)
 }
@@ -96,4 +102,16 @@ func TestVector3_Equal(t *testing.T) {
 			t.Errorf("%v == %v expected %v, was %v", testCase.a, testCase.b, testCase.expected, result)
 		}
 	}
+}
+
+func TestVector2_Dot(t *testing.T) {
+	val := Vector2{1, 2}.Dot(Vector2{2, 4})
+	expected := 10.0
+	if val != expected {
+		t.Errorf("Dot product expected %f got %f", expected, val)
+	}
+}
+
+func TestVector2_DivideByVector(t *testing.T) {
+	testVector2(Vector2{0.5, 0}, Vector2{1.0, 0.0}.DivideByVector(Vector2{2.0, 1.0}), t)
 }

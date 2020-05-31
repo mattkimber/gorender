@@ -23,6 +23,7 @@ type Flags struct {
 	ManifestFilename              string
 	OutputTime                    bool
 	Debug                         bool
+	Fast                          bool
 	SubDirs                       bool
 	ProfileFile                   string
 }
@@ -40,6 +41,8 @@ func init() {
 	flag.BoolVar(&flags.Debug, "debug", false, "output extra debugging spritesheets")
 	flag.StringVar(&flags.ProfileFile, "profile", "", "output Go profiling information to the specified file")
 
+	flag.BoolVar(&flags.Fast, "fast", false, "force fast rendering output")
+
 	// Short format
 	flag.StringVar(&flags.Scales, "s", "1.0", "shorthand for -scale")
 	flag.BoolVar(&flags.SubDirs, "u", false, "shorthand for -subdirs")
@@ -48,6 +51,7 @@ func init() {
 	flag.StringVar(&flags.ManifestFilename, "m", "files/manifest.json", "shorthand for -manifest")
 	flag.BoolVar(&flags.OutputTime, "t", false, "shorthand for -time")
 	flag.BoolVar(&flags.Debug, "d", false, "shorthand for -debug")
+	flag.BoolVar(&flags.Fast, "f", false, "shorthand for -fast")
 
 }
 
@@ -68,6 +72,12 @@ func process() {
 	manifest, err := getManifest(flags.ManifestFilename)
 	if err != nil {
 		panic(err)
+	}
+
+	if flags.Fast {
+		manifest.Sampler = "square"
+		manifest.Accuracy = 1
+		manifest.Overlap = 0
 	}
 
 	object, err := getVoxelObject(flags.InputFilename)

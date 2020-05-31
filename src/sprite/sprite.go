@@ -70,11 +70,19 @@ func get32bppSample(info raycaster.RenderInfo, shader shadeFunc32bpp, softenEdge
 
 	// Return the average colour value
 	return color.RGBA64{
-		R: uint16(math.Sqrt(cr / divisor)),
-		G: uint16(math.Sqrt(cg / divisor)),
-		B: uint16(math.Sqrt(cb / divisor)),
+		R: clamp(uint16(math.Sqrt(cr / divisor))),
+		G: clamp(uint16(math.Sqrt(cg / divisor))),
+		B: clamp(uint16(math.Sqrt(cb / divisor))),
 		A: uint16(alpha),
 	}
+}
+
+func clamp(input uint16) uint16 {
+	if input < 256 {
+		return 256
+	}
+
+	return input
 }
 
 func applyIndexedImage(img *image.Paletted, pal colour.Palette, bounds image.Rectangle, loc image.Point, shader shadeFuncIndexed, info raycaster.RenderOutput) {
@@ -87,13 +95,18 @@ func applyIndexedImage(img *image.Paletted, pal colour.Palette, bounds image.Rec
 
 func get8bppSample(info raycaster.RenderInfo, shader shadeFuncIndexed, pal colour.Palette) byte {
 	values := map[byte]int{}
+	specials := 0
+	threshold := len(info) / 3
 
 	for _, s := range info {
 		if s.Collision {
 			idx := shader(s)
 
 			if pal.IsSpecialColour(idx) {
-				return idx
+				specials++
+				if specials >= threshold {
+					return idx
+				}
 			}
 
 			if idx != 0 {

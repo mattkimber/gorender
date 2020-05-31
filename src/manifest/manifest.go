@@ -35,9 +35,15 @@ type Manifest struct {
 	DepthInfluence       float64          `json:"depth_influence"`
 	TiledNormals         bool             `json:"tiled_normals"`
 	SoftenEdges          float64          `json:"soften_edges"`
+	Accuracy             int              `json:"accuracy"`
+	Sampler              string           `json:"sampler"`
+	Overlap              float64          `json:"overlap"`
 }
 
 func FromJson(handle io.Reader) (manifest Manifest, err error) {
+	// Set defaults
+	manifest.Accuracy = 2
+
 	data, err := ioutil.ReadAll(handle)
 
 	if err != nil {
