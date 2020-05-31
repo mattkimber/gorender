@@ -130,7 +130,7 @@ func (p Palette) GetLitRGB(index byte, l float64) (r, g, b float64) {
 		l = 0.5
 	}
 
-	// clamp to [-1,1]
+	// Clamp to [-1,1]
 	if l > 1 {
 		l = 1
 	} else if l < -1 {
@@ -139,20 +139,20 @@ func (p Palette) GetLitRGB(index byte, l float64) (r, g, b float64) {
 
 	if l >= 0 {
 		// interpolate towards white
-		r = clamp((r * (1 - l)) + (65535 * l))
-		g = clamp((g * (1 - l)) + (65535 * l))
-		b = clamp((b * (1 - l)) + (65535 * l))
+		r = Clamp((r * (1 - l)) + (65535 * l))
+		g = Clamp((g * (1 - l)) + (65535 * l))
+		b = Clamp((b * (1 - l)) + (65535 * l))
 	} else if l < 0 {
 		// interpolate towards black
-		r = clamp(r * (1 + l))
-		g = clamp(g * (1 + l))
-		b = clamp(b * (1 + l))
+		r = Clamp(r * (1 + l))
+		g = Clamp(g * (1 + l))
+		b = Clamp(b * (1 + l))
 	}
 
 	return
 }
 
-func clamp(input float64) float64 {
+func Clamp(input float64) float64 {
 	if input > 65535 {
 		return 65535
 	} else if input < 256 {

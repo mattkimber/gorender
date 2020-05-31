@@ -4,7 +4,6 @@ import (
 	"colour"
 	"image"
 	"image/color"
-	"math"
 	"raycaster"
 )
 
@@ -40,9 +39,9 @@ func get32bppSample(info raycaster.RenderInfo, shader shadeFunc32bpp, softenEdge
 
 		if s.Collision {
 			r, g, b := shader(s)
-			cr += r * r // Summing squares of colours gives more accurate results
-			cg += g * g
-			cb += b * b
+			cr += r
+			cg += g
+			cb += b
 			filled++
 		}
 	}
@@ -70,19 +69,11 @@ func get32bppSample(info raycaster.RenderInfo, shader shadeFunc32bpp, softenEdge
 
 	// Return the average colour value
 	return color.RGBA64{
-		R: clamp(uint16(math.Sqrt(cr / divisor))),
-		G: clamp(uint16(math.Sqrt(cg / divisor))),
-		B: clamp(uint16(math.Sqrt(cb / divisor))),
+		R: uint16(colour.Clamp(cr / divisor)),
+		G: uint16(colour.Clamp(cg / divisor)),
+		B: uint16(colour.Clamp(cb / divisor)),
 		A: uint16(alpha),
 	}
-}
-
-func clamp(input uint16) uint16 {
-	if input < 256 {
-		return 256
-	}
-
-	return input
 }
 
 func applyIndexedImage(img *image.Paletted, pal colour.Palette, bounds image.Rectangle, loc image.Point, shader shadeFuncIndexed, info raycaster.RenderOutput) {
