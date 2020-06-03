@@ -3,7 +3,6 @@ package raycaster
 import (
 	"geometry"
 	"manifest"
-	"math"
 	"sampler"
 	"sync"
 	"voxelobject"
@@ -27,27 +26,6 @@ type RayResult struct {
 }
 
 type RenderOutput [][]RenderInfo
-
-func GetCalculatedSpriteHeight(m manifest.Manifest, spr manifest.Sprite) (height int, delta float64) {
-	size := m.Size
-	cos, sin := math.Cos(degToRad(spr.Angle)), math.Sin(degToRad(spr.Angle))
-
-	xComponent := math.Abs(size.X * cos)
-	yComponent := math.Abs(size.Y * sin)
-
-	planeXComponent := math.Abs(size.X * sin)
-	planeYComponent := math.Abs(size.Y * cos)
-
-	horizontalSize := (xComponent + yComponent) * math.Sin(degToRad(getElevationAngle(m)))
-
-	ratio := (horizontalSize + size.Z) / (planeXComponent + planeYComponent)
-	spriteSize := ratio * float64(spr.Width)
-
-	spriteSizeRounded := math.Ceil(spriteSize)
-	delta = spriteSizeRounded - spriteSize
-
-	return int(spriteSizeRounded), delta
-}
 
 func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manifest, spr manifest.Sprite, sampler sampler.Samples) RenderOutput {
 	size := object.Size

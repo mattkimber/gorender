@@ -7,16 +7,12 @@ import (
 )
 
 func getRenderDirection(angle float64, elevationAngle float64) geometry.Vector3 {
-	x, y, z := -math.Cos(degToRad(angle)), math.Sin(degToRad(angle)), math.Sin(degToRad(elevationAngle))
+	x, y, z := -math.Cos(geometry.DegToRad(angle)), math.Sin(geometry.DegToRad(angle)), math.Sin(geometry.DegToRad(elevationAngle))
 	return geometry.Vector3{X: x, Y: y, Z: z}.Normalise()
 }
 
-func degToRad(angle float64) float64 {
-	return (angle / 180.0) * math.Pi
-}
-
 func getLightingDirection(angle float64, elevation float64, flipY bool) geometry.Vector3 {
-	x, y, z := -math.Cos(degToRad(angle)), math.Sin(degToRad(angle)), math.Sin(degToRad(elevation))
+	x, y, z := -math.Cos(geometry.DegToRad(angle)), math.Sin(geometry.DegToRad(angle)), math.Sin(geometry.DegToRad(elevation))
 	if flipY {
 		y = -y
 	}
@@ -25,13 +21,13 @@ func getLightingDirection(angle float64, elevation float64, flipY bool) geometry
 
 func getViewportPlane(angle float64, m manifest.Manifest, zError float64, size geometry.Point) geometry.Plane {
 	elevationAngle := getElevationAngle(m)
-	cos, sin := math.Cos(degToRad(angle)), math.Sin(degToRad(angle))
+	cos, sin := math.Cos(geometry.DegToRad(angle)), math.Sin(geometry.DegToRad(angle))
 
 	midpoint := geometry.Vector3{X: float64(size.X-1) / 2.0, Y: float64(size.Y) / 2.0, Z: (m.Size.Z + zError) / 2.0}
 	viewpoint := midpoint.Add(getRenderDirection(angle, elevationAngle).MultiplyByConstant(100.0))
 
-	planeNormalXComponent := math.Abs(((m.Size.X) / 2.0) * cos * math.Sin(degToRad(elevationAngle)))
-	planeNormalYComponent := math.Abs(((m.Size.Y) / 2.0) * sin * math.Sin(degToRad(elevationAngle)))
+	planeNormalXComponent := math.Abs(((m.Size.X) / 2.0) * cos * math.Sin(geometry.DegToRad(elevationAngle)))
+	planeNormalYComponent := math.Abs(((m.Size.Y) / 2.0) * sin * math.Sin(geometry.DegToRad(elevationAngle)))
 	planeNormalZComponent := (m.Size.Z + zError) / 2.0
 
 	planeNormal := geometry.UnitZ().MultiplyByConstant(planeNormalXComponent + planeNormalYComponent + planeNormalZComponent)
@@ -53,6 +49,6 @@ func getElevationAngle(m manifest.Manifest) float64 {
 }
 
 func getRenderNormal(angle float64) geometry.Vector3 {
-	x, y := -math.Cos(degToRad(angle)), math.Sin(degToRad(angle))
+	x, y := -math.Cos(geometry.DegToRad(angle)), math.Sin(geometry.DegToRad(angle))
 	return geometry.Vector3{X: y, Y: -x}.Normalise()
 }

@@ -39,6 +39,7 @@ func GetSpritesheets(def manifest.Definition) Spritesheets {
 	for i, spr := range def.Manifest.Sprites {
 		def.Manifest.Sprites[i].X = w
 		w += int(float64(spr.Width+spriteSpacing) * def.Scale)
+
 		if int(float64(spr.Height)*def.Scale) > h {
 			h = int(float64(spr.Height) * def.Scale)
 		}
@@ -101,14 +102,6 @@ func getRegularSheets(sheets Spritesheets, def manifest.Definition, bounds image
 
 func raycast(def manifest.Definition, spriteInfos []SpriteInfo) {
 	for i, spr := range def.Manifest.Sprites {
-
-		// 0 means "auto"
-		if spr.Height == 0 {
-			height, delta := raycaster.GetCalculatedSpriteHeight(def.Manifest, spr)
-			spr.Height = height
-			spr.ZError = delta
-		}
-
 		rect := getSpriteSizeForAngle(spr, def.Scale)
 
 		smpFunc := sampler.Get(def.Manifest.Sampler)
