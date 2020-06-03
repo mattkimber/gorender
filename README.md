@@ -76,10 +76,13 @@ The fields are as follows:
 * `sampler`: (see "Supersampling" below)
 * `overlap`: (see "Supersampling" below)
 * `accuracy`: (see "Supersampling" below)
+* `brightness`: A value between `[-1.0, 1.0]` for adjusting the brightness of the output. `0` (the default) means no change.
+* `contrast`: A value between `[-1.0, 1.0]` for adjusting the contrast of the output. `0` (the default) means no change.
 * `sprites`: the set of sprites to produce, as an array. Each sprite must have the following properties:
    * `angle`: the angle of the object for this sprite.
    * `width`: the width of the output sprite image.
-   * `height`: the height of the output sprite image.
+   * `height`: the height of the output sprite image. Set this to `0` to automatically determine the height based on
+               the configured width.
    * `flip`: flip the voxel object along in Y axis (useful for generating tracks or dealing with reversed files)
    
 Rendering sprites to fit a particular game is a careful balance between widths, heights, and angle settings. The

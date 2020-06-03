@@ -15,3 +15,10 @@ func TestSquare(t *testing.T) {
 		t.Errorf("Square() = %v, want %v", gotResult, expected)
 	}
 }
+
+func TestDisc(t *testing.T) {
+	result := Disc(5, 5, 3, .1)
+	if len(result[0][0]) != 9 {
+		t.Errorf("Disc() = %d, want %d", len(result[0][0]), 9)
+	}
+}

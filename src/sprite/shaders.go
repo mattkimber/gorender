@@ -10,7 +10,7 @@ import (
 func Apply32bppSprite(img *image.RGBA, bounds image.Rectangle, loc image.Point, info raycaster.RenderOutput, d manifest.Definition) {
 	shader := func(smp raycaster.RenderSample) (float64, float64, float64) {
 		lightingOffset := getLightingOffset(smp, d.Manifest.DepthInfluence)
-		return d.Palette.GetLitRGB(smp.Index, lightingOffset)
+		return d.Palette.GetLitRGB(smp.Index, lightingOffset, d.Manifest.Brightness, d.Manifest.Contrast)
 	}
 
 	apply32bppImage(img, bounds, loc, shader, info, d.SoftenEdges())

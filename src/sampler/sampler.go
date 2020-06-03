@@ -82,8 +82,8 @@ func getPoissonDisc(accuracy int, overlap float64) []geometry.Vector2 {
 		return discCache[discNum]
 	}
 
-	numSamples := accuracy * 3
-	distance := 1.0 / float64(numSamples)
+	numSamples := accuracy * accuracy
+	distance := 1.0 / float64(accuracy)
 	distance = distance * distance
 
 	radius := 1.0 + overlap
@@ -103,6 +103,9 @@ func getPoissonDisc(accuracy int, overlap float64) []geometry.Vector2 {
 
 		if valid {
 			disc = append(disc, trial)
+			if len(disc) >= numSamples {
+				break
+			}
 		}
 	}
 

@@ -13,6 +13,7 @@ func TestFromJson(t *testing.T) {
 		LightingElevation: 65,
 		DepthInfluence:    0.2,
 		Accuracy:          2,
+		Contrast:          1.0,
 		Size: geometry.Vector3{
 			X: 20,
 			Y: 30,

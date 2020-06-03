@@ -23,6 +23,7 @@ type Sprite struct {
 	Width  int     `json:"width"`
 	Height int     `json:"height"`
 	X      int
+	ZError float64
 	Flip   bool `json:"flip"`
 }
 
@@ -38,6 +39,8 @@ type Manifest struct {
 	Accuracy             int              `json:"accuracy"`
 	Sampler              string           `json:"sampler"`
 	Overlap              float64          `json:"overlap"`
+	Brightness           float64          `json:"brightness"`
+	Contrast             float64          `json:"contrast"`
 }
 
 func FromJson(handle io.Reader) (manifest Manifest, err error) {
@@ -53,6 +56,10 @@ func FromJson(handle io.Reader) (manifest Manifest, err error) {
 	if err = json.Unmarshal(data, &manifest); err != nil {
 		return
 	}
+
+	// Convert to standard values
+	manifest.Brightness = manifest.Brightness * 65535
+	manifest.Contrast += 1.0
 
 	return
 }

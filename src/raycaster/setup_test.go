@@ -53,7 +53,7 @@ func TestGetViewportPlane(t *testing.T) {
 		size := geometry.Point{X: testCase.x, Y: testCase.y, Z: testCase.y}
 		mSize := geometry.Vector3{X: float64(testCase.x), Y: float64(testCase.y), Z: float64(testCase.y)}
 		m := manifest.Manifest{Size: mSize}
-		if result := getViewportPlane(testCase.angle, m, size); !result.Equals(testCase.expected) {
+		if result := getViewportPlane(testCase.angle, m, 0, size); !result.Equals(testCase.expected) {
 			t.Errorf("Angle %f expected viewport plane %v, got %v", testCase.angle, testCase.expected, result)
 		}
 	}

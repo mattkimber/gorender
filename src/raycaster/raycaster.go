@@ -3,6 +3,7 @@ package raycaster
 import (
 	"geometry"
 	"manifest"
+	"math"
 	"sampler"
 	"sync"
 	"voxelobject"
@@ -27,11 +28,32 @@ type RayResult struct {
 
 type RenderOutput [][]RenderInfo
 
+func GetCalculatedSpriteHeight(m manifest.Manifest, spr manifest.Sprite) (height int, delta float64) {
+	size := m.Size
+	cos, sin := math.Cos(degToRad(spr.Angle)), math.Sin(degToRad(spr.Angle))
+
+	xComponent := math.Abs(size.X * cos)
+	yComponent := math.Abs(size.Y * sin)
+
+	planeXComponent := math.Abs(size.X * sin)
+	planeYComponent := math.Abs(size.Y * cos)
+
+	horizontalSize := (xComponent + yComponent) * math.Sin(degToRad(getElevationAngle(m)))
+
+	ratio := (horizontalSize + size.Z) / (planeXComponent + planeYComponent)
+	spriteSize := ratio * float64(spr.Width)
+
+	spriteSizeRounded := math.Ceil(spriteSize)
+	delta = spriteSizeRounded - spriteSize
+
+	return int(spriteSizeRounded), delta
+}
+
 func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manifest, spr manifest.Sprite, sampler sampler.Samples) RenderOutput {
 	size := object.Size
 	limits := geometry.Vector3{X: float64(size.X), Y: float64(size.Y), Z: float64(size.Z)}
 
-	viewport := getViewportPlane(spr.Angle, m, size)
+	viewport := getViewportPlane(spr.Angle, m, spr.ZError, size)
 	ray := geometry.Zero().Subtract(getRenderDirection(spr.Angle, getElevationAngle(m)))
 
 	lighting := getLightingDirection(spr.Angle+float64(m.LightingAngle), float64(m.LightingElevation), spr.Flip)
