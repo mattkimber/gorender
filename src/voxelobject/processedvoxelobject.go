@@ -285,13 +285,14 @@ func (p *ProcessedVoxelObject) getOcclusion(x, y, z int) (occlusion int) {
 func (p *ProcessedVoxelObject) isSurface(x, y, z int) bool {
 	// A voxel is a surface voxel if any of the adjacent directions is zero
 	// The edges of the voxel object are trivially surface voxels
-	return p.Elements[x][y][z].Index != 0 && (x == 0 || y == 0 || z == 0 ||
-		x == p.Size.X-1 || y == p.Size.Y-1 || z == p.Size.Z-1 ||
+	return p.Elements[x][y][z].Index != 0 && (x == 0 || y == 0 || z == 0 || // Edges are surface voxels
+		x == p.Size.X-1 || y == p.Size.Y-1 || z == p.Size.Z-1 || // Edges are surface voxels
 		p.Elements[x+1][y][z].Index == 0 || p.Elements[x-1][y][z].Index == 0 ||
 		p.Elements[x][y+1][z].Index == 0 || p.Elements[x][y-1][z].Index == 0 ||
-		p.Elements[x][y][z-1].Index == 0 || p.Elements[x-1][y][z+1].Index == 0 ||
-		p.Elements[x][y][z+1].Index == 0 || p.Elements[x+1][y][z+1].Index == 0 ||
-		p.Elements[x][y-1][z+1].Index == 0 || p.Elements[x][y+1][z+1].Index == 0)
+		p.Elements[x][y][z+1].Index == 0 || p.Elements[x][y][z-1].Index == 0)
+	//p.Elements[x][y][z-1].Index == 0 || p.Elements[x-1][y][z+1].Index == 0 ||
+	//p.Elements[x][y][z+1].Index == 0 || p.Elements[x+1][y][z+1].Index == 0 ||
+	//p.Elements[x][y-1][z+1].Index == 0 || p.Elements[x][y+1][z+1].Index == 0)
 }
 
 func (p *ProcessedVoxelObject) setElements(r RawVoxelObject, isTiled bool) {

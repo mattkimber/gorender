@@ -2,6 +2,7 @@ package raycaster
 
 import (
 	"geometry"
+	"math"
 	"math/rand"
 	"voxelobject"
 )
@@ -53,65 +54,94 @@ func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Ve
 	return false, geometry.Vector3{}
 }
 
+// Attempt to recover a non-surface voxel by taking a more DDA-like approach where we trace backward up the ray
+// starting with X, then Y, then Z, then repeat until we find a surface voxel or bail.
 func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3, flipY bool) (lx byte, ly byte, lz byte) {
-	lx, ly, lz = byte(loc.X), byte(loc.Y), byte(loc.Z)
 
 	bSizeY := uint8(object.Size.Y - 1)
+
+	lx, ly, lz = byte(loc.X), byte(loc.Y), byte(loc.Z)
 	if flipY {
 		ly = bSizeY - ly
 	}
 
-	if !object.Elements[lx][ly][lz].IsSurface {
-		loc2 := loc
-		lx, ly, lz = byte(loc.X), byte(loc.Y), byte(loc.Z)
-
-		if flipY {
-			ly = bSizeY - ly
-		}
-
-		for i := 0; i < 20; i++ {
-			loc2 = loc2.Subtract(ray.MultiplyByConstant(0.125))
-			if !isInsideBoundingVolume(loc2, limits) {
-				break
-			}
-
-			lx, ly, lz = byte(loc2.X), byte(loc2.Y), byte(loc2.Z)
-
-			if flipY {
-				ly = bSizeY - ly
-			}
-
-			if object.Elements[lx][ly][lz].IsSurface {
-				break
-			}
-		}
+	if isInsideBoundingVolume(loc, limits) && object.Elements[lx][ly][lz].IsSurface {
+		return
 	}
 
-	if !object.Elements[lx][ly][lz].IsSurface {
-		loc2 := loc
+	// Check always checks a 9 voxel "halo"
+	check := make([]geometry.PointB, 9)
 
-		for i := 0; i < 20; i++ {
-			loc2 = loc2.Subtract(ray.MultiplyByConstant(0.125).Add(jitter[i]))
-			if !isInsideBoundingVolume(loc2, limits) {
-				break
-			}
+	loc0 := loc
+	x, y, z := ray.X, ray.Y, ray.Z
 
-			lx, ly, lz = byte(loc2.X), byte(loc2.Y), byte(loc2.Z)
+	for i := 0; i < 10; i++ {
 
-			if flipY {
-				ly = bSizeY - ly
-			}
-
-			if object.Elements[lx][ly][lz].IsSurface {
-				break
-			}
-		}
-
+		loc = loc.Subtract(ray.Normalise())
 		lx, ly, lz = byte(loc.X), byte(loc.Y), byte(loc.Z)
 		if flipY {
 			ly = bSizeY - ly
 		}
+
+		for j := 0; j < 3; j++ {
+
+			if math.Abs(x) > math.Abs(y) && math.Abs(x) > math.Abs(z) {
+				// X-major
+
+				for k := byte(0); k < 9; k++ {
+					check[k] = geometry.PointB{X: lx, Y: ly - 1 + (k % 3), Z: lz - 1 + (k / 3)}
+				}
+
+				x = 0
+			} else if math.Abs(y) > math.Abs(x) && math.Abs(y) > math.Abs(z) {
+				// Y-major
+
+				for k := byte(0); k < 9; k++ {
+					check[k] = geometry.PointB{X: lx - 1 + (k % 3), Y: ly, Z: lz - 1 + (k / 3)}
+				}
+
+				y = 0
+			} else if math.Abs(z) > math.Abs(x) && math.Abs(z) > math.Abs(y) {
+				// Z-major
+
+				for k := byte(0); k < 9; k++ {
+					check[k] = geometry.PointB{X: lx - 1 + (k % 3), Y: ly - 1 + (k / 3), Z: lz}
+				}
+
+				z = 0
+			}
+
+			for k := byte(0); k < 9; k++ {
+				point := check[k]
+				pointF := geometry.Vector3{X: float64(point.X), Y: float64(point.Y), Z: float64(point.Z)}
+
+				lx, ly, lz = point.X, point.Y, point.Z
+				if flipY {
+					ly = bSizeY - ly
+				}
+
+				if isInsideBoundingVolume(pointF, limits) {
+					if object.Elements[lx][ly][lz].IsSurface {
+						//fmt.Printf("Recovered surface voxel at %d %d %d (%d)\n", lx, ly, lz, k)
+						//fmt.Printf("%v\n", check)
+						return
+					}
+				}
+			}
+
+			if x == 0 && y == 0 && z == 0 {
+				x, y, z = ray.X, ray.Y, ray.Z
+			}
+		}
+
 	}
+
+	lx, ly, lz = byte(loc0.X), byte(loc0.Y), byte(loc0.Z)
+
+	if flipY {
+		ly = bSizeY - ly
+	}
+
 	return
 }
 
