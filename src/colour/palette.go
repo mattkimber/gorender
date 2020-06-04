@@ -71,29 +71,37 @@ func (p Palette) IsSpecialColour(index byte) bool {
 	return false
 }
 
-func (p Palette) GetRGB(index byte) (r, g, b float64) {
+func (p Palette) GetRGB(index byte, resolveSpecialColours bool) (output RGB) {
 	if int(index) < len(p.Entries) {
 		entry := p.Entries[index]
 		rgba := color.RGBA{R: entry.R, B: entry.B, G: entry.G}
 		r32, g32, b32, _ := rgba.RGBA()
-		r, g, b = float64(r32), float64(g32), float64(b32)
+		output = RGB{
+			R: float64(r32),
+			G: float64(g32),
+			B: float64(b32),
+		}
+
+		if !resolveSpecialColours {
+			return
+		}
 
 		if entry.Range != nil {
 			if entry.Range.IsPrimaryCompanyColour || entry.Range.IsSecondaryCompanyColour {
 				cc := float64((19595*uint32(entry.R) + 38470*uint32(entry.G) + 7471*uint32(entry.B) + 1<<15) >> 8)
 				y := (p.DefaultBrightness * 32767.0 * (1 - p.CompanyColourLightingContribution)) + (cc * p.CompanyColourLightingContribution)
-				return y, y, y
+				return RGB{R: y, G: y, B: y}
 			}
 
 			if entry.Range.IsAnimatedLight {
-				return 22000, 22000, 22000
+				return RGB{R: 22000, G: 22000, B: 22000}
 			}
 		}
 
 		return
 	}
 
-	return 0, 0, 0
+	return RGB{R: 0, G: 0, B: 0}
 }
 
 func (p Palette) GetLitIndexed(index byte, l float64) (idx byte) {
@@ -118,11 +126,11 @@ func (p Palette) GetLitIndexed(index byte, l float64) (idx byte) {
 	return index
 }
 
-func (p Palette) GetLitRGB(index byte, l float64, brightness float64, contrast float64) (r, g, b float64) {
-	r, g, b = p.GetRGB(index)
+func (p Palette) GetLitRGB(index byte, l float64, brightness float64, contrast float64, resolveSpecialColours bool) (output RGB) {
+	output = p.GetRGB(index, resolveSpecialColours)
 
 	entry := p.Entries[index]
-	if entry.Range != nil && (entry.Range.IsPrimaryCompanyColour || entry.Range.IsSecondaryCompanyColour) {
+	if resolveSpecialColours && entry.Range != nil && (entry.Range.IsPrimaryCompanyColour || entry.Range.IsSecondaryCompanyColour) {
 		l = l * p.CompanyColourLightingScale
 	}
 
@@ -139,24 +147,24 @@ func (p Palette) GetLitRGB(index byte, l float64, brightness float64, contrast f
 
 	if l >= 0 {
 		// interpolate towards white
-		r = (r * (1 - l)) + (65535 * l)
-		g = (g * (1 - l)) + (65535 * l)
-		b = (b * (1 - l)) + (65535 * l)
+		output.R = (output.R * (1 - l)) + (65535 * l)
+		output.G = (output.G * (1 - l)) + (65535 * l)
+		output.B = (output.B * (1 - l)) + (65535 * l)
 	} else if l < 0 {
 		// interpolate towards black
-		r = r * (1 + l)
-		g = g * (1 + l)
-		b = b * (1 + l)
+		output.R = output.R * (1 + l)
+		output.G = output.G * (1 + l)
+		output.B = output.B * (1 + l)
 	}
 
 	// Apply brightness/contrast
-	r += brightness
-	g += brightness
-	b += brightness
+	output.R += brightness
+	output.G += brightness
+	output.B += brightness
 
-	r = contrast*(r-32767) + 32767
-	g = contrast*(g-32767) + 32767
-	b = contrast*(b-32767) + 32767
+	output.R = contrast*(output.R-32767) + 32767
+	output.G = contrast*(output.G-32767) + 32767
+	output.B = contrast*(output.B-32767) + 32767
 
 	return
 }

@@ -25,7 +25,7 @@ type Spritesheets struct {
 }
 
 type SpriteInfo struct {
-	RenderOutput raycaster.RenderOutput
+	ShaderOutput sprite.ShaderOutput
 	SpriteBounds image.Rectangle
 }
 
@@ -108,7 +108,8 @@ func raycast(def manifest.Definition, spriteInfos []SpriteInfo) {
 		smp := smpFunc(rect.Max.X, rect.Max.Y, def.Manifest.Accuracy, def.Manifest.Overlap)
 
 		spriteInfos[i].SpriteBounds = rect
-		spriteInfos[i].RenderOutput = raycaster.GetRaycastOutput(def.Object, def.Manifest, spr, smp)
+		renderOutput := raycaster.GetRaycastOutput(def.Object, def.Manifest, spr, smp)
+		spriteInfos[i].ShaderOutput = sprite.GetShaderOutput(renderOutput, def, rect.Max.X, rect.Max.Y)
 	}
 }
 
@@ -119,7 +120,7 @@ func get8bppSpritesheetImage(def manifest.Definition, bounds image.Rectangle, sp
 
 	for i := 0; i < len(def.Manifest.Sprites); i++ {
 		loc := image.Point{X: def.Manifest.Sprites[i].X}
-		applySprite8bpp(img, def, spriteInfos[i], loc, depth)
+		applySprite8bpp(img, spriteInfos[i], loc, depth)
 	}
 
 	return img
@@ -136,11 +137,11 @@ func get32bppSpritesheetImage(def manifest.Definition, bounds image.Rectangle, s
 	return img
 }
 
-func applySprite8bpp(img *image.Paletted, def manifest.Definition, spriteInfo SpriteInfo, loc image.Point, depth string) {
+func applySprite8bpp(img *image.Paletted, spriteInfo SpriteInfo, loc image.Point, depth string) {
 	if depth == "8bpp" {
-		sprite.ApplyIndexedSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.RenderOutput, def)
+		sprite.ApplyIndexedSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.ShaderOutput, sprite.GetIndex)
 	} else if depth == "mask" {
-		sprite.ApplyMaskSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.RenderOutput, def)
+		sprite.ApplyIndexedSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.ShaderOutput, sprite.GetMaskIndex)
 	}
 
 	return
@@ -150,19 +151,19 @@ func applySprite32bpp(img *image.RGBA, def manifest.Definition, spriteInfo Sprit
 	if def.Object.Invalid() {
 		sprite.ApplyUniformSprite(img, spriteInfo.SpriteBounds, loc)
 	} else if depth == "lighting" {
-		sprite.ApplyLightingSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.RenderOutput, def)
+		sprite.Apply32bppSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.ShaderOutput, sprite.GetLighting)
 	} else if depth == "depth" {
-		sprite.ApplyDepthSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.RenderOutput, def)
+		sprite.Apply32bppSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.ShaderOutput, sprite.GetDepth)
 	} else if depth == "occlusion" {
-		sprite.ApplyOcclusionSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.RenderOutput, def)
+		sprite.Apply32bppSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.ShaderOutput, sprite.GetOcclusion)
 	} else if depth == "shadow" {
-		sprite.ApplyShadowSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.RenderOutput, def)
+		sprite.Apply32bppSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.ShaderOutput, sprite.GetShadowing)
 	} else if depth == "normals" {
-		sprite.ApplyNormalSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.RenderOutput, def)
+		sprite.Apply32bppSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.ShaderOutput, sprite.GetNormal)
 	} else if depth == "avg_normals" {
-		sprite.ApplyAverageNormalSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.RenderOutput, def)
+		sprite.Apply32bppSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.ShaderOutput, sprite.GetAveragedNormal)
 	} else {
-		sprite.Apply32bppSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.RenderOutput, def)
+		sprite.Apply32bppSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.ShaderOutput, sprite.GetColour)
 	}
 
 	return

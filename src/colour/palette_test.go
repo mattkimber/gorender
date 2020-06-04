@@ -46,8 +46,8 @@ func TestPalette_GetRGB(t *testing.T) {
 	expected := [][]uint16{{0, 0, 0}, {65535, 65535, 65535}, {38731, 38731, 38731}, {0, 0, 0}}
 
 	for i, e := range expected {
-		if r, g, b := palette.GetRGB(byte(i)); uint16(r) != e[0] || uint16(g) != e[1] || uint16(b) != e[2] {
-			t.Errorf("entry at %d not returned correctly: was [%f %f %f], expected %v", i, r, g, b, e)
+		if rgb := palette.GetRGB(byte(i), true); uint16(rgb.R) != e[0] || uint16(rgb.G) != e[1] || uint16(rgb.B) != e[2] {
+			t.Errorf("entry at %d not returned correctly: was [%v], expected %v", i, rgb, e)
 		}
 	}
 }
@@ -67,8 +67,8 @@ func TestPalette_GetLitRGB(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		r, g, b := palette.GetLitRGB(testCase.index, testCase.lighting, 0.0, 1.0)
-		result := []uint16{uint16(r), uint16(g), uint16(b)}
+		rgb := palette.GetLitRGB(testCase.index, testCase.lighting, 0.0, 1.0, false)
+		result := []uint16{uint16(rgb.R), uint16(rgb.G), uint16(rgb.B)}
 		if result[0] != testCase.expected[0] || result[1] != testCase.expected[1] || result[2] != testCase.expected[2] {
 			t.Errorf("index %d with lighting %f returned %v, expected %v", testCase.index, testCase.lighting, result, testCase.expected)
 		}

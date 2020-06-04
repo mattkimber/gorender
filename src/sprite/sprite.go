@@ -4,11 +4,7 @@ import (
 	"colour"
 	"image"
 	"image/color"
-	"raycaster"
 )
-
-type shadeFunc32bpp func(raycaster.RenderSample) (float64, float64, float64)
-type shadeFuncIndexed func(raycaster.RenderSample) byte
 
 func ApplyUniformSprite(img *image.RGBA, bounds image.Rectangle, loc image.Point) {
 	minX, minY := bounds.Min.X+loc.X, bounds.Min.Y+loc.Y
@@ -21,101 +17,20 @@ func ApplyUniformSprite(img *image.RGBA, bounds image.Rectangle, loc image.Point
 	}
 }
 
-func apply32bppImage(img *image.RGBA, bounds image.Rectangle, loc image.Point, shader shadeFunc32bpp, info raycaster.RenderOutput, softenEdges bool) {
+func Apply32bppSprite(img *image.RGBA, bounds image.Rectangle, loc image.Point, info ShaderOutput, getProperty func(*ShaderInfo) colour.RGB) {
 	for x := bounds.Min.X; x < bounds.Max.X; x++ {
 		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-			c := get32bppSample(info[x][y], shader, softenEdges)
-			img.Set(x+loc.X, y+loc.Y, c)
+			c := getProperty(&info[x][y])
+			img.Set(x+loc.X, y+loc.Y, c.GetRGBA(info[x][y].Alpha))
 		}
 	}
 }
 
-func get32bppSample(info raycaster.RenderInfo, shader shadeFunc32bpp, softenEdges bool) color.RGBA64 {
-	total, filled := 0, 0
-	cr, cg, cb := 0.0, 0.0, 0.0
-
-	for _, s := range info {
-		total++
-
-		if s.Collision {
-			r, g, b := shader(s)
-			cr += r
-			cg += g
-			cb += b
-			filled++
-		}
-	}
-
-	// No collisions = transparent
-	if filled == 0 {
-		return color.RGBA64{
-			R: 0,
-			G: 0,
-			B: 0,
-			A: 0,
-		}
-	}
-
-	// Soften edges means that when only some rays collided (typically near edges
-	// of an object) we fade to transparent. Otherwise objects are hard-edged, which
-	// makes them more likely to suffer aliasing artifacts but also clearer at small
-	// sizes
-	alpha := 65535
-	divisor := float64(filled)
-	if softenEdges {
-		alpha = (filled * 65535) / (total)
-		divisor = float64(total)
-	}
-
-	// Return the average colour value
-	return color.RGBA64{
-		R: uint16(colour.Clamp(cr / divisor)),
-		G: uint16(colour.Clamp(cg / divisor)),
-		B: uint16(colour.Clamp(cb / divisor)),
-		A: uint16(alpha),
-	}
-}
-
-func applyIndexedImage(img *image.Paletted, pal colour.Palette, bounds image.Rectangle, loc image.Point, shader shadeFuncIndexed, info raycaster.RenderOutput) {
+func ApplyIndexedSprite(img *image.Paletted, bounds image.Rectangle, loc image.Point, info ShaderOutput, getProperty func(*ShaderInfo) byte) {
 	for x := bounds.Min.X; x < bounds.Max.X; x++ {
 		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-			img.SetColorIndex(x+loc.X, y+loc.Y, get8bppSample(info[x][y], shader, pal))
+			c := getProperty(&info[x][y])
+			img.SetColorIndex(x+loc.X, y+loc.Y, c)
 		}
 	}
-}
-
-func get8bppSample(info raycaster.RenderInfo, shader shadeFuncIndexed, pal colour.Palette) byte {
-	values := map[byte]int{}
-	specials := 0
-	threshold := len(info) / 3
-
-	for _, s := range info {
-		if s.Collision {
-			idx := shader(s)
-
-			if pal.IsSpecialColour(idx) {
-				specials++
-				if specials >= threshold {
-					return idx
-				}
-			}
-
-			if idx != 0 {
-				values[idx]++
-			}
-		}
-	}
-
-	// TODO: something better than returning the modal index, which produces heavily aliased results
-	max := 0
-	modalIndex := byte(0)
-
-	for k, v := range values {
-		if v > max {
-			max = v
-			modalIndex = k
-		}
-	}
-
-	return modalIndex
 }

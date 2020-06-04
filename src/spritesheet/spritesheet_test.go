@@ -8,6 +8,7 @@ import (
 	"os"
 	"raycaster"
 	"sampler"
+	"sprite"
 	"testing"
 	"utils/fileutils"
 	"utils/imageutils"
@@ -95,9 +96,11 @@ func benchmarkSpritesheet(b *testing.B, spritesheetImage func(def manifest.Defin
 		rect := getSpriteSizeForAngle(def.Manifest.Sprites[0], def.Scale)
 
 		smp := sampler.Disc(rect.Max.X, rect.Max.Y, def.Manifest.Accuracy, 0)
+		ro := raycaster.GetRaycastOutput(def.Object, def.Manifest, def.Manifest.Sprites[0], smp)
+		so := sprite.GetShaderOutput(ro, def, rect.Max.X, rect.Max.Y)
 
 		info := SpriteInfo{
-			RenderOutput: raycaster.GetRaycastOutput(def.Object, def.Manifest, def.Manifest.Sprites[0], smp),
+			ShaderOutput: so,
 			SpriteBounds: rect,
 		}
 

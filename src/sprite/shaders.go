@@ -1,12 +1,48 @@
 package sprite
 
 import (
+	"colour"
 	"geometry"
-	"image"
 	"manifest"
 	"raycaster"
 )
 
+func Colour(smp raycaster.RenderSample, d manifest.Definition, resolveSpecialColours bool) colour.RGB {
+	lightingOffset := getLightingOffset(smp, d.Manifest.DepthInfluence)
+	return d.Palette.GetLitRGB(smp.Index, lightingOffset, d.Manifest.Brightness, d.Manifest.Contrast, resolveSpecialColours)
+}
+
+func Normal(smp raycaster.RenderSample) colour.RGB {
+	normal := smp.Normal.MultiplyByConstant(32766).Add(geometry.Vector3{X: 32766, Y: 32766, Z: 32766})
+	return colour.RGB{R: normal.X, G: normal.Y, B: normal.Z}
+}
+
+func AveragedNormal(smp raycaster.RenderSample) colour.RGB {
+	normal := smp.AveragedNormal.MultiplyByConstant(32766).Add(geometry.Vector3{X: 32766, Y: 32766, Z: 32766})
+	return colour.RGB{R: normal.X, G: normal.Y, B: normal.Z}
+}
+
+func Depth(smp raycaster.RenderSample) colour.RGB {
+	v := float64(smp.Depth * 400)
+	return colour.RGB{R: v, G: v, B: v}
+}
+
+func Occlusion(smp raycaster.RenderSample) colour.RGB {
+	v := float64(smp.Occlusion * 6000)
+	return colour.RGB{R: v, G: v, B: v}
+}
+
+func Shadow(smp raycaster.RenderSample) colour.RGB {
+	v := 65535 - (smp.Shadowing * 65535)
+	return colour.RGB{R: v, G: v, B: v}
+}
+
+func Lighting(smp raycaster.RenderSample) colour.RGB {
+	v := 32767 + (smp.LightAmount * 32767)
+	return colour.RGB{R: v, G: v, B: v}
+}
+
+/*
 func Apply32bppSprite(img *image.RGBA, bounds image.Rectangle, loc image.Point, info raycaster.RenderOutput, d manifest.Definition) {
 	shader := func(smp raycaster.RenderSample) (float64, float64, float64) {
 		lightingOffset := getLightingOffset(smp, d.Manifest.DepthInfluence)
@@ -15,7 +51,8 @@ func Apply32bppSprite(img *image.RGBA, bounds image.Rectangle, loc image.Point, 
 
 	apply32bppImage(img, bounds, loc, shader, info, d.SoftenEdges())
 }
-
+*/
+/*
 func ApplyIndexedSprite(img *image.Paletted, bounds image.Rectangle, loc image.Point, info raycaster.RenderOutput, d manifest.Definition) {
 	shader := func(smp raycaster.RenderSample) byte {
 		lightingOffset := getLightingOffset(smp, d.Manifest.DepthInfluence)
@@ -33,60 +70,7 @@ func ApplyMaskSprite(img *image.Paletted, bounds image.Rectangle, loc image.Poin
 
 	applyIndexedImage(img, d.Palette, bounds, loc, shader, info)
 }
-
-func ApplyNormalSprite(img *image.RGBA, bounds image.Rectangle, loc image.Point, info raycaster.RenderOutput, d manifest.Definition) {
-	shader := func(smp raycaster.RenderSample) (float64, float64, float64) {
-		normal := smp.Normal.MultiplyByConstant(32766).Add(geometry.Vector3{X: 32766, Y: 32766, Z: 32766})
-		return normal.X, normal.Y, normal.Z
-	}
-
-	apply32bppImage(img, bounds, loc, shader, info, d.SoftenEdges())
-}
-
-func ApplyAverageNormalSprite(img *image.RGBA, bounds image.Rectangle, loc image.Point, info raycaster.RenderOutput, d manifest.Definition) {
-	shader := func(smp raycaster.RenderSample) (float64, float64, float64) {
-		normal := smp.AveragedNormal.MultiplyByConstant(32766).Add(geometry.Vector3{X: 32766, Y: 32766, Z: 32766})
-		return normal.X, normal.Y, normal.Z
-	}
-
-	apply32bppImage(img, bounds, loc, shader, info, d.SoftenEdges())
-}
-
-func ApplyDepthSprite(img *image.RGBA, bounds image.Rectangle, loc image.Point, info raycaster.RenderOutput, d manifest.Definition) {
-	shader := func(smp raycaster.RenderSample) (float64, float64, float64) {
-		v := float64(smp.Depth * 400)
-		return v, v, v
-	}
-
-	apply32bppImage(img, bounds, loc, shader, info, d.SoftenEdges())
-}
-
-func ApplyOcclusionSprite(img *image.RGBA, bounds image.Rectangle, loc image.Point, info raycaster.RenderOutput, d manifest.Definition) {
-	shader := func(smp raycaster.RenderSample) (float64, float64, float64) {
-		v := float64(smp.Occlusion * 6000)
-		return v, v, v
-	}
-
-	apply32bppImage(img, bounds, loc, shader, info, d.SoftenEdges())
-}
-
-func ApplyShadowSprite(img *image.RGBA, bounds image.Rectangle, loc image.Point, info raycaster.RenderOutput, d manifest.Definition) {
-	shader := func(smp raycaster.RenderSample) (float64, float64, float64) {
-		v := 65535 - (smp.Shadowing * 65535)
-		return v, v, v
-	}
-
-	apply32bppImage(img, bounds, loc, shader, info, d.SoftenEdges())
-}
-
-func ApplyLightingSprite(img *image.RGBA, bounds image.Rectangle, loc image.Point, info raycaster.RenderOutput, d manifest.Definition) {
-	shader := func(smp raycaster.RenderSample) (float64, float64, float64) {
-		v := 32767 + (smp.LightAmount * 32767)
-		return v, v, v
-	}
-
-	apply32bppImage(img, bounds, loc, shader, info, d.SoftenEdges())
-}
+*/
 
 func getLightingOffset(smp raycaster.RenderSample, depthInfluence float64) float64 {
 	lightingOffset := -0.3
