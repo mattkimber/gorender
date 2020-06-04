@@ -42,36 +42,6 @@ func Lighting(smp raycaster.RenderSample) colour.RGB {
 	return colour.RGB{R: v, G: v, B: v}
 }
 
-/*
-func Apply32bppSprite(img *image.RGBA, bounds image.Rectangle, loc image.Point, info raycaster.RenderOutput, d manifest.Definition) {
-	shader := func(smp raycaster.RenderSample) (float64, float64, float64) {
-		lightingOffset := getLightingOffset(smp, d.Manifest.DepthInfluence)
-		return d.Palette.GetLitRGB(smp.Index, lightingOffset, d.Manifest.Brightness, d.Manifest.Contrast)
-	}
-
-	apply32bppImage(img, bounds, loc, shader, info, d.SoftenEdges())
-}
-*/
-/*
-func ApplyIndexedSprite(img *image.Paletted, bounds image.Rectangle, loc image.Point, info raycaster.RenderOutput, d manifest.Definition) {
-	shader := func(smp raycaster.RenderSample) byte {
-		lightingOffset := getLightingOffset(smp, d.Manifest.DepthInfluence)
-		idx := d.Palette.GetLitIndexed(smp.Index, lightingOffset)
-		return idx
-	}
-
-	applyIndexedImage(img, d.Palette, bounds, loc, shader, info)
-}
-
-func ApplyMaskSprite(img *image.Paletted, bounds image.Rectangle, loc image.Point, info raycaster.RenderOutput, d manifest.Definition) {
-	shader := func(smp raycaster.RenderSample) byte {
-		return d.Palette.GetMaskColour(smp.Index)
-	}
-
-	applyIndexedImage(img, d.Palette, bounds, loc, shader, info)
-}
-*/
-
 func getLightingOffset(smp raycaster.RenderSample, depthInfluence float64) float64 {
 	lightingOffset := -0.3
 	lightingOffset += smp.LightAmount * 0.6

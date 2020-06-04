@@ -31,12 +31,80 @@ type Palette struct {
 	CompanyColourLightingScale        float64        `json:"company_colour_lighting_scale"`
 }
 
+func (pe *PaletteEntry) GetRGB() (output RGB) {
+	output.R = float64(pe.R) * 255
+	output.G = float64(pe.G) * 255
+	output.B = float64(pe.B) * 255
+	return
+}
+
 // Get a Go palette
 func (p Palette) GetGoPalette() (pal color.Palette) {
 	pal = make([]color.Color, len(p.Entries))
 
 	for i, e := range p.Entries {
 		pal[i] = color.RGBA{R: e.R, G: e.G, B: e.B, A: 255}
+	}
+
+	return
+}
+
+// Get the palette of non-special colours
+func (p Palette) GetRegularPalette() (pal []RGB) {
+	pal = make([]RGB, len(p.Entries))
+
+	for i, e := range p.Entries {
+		if !p.IsSpecialColour(byte(i)) {
+			pal[i] = FromPaletteEntry(e)
+		} else {
+			pal[i] = RGB{ R: 65535, G: 0, B: 65535 }
+		}
+	}
+
+	return
+}
+
+// Get the palette of primary company colours
+func (p Palette) GetPrimaryCompanyColourPalette() (pal []RGB) {
+	pal = make([]RGB, len(p.Entries))
+
+	for i, e := range p.Entries {
+		if e.Range != nil && i != 0 && i != 255 && e.Range.IsPrimaryCompanyColour {
+			pal[i] = FromPaletteEntry(e)
+		} else {
+			pal[i] = RGB{ R: 65535, G: 0, B: 65535 }
+		}
+	}
+
+	return
+}
+
+
+// Get the palette of secondary company colours
+func (p Palette) GetSecondaryCompanyColourPalette() (pal []RGB) {
+	pal = make([]RGB, len(p.Entries))
+
+	for i, e := range p.Entries {
+		if e.Range != nil && i != 0 && i != 255 && e.Range.IsSecondaryCompanyColour {
+			pal[i] = FromPaletteEntry(e)
+		} else {
+			pal[i] = RGB{ R: 65535, G: 0, B: 65535 }
+		}
+	}
+
+	return
+}
+
+// Get the palette of animated colours
+func (p Palette) GetAnimatedPalette() (pal []RGB) {
+	pal = make([]RGB, len(p.Entries))
+
+	for i, e := range p.Entries {
+		if e.Range != nil && i != 0 && i != 255 && e.Range.IsAnimatedLight {
+			pal[i] = FromPaletteEntry(e)
+		} else {
+			pal[i] = RGB{ R: 255, G: 0, B: 255 }
+		}
 	}
 
 	return
@@ -179,8 +247,8 @@ func Clamp(input float64) float64 {
 	return input
 }
 
-func (p *PaletteEntry) UnmarshalJSON(data []byte) error {
-	i := []interface{}{&p.R, &p.G, &p.B}
+func (pe *PaletteEntry) UnmarshalJSON(data []byte) error {
+	i := []interface{}{&pe.R, &pe.G, &pe.B}
 
 	if err := json.Unmarshal(data, &i); err != nil {
 		return err

@@ -23,8 +23,34 @@ func (rgb *RGB) GetRGBA(alpha float64) color.RGBA64 {
 	}
 }
 
-func (rgb *RGB) Add(input RGB) {
-	rgb.R += input.R
-	rgb.G += input.G
-	rgb.B += input.B
+func (rgb RGB) Add(input RGB) (result RGB){
+	result.R = rgb.R + input.R
+	result.G = rgb.G + input.G
+	result.B = rgb.B + input.B
+
+	return
+}
+
+func (rgb RGB) Subtract(input RGB) (result RGB){
+	result.R = rgb.R - input.R
+	result.G = rgb.G - input.G
+	result.B = rgb.B - input.B
+
+	return
+}
+
+func (rgb RGB) MultiplyBy(value float64) (result RGB){
+	result.R = rgb.R * value
+	result.G = rgb.G * value
+	result.B = rgb.B * value
+
+	return
+}
+
+func FromPaletteEntry(p PaletteEntry) RGB {
+	return RGB{
+		R: float64(p.R) * 255,
+		G: float64(p.G) * 255,
+		B: float64(p.B) * 255,
+	}
 }

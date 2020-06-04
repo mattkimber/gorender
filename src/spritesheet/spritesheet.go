@@ -48,7 +48,7 @@ func GetSpritesheets(def manifest.Definition) Spritesheets {
 	bounds := image.Rectangle{Max: image.Point{X: w, Y: h}}
 	spriteInfos := make([]SpriteInfo, len(def.Manifest.Sprites))
 
-	timingutils.Time("Raycasting", def.Time, func() {
+	timingutils.Time("Raycasting/sampling", def.Time, func() {
 		raycast(def, spriteInfos)
 	})
 

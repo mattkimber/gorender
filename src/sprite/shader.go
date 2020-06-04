@@ -3,6 +3,7 @@ package sprite
 import (
 	"colour"
 	"manifest"
+	"math"
 	"raycaster"
 )
 
@@ -18,6 +19,9 @@ type ShaderInfo struct {
 	Lighting       colour.RGB
 	Shadowing      colour.RGB
 	ModalIndex     byte
+	DitheredIndex  byte
+	IsMaskColour   bool
+	IsAnimated	   bool
 }
 
 type ShaderOutput [][]ShaderInfo
@@ -51,12 +55,14 @@ func GetShadowing(s *ShaderInfo) colour.RGB {
 }
 
 func GetIndex(s *ShaderInfo) byte {
-	return s.ModalIndex
+	return s.DitheredIndex
 }
 
 func GetMaskIndex(s *ShaderInfo) byte {
-	if s.Specialness >= 0.5 {
+	if s.Specialness > 0.75 || s.IsAnimated {
 		return s.ModalIndex
+	} else if s.Specialness > 0.25 && s.IsMaskColour {
+		return s.DitheredIndex
 	}
 	return 0
 }
@@ -64,15 +70,94 @@ func GetMaskIndex(s *ShaderInfo) byte {
 func GetShaderOutput(renderOutput raycaster.RenderOutput, def manifest.Definition, width int, height int) (output ShaderOutput) {
 	output = make([][]ShaderInfo, width)
 
+	// Palettes
+	regularPalette := def.Palette.GetRegularPalette()
+	primaryCCPalette := def.Palette.GetPrimaryCompanyColourPalette()
+	secondaryCCPalette := def.Palette.GetSecondaryCompanyColourPalette()
+	animatedPalette := def.Palette.GetAnimatedPalette()
+
+	// Floyd-Steinberg error rows
+	errCurr := make([]colour.RGB, height+2)
+	errNext := make([]colour.RGB, height+2)
+
+	var error colour.RGB
+
 	for x := 0; x < width; x++ {
 		output[x] = make([]ShaderInfo, height)
 
 		for y := 0; y < height; y++ {
 			output[x][y] = shade(renderOutput[x][y], def)
+			bestIndex := byte(0)
+
+			if output[x][y].Alpha < 0.01 {
+				bestIndex = 0
+			} else if def.Palette.Entries[output[x][y].ModalIndex].Range.IsPrimaryCompanyColour {
+				error = output[x][y].SpecialColour.Add(errCurr[y+1])
+				bestIndex = getBestIndex(error, primaryCCPalette)
+			} else if def.Palette.Entries[output[x][y].ModalIndex].Range.IsSecondaryCompanyColour {
+				error = output[x][y].SpecialColour.Add(errCurr[y+1])
+				bestIndex = getBestIndex(error, secondaryCCPalette)
+			} else if def.Palette.Entries[output[x][y].ModalIndex].Range.IsAnimatedLight {
+				output[x][y].IsAnimated = true
+				error = output[x][y].SpecialColour.Add(errCurr[y+1])
+				bestIndex = getBestIndex(error, animatedPalette)
+			} else {
+				if y > 0 && def.Palette.IsSpecialColour(output[x][y-1].ModalIndex) {
+					error = output[x][y].Colour
+				} else {
+					error = output[x][y].Colour.Add(errCurr[y+1])
+				}
+				bestIndex = getBestIndex(error, regularPalette)
+			}
+
+
+			output[x][y].DitheredIndex = bestIndex
+
+			if def.Palette.IsSpecialColour(bestIndex) {
+				output[x][y].IsMaskColour = true
+			}
+
+			if output[x][y].Alpha > 0.01 {
+				error = error.Subtract(def.Palette.Entries[bestIndex].GetRGB())
+			} else {
+				error = colour.RGB{}
+			}
+
+			// Apply Floyd-Steinberg error
+			errNext[y+0] = errNext[y+0].Add(error.MultiplyBy(3.0/16))
+			errNext[y+1] = errNext[y+1].Add(error.MultiplyBy(5.0/16))
+			errNext[y+2] = errNext[y+2].Add(error.MultiplyBy(1.0/16))
+			errCurr[y+2] = errCurr[y+2].Add(error.MultiplyBy(7.0/16))
+
+			//fmt.Printf("%f %f %f\n", errCurr[y+2], error, error.MultiplyBy(7/16))
+			errCurr[y+1] = colour.RGB{}
 		}
+
+		// Swap the next and current error lines
+		errCurr, errNext = errNext, errCurr
 	}
 
 	return
+}
+
+func getBestIndex(error colour.RGB, palette []colour.RGB) byte {
+	bestIndex, bestSum := 0, math.MaxFloat64
+	for index, p := range palette {
+		sum := squareDiff(error.R, p.R) + squareDiff(error.G, p.G) + squareDiff(error.B, p.B)
+		if sum < bestSum {
+			bestIndex, bestSum = index, sum
+			if sum == 0 {
+				break
+			}
+		}
+	}
+
+	return byte(bestIndex)
+}
+
+func squareDiff(a, b float64) float64 {
+	diff := a - b
+	return diff * diff
 }
 
 func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInfo) {
@@ -83,14 +168,14 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 		total++
 
 		if s.Collision {
-			output.Colour.Add(Colour(s, def, true))
-			output.SpecialColour.Add(Colour(s, def, false))
+			output.Colour = output.Colour.Add(Colour(s, def, true))
+			output.SpecialColour = output.SpecialColour.Add(Colour(s, def, false))
 
 			if def.Palette.IsSpecialColour(s.Index) {
 				output.Specialness += 1.0
+				values[s.Index]++
 			}
 
-			// TODO: in future we will only need this for "special" colours
 			if s.Index != 0 {
 				values[s.Index]++
 			}
@@ -98,12 +183,12 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 			filled++
 
 			if def.Debug {
-				output.Normal.Add(Normal(s))
-				output.AveragedNormal.Add(AveragedNormal(s))
-				output.Depth.Add(Depth(s))
-				output.Occlusion.Add(Occlusion(s))
-				output.Shadowing.Add(Shadow(s))
-				output.Lighting.Add(Lighting(s))
+				output.Normal = output.Normal.Add(Normal(s))
+				output.AveragedNormal = output.AveragedNormal.Add(AveragedNormal(s))
+				output.Depth = output.Depth.Add(Depth(s))
+				output.Occlusion = output.Occlusion.Add(Occlusion(s))
+				output.Shadowing = output.Shadowing.Add(Shadow(s))
+				output.Lighting = output.Lighting.Add(Lighting(s))
 			}
 		}
 	}
