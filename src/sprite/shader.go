@@ -21,7 +21,7 @@ type ShaderInfo struct {
 	ModalIndex     byte
 	DitheredIndex  byte
 	IsMaskColour   bool
-	IsAnimated	   bool
+	IsAnimated     bool
 }
 
 type ShaderOutput [][]ShaderInfo
@@ -110,26 +110,24 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, def manifest.Definitio
 				bestIndex = getBestIndex(error, regularPalette)
 			}
 
-
 			output[x][y].DitheredIndex = bestIndex
 
 			if def.Palette.IsSpecialColour(bestIndex) {
 				output[x][y].IsMaskColour = true
 			}
 
-			if output[x][y].Alpha > 0.01 {
-				error = error.Subtract(def.Palette.Entries[bestIndex].GetRGB())
+			if output[x][y].Alpha >= 0.01 {
+				error = colour.ClampRGB(error.Subtract(def.Palette.Entries[bestIndex].GetRGB()))
 			} else {
 				error = colour.RGB{}
 			}
 
 			// Apply Floyd-Steinberg error
-			errNext[y+0] = errNext[y+0].Add(error.MultiplyBy(3.0/16))
-			errNext[y+1] = errNext[y+1].Add(error.MultiplyBy(5.0/16))
-			errNext[y+2] = errNext[y+2].Add(error.MultiplyBy(1.0/16))
-			errCurr[y+2] = errCurr[y+2].Add(error.MultiplyBy(7.0/16))
+			errNext[y+0] = errNext[y+0].Add(error.MultiplyBy(3.0 / 16))
+			errNext[y+1] = errNext[y+1].Add(error.MultiplyBy(5.0 / 16))
+			errNext[y+2] = errNext[y+2].Add(error.MultiplyBy(1.0 / 16))
+			errCurr[y+2] = errCurr[y+2].Add(error.MultiplyBy(7.0 / 16))
 
-			//fmt.Printf("%f %f %f\n", errCurr[y+2], error, error.MultiplyBy(7/16))
 			errCurr[y+1] = colour.RGB{}
 		}
 
@@ -143,6 +141,10 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, def manifest.Definitio
 func getBestIndex(error colour.RGB, palette []colour.RGB) byte {
 	bestIndex, bestSum := 0, math.MaxFloat64
 	for index, p := range palette {
+		if p.R == 65535 && p.G == 0 && p.B == 65535 {
+			continue
+		}
+
 		sum := squareDiff(error.R, p.R) + squareDiff(error.G, p.G) + squareDiff(error.B, p.B)
 		if sum < bestSum {
 			bestIndex, bestSum = index, sum

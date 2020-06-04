@@ -6,8 +6,8 @@
   "soften_edges": 0.5,
   "sampler": "disc",
   "accuracy": 5,
-  "brightness": -0.1,
-  "contrast": 0.1,
+  "brightness": 0,
+  "contrast": 0,
   "size": {
     "x": 126,
     "y": 40,

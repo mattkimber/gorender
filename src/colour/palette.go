@@ -57,7 +57,7 @@ func (p Palette) GetRegularPalette() (pal []RGB) {
 		if !p.IsSpecialColour(byte(i)) {
 			pal[i] = FromPaletteEntry(e)
 		} else {
-			pal[i] = RGB{ R: 65535, G: 0, B: 65535 }
+			pal[i] = RGB{R: 65535, G: 0, B: 65535}
 		}
 	}
 
@@ -72,13 +72,12 @@ func (p Palette) GetPrimaryCompanyColourPalette() (pal []RGB) {
 		if e.Range != nil && i != 0 && i != 255 && e.Range.IsPrimaryCompanyColour {
 			pal[i] = FromPaletteEntry(e)
 		} else {
-			pal[i] = RGB{ R: 65535, G: 0, B: 65535 }
+			pal[i] = RGB{R: 65535, G: 0, B: 65535}
 		}
 	}
 
 	return
 }
-
 
 // Get the palette of secondary company colours
 func (p Palette) GetSecondaryCompanyColourPalette() (pal []RGB) {
@@ -88,7 +87,7 @@ func (p Palette) GetSecondaryCompanyColourPalette() (pal []RGB) {
 		if e.Range != nil && i != 0 && i != 255 && e.Range.IsSecondaryCompanyColour {
 			pal[i] = FromPaletteEntry(e)
 		} else {
-			pal[i] = RGB{ R: 65535, G: 0, B: 65535 }
+			pal[i] = RGB{R: 65535, G: 0, B: 65535}
 		}
 	}
 
@@ -103,7 +102,7 @@ func (p Palette) GetAnimatedPalette() (pal []RGB) {
 		if e.Range != nil && i != 0 && i != 255 && e.Range.IsAnimatedLight {
 			pal[i] = FromPaletteEntry(e)
 		} else {
-			pal[i] = RGB{ R: 255, G: 0, B: 255 }
+			pal[i] = RGB{R: 65535, G: 0, B: 65535}
 		}
 	}
 
@@ -240,11 +239,21 @@ func (p Palette) GetLitRGB(index byte, l float64, brightness float64, contrast f
 func Clamp(input float64) float64 {
 	if input > 65535 {
 		return 65535
-	} else if input < 256 {
-		return 256
+	} else if input < 0 {
+		return 0
 	}
 
 	return input
+}
+
+func ClampRGB(input RGB) (output RGB) {
+	output = RGB{
+		R: Clamp(input.R),
+		G: Clamp(input.G),
+		B: Clamp(input.B),
+	}
+
+	return
 }
 
 func (pe *PaletteEntry) UnmarshalJSON(data []byte) error {
