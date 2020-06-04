@@ -71,6 +71,7 @@ func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometr
 
 	// Check always checks a 9 voxel "halo"
 	check := make([]geometry.PointB, 9)
+	checkOrder := []int{4, 1, 7, 3, 5, 0, 2, 6, 8}
 
 	loc0 := loc
 	x, y, z := ray.X, ray.Y, ray.Z
@@ -112,7 +113,7 @@ func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometr
 			}
 
 			for k := byte(0); k < 9; k++ {
-				point := check[k]
+				point := check[checkOrder[k]]
 				pointF := geometry.Vector3{X: float64(point.X), Y: float64(point.Y), Z: float64(point.Z)}
 
 				lx, ly, lz = point.X, point.Y, point.Z
