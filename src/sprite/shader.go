@@ -74,7 +74,6 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, def manifest.Definitio
 	regularPalette := def.Palette.GetRegularPalette()
 	primaryCCPalette := def.Palette.GetPrimaryCompanyColourPalette()
 	secondaryCCPalette := def.Palette.GetSecondaryCompanyColourPalette()
-	animatedPalette := def.Palette.GetAnimatedPalette()
 
 	// Floyd-Steinberg error rows
 	errCurr := make([]colour.RGB, height+2)
@@ -105,8 +104,8 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, def manifest.Definitio
 			} else if rng.IsAnimatedLight {
 				output[x][y].IsAnimated = true
 				// Never add error values to special colours
-				error = output[x][y].SpecialColour
-				bestIndex = getBestIndex(error, animatedPalette)
+				bestIndex = output[x][y].ModalIndex
+				error = def.Palette.Entries[bestIndex].GetRGB()
 			} else {
 				if y > 0 && def.Palette.IsSpecialColour(output[x][y-1].ModalIndex) {
 					error = output[x][y].Colour
