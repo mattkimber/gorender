@@ -14,8 +14,8 @@ func (rgb *RGB) DivideAndClamp(divisor float64) {
 	rgb.B = Clamp(rgb.B / divisor)
 }
 
-func (rgb *RGB) GetRGBA(alpha float64) color.RGBA64 {
-	return color.RGBA64{
+func (rgb *RGB) GetRGBA(alpha float64) color.NRGBA64 {
+	return color.NRGBA64{
 		R: uint16(rgb.R),
 		G: uint16(rgb.G),
 		B: uint16(rgb.B),

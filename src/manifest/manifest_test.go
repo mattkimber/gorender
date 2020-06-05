@@ -14,6 +14,7 @@ func TestFromJson(t *testing.T) {
 		DepthInfluence:    0.2,
 		Accuracy:          2,
 		Contrast:          1.0,
+		EdgeThreshold:     0.5,
 		Size: geometry.Vector3{
 			X: 20,
 			Y: 30,

@@ -89,17 +89,23 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, def manifest.Definitio
 			output[x][y] = shade(renderOutput[x][y], def)
 			bestIndex := byte(0)
 
-			if output[x][y].Alpha < 0.01 {
+			rng := def.Palette.Entries[output[x][y].ModalIndex].Range
+			if rng == nil {
+				rng = &colour.PaletteRange{}
+			}
+
+			if output[x][y].Alpha < def.Manifest.EdgeThreshold {
 				bestIndex = 0
-			} else if def.Palette.Entries[output[x][y].ModalIndex].Range.IsPrimaryCompanyColour {
+			} else if rng.IsPrimaryCompanyColour {
 				error = output[x][y].SpecialColour.Add(errCurr[y+1])
 				bestIndex = getBestIndex(error, primaryCCPalette)
-			} else if def.Palette.Entries[output[x][y].ModalIndex].Range.IsSecondaryCompanyColour {
+			} else if rng.IsSecondaryCompanyColour {
 				error = output[x][y].SpecialColour.Add(errCurr[y+1])
 				bestIndex = getBestIndex(error, secondaryCCPalette)
-			} else if def.Palette.Entries[output[x][y].ModalIndex].Range.IsAnimatedLight {
+			} else if rng.IsAnimatedLight {
 				output[x][y].IsAnimated = true
-				error = output[x][y].SpecialColour.Add(errCurr[y+1])
+				// Never add error values to special colours
+				error = output[x][y].SpecialColour
 				bestIndex = getBestIndex(error, animatedPalette)
 			} else {
 				if y > 0 && def.Palette.IsSpecialColour(output[x][y-1].ModalIndex) {
@@ -116,7 +122,7 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, def manifest.Definitio
 				output[x][y].IsMaskColour = true
 			}
 
-			if output[x][y].Alpha >= 0.01 {
+			if output[x][y].Alpha >= def.Manifest.EdgeThreshold {
 				error = colour.ClampRGB(error.Subtract(def.Palette.Entries[bestIndex].GetRGB()))
 			} else {
 				error = colour.RGB{}
@@ -215,8 +221,12 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 	// sizes
 	output.Alpha = 1.0
 	divisor := float64(filled)
+
 	if def.SoftenEdges() {
 		output.Alpha = divisor / float64(total)
+	}
+
+	if def.Manifest.FadeToBlack {
 		divisor = float64(total)
 	}
 

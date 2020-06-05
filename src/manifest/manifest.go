@@ -42,11 +42,14 @@ type Manifest struct {
 	Overlap              float64          `json:"overlap"`
 	Brightness           float64          `json:"brightness"`
 	Contrast             float64          `json:"contrast"`
+	FadeToBlack          bool             `json:"fade_to_black"`
+	EdgeThreshold        float64          `json:"alpha_edge_threshold"`
 }
 
 func FromJson(handle io.Reader) (manifest Manifest, err error) {
 	// Set defaults
 	manifest.Accuracy = 2
+	manifest.EdgeThreshold = 0.5
 
 	data, err := ioutil.ReadAll(handle)
 
