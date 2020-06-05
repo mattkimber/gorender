@@ -96,10 +96,18 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, def manifest.Definitio
 			if output[x][y].Alpha < def.Manifest.EdgeThreshold {
 				bestIndex = 0
 			} else if rng.IsPrimaryCompanyColour {
-				error = output[x][y].SpecialColour.Add(errCurr[y+1])
+				if y > 0 && def.Palette.IsSpecialColour(output[x][y-1].ModalIndex) {
+					error = output[x][y].SpecialColour
+				} else {
+					error = output[x][y].SpecialColour.Add(errCurr[y+1])
+				}
 				bestIndex = getBestIndex(error, primaryCCPalette)
 			} else if rng.IsSecondaryCompanyColour {
-				error = output[x][y].SpecialColour.Add(errCurr[y+1])
+				if y > 0 && def.Palette.IsSpecialColour(output[x][y-1].ModalIndex) {
+					error = output[x][y].SpecialColour
+				} else {
+					error = output[x][y].SpecialColour.Add(errCurr[y+1])
+				}
 				bestIndex = getBestIndex(error, secondaryCCPalette)
 			} else if rng.IsAnimatedLight {
 				output[x][y].IsAnimated = true
@@ -146,7 +154,7 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, def manifest.Definitio
 func getBestIndex(error colour.RGB, palette []colour.RGB) byte {
 	bestIndex, bestSum := 0, math.MaxFloat64
 	for index, p := range palette {
-		if p.R == 65535 && (p.G == 0 || p.G > 65000) && p.B == 65535 {
+		if p.R > 65000 && (p.G == 0 || p.G > 65000) && p.B > 65000 {
 			continue
 		}
 
