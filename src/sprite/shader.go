@@ -146,7 +146,7 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, def manifest.Definitio
 func getBestIndex(error colour.RGB, palette []colour.RGB) byte {
 	bestIndex, bestSum := 0, math.MaxFloat64
 	for index, p := range palette {
-		if p.R == 65535 && p.G == 0 && p.B == 65535 {
+		if p.R == 65535 && (p.G == 0 || p.G > 65000) && p.B == 65535 {
 			continue
 		}
 
