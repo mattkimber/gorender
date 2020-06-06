@@ -236,26 +236,6 @@ func (p Palette) GetLitRGB(index byte, l float64, brightness float64, contrast f
 	return
 }
 
-func Clamp(input float64) float64 {
-	if input > 65535 {
-		return 65535
-	} else if input < 0 {
-		return 0
-	}
-
-	return input
-}
-
-func ClampRGB(input RGB) (output RGB) {
-	output = RGB{
-		R: Clamp(input.R),
-		G: Clamp(input.G),
-		B: Clamp(input.B),
-	}
-
-	return
-}
-
 func (pe *PaletteEntry) UnmarshalJSON(data []byte) error {
 	i := []interface{}{&pe.R, &pe.G, &pe.B}
 

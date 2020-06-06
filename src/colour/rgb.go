@@ -9,9 +9,29 @@ type RGB struct {
 }
 
 func (rgb *RGB) DivideAndClamp(divisor float64) {
-	rgb.R = Clamp(rgb.R / divisor)
-	rgb.G = Clamp(rgb.G / divisor)
-	rgb.B = Clamp(rgb.B / divisor)
+	rgb.R = Clamp(rgb.R/divisor, 256, 65535-256)
+	rgb.G = Clamp(rgb.G/divisor, 256, 65535-256)
+	rgb.B = Clamp(rgb.B/divisor, 256, 65535-256)
+}
+
+func ClampRGB(input RGB) (output RGB) {
+	output = RGB{
+		R: Clamp(input.R, 256, 65535-256),
+		G: Clamp(input.G, 256, 65535-256),
+		B: Clamp(input.B, 256, 65535-256),
+	}
+
+	return
+}
+
+func Clamp(input float64, min, max float64) float64 {
+	if input > max {
+		return max
+	} else if input < min {
+		return min
+	}
+
+	return input
 }
 
 func (rgb *RGB) GetRGBA(alpha float64) color.NRGBA64 {
