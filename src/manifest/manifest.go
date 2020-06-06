@@ -44,6 +44,7 @@ type Manifest struct {
 	Contrast             float64          `json:"contrast"`
 	FadeToBlack          bool             `json:"fade_to_black"`
 	EdgeThreshold        float64          `json:"alpha_edge_threshold"`
+	PadToFullLength      bool             `json:"pad_to_full_length"`
 }
 
 func FromJson(handle io.Reader) (manifest Manifest, err error) {

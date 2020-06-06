@@ -80,6 +80,8 @@ The fields are as follows:
 * `contrast`: A value between `[-1.0, 1.0]` for adjusting the contrast of the output. `0` (the default) means no change.
 * `fade_to_black`: When edge-softening, whether to allow edge colours to fade to black or to keep their original shade. When true, produces black borders on objects.
 * `alpha_edge_threshold`: The alpha value above which a pixel will be output instead of set to transparent. (Default 0.5)
+* `pad_to_full_length`: If this is set to `true`, voxel objects will be padded in their length (x) dimension to the size
+   configured in the manifest. This can help with aligning many sizes of object consistently.
 * `sprites`: the set of sprites to produce, as an array. Each sprite must have the following properties:
    * `angle`: the angle of the object for this sprite.
    * `width`: the width of the output sprite image.

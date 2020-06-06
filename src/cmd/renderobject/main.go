@@ -64,6 +64,11 @@ func main() {
 }
 
 func process() {
+	if !strings.HasSuffix(flags.InputFilename, ".vox") {
+		fmt.Printf("Files does not have .vox extension: %s\n", flags.InputFilename)
+		return
+	}
+
 	palette, err := getPalette("files/ttd_palette.json")
 	if err != nil {
 		panic(err)
