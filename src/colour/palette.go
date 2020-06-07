@@ -21,6 +21,7 @@ type PaletteRange struct {
 	IsSecondaryCompanyColour bool `json:"is_secondary_company_colour"`
 	IsAnimatedLight          bool `json:"is_animated_light"`
 	Smoothness               int  `json:"smoothness"`
+	IsNonRenderable          bool `json:"non_renderable"`
 }
 
 type Palette struct {
@@ -130,9 +131,17 @@ func (p Palette) GetMaskColour(index byte) (msk byte) {
 	return
 }
 
+func (p Palette) IsRenderable(index byte) bool {
+	if int(index) < len(p.Entries) && p.Entries[index].Range != nil {
+		return !p.Entries[index].Range.IsNonRenderable
+	}
+
+	return false
+}
+
 func (p Palette) IsSpecialColour(index byte) bool {
 	if int(index) < len(p.Entries) && p.Entries[index].Range != nil {
-		return p.Entries[index].Range.IsPrimaryCompanyColour || p.Entries[index].Range.IsSecondaryCompanyColour || p.Entries[index].Range.IsAnimatedLight
+		return p.Entries[index].Range.IsPrimaryCompanyColour || p.Entries[index].Range.IsSecondaryCompanyColour || p.Entries[index].Range.IsAnimatedLight || p.Entries[index].Range.IsNonRenderable
 	}
 
 	return false
@@ -272,7 +281,7 @@ func (p *Palette) SetRanges(ranges []PaletteRange) (err error) {
 	}
 
 	for i, r := range ranges {
-		for j := r.Start; j <= r.End; j++ {
+		for j := int(r.Start); j <= int(r.End); j++ {
 			if p.Entries[j].Range != nil {
 				return fmt.Errorf("range %d overlaps colour %d", i, j)
 			}

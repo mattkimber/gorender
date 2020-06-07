@@ -189,6 +189,12 @@
       "start": 245,
       "end": 254,
       "is_animated_light": true
+    },
+    {
+      "_comment": "cargopositor mask",
+      "start": 255,
+      "end": 255,
+      "non_renderable": true
     }
   ],
   "entries": [

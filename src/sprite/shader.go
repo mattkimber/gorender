@@ -182,7 +182,7 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 	for _, s := range info {
 		total++
 
-		if s.Collision {
+		if s.Collision && def.Palette.IsRenderable(s.Index) {
 			output.Colour = output.Colour.Add(Colour(s, def, true))
 			output.SpecialColour = output.SpecialColour.Add(Colour(s, def, false))
 
