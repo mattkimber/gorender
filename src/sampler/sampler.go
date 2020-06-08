@@ -2,6 +2,9 @@ package sampler
 
 import (
 	"geometry"
+	"image"
+	"image/color"
+	"image/draw"
 	"math/rand"
 )
 
@@ -15,6 +18,24 @@ func (s Samples) Width() int {
 
 func (s Samples) Height() int {
 	return len(s[0])
+}
+
+func (s Samples) GetImage() (img *image.RGBA) {
+	rect := image.Rect(0, 0, 200, 200)
+	img = image.NewRGBA(rect)
+
+	// Clear to white
+	draw.Draw(img, rect, image.NewUniform(color.White), image.Point{}, draw.Over)
+
+	samples := s[0][0]
+	for _, smp := range samples {
+		x, y := int(100.0+(smp.X*50.0)), int(100.0+(smp.Y*50.0))
+		if x >= 0 && y >= 0 && x < 200 && y < 200 {
+			img.Set(x, y, color.Black)
+		}
+	}
+
+	return
 }
 
 func Get(name string) func(int, int, int, float64) Samples {
@@ -86,7 +107,7 @@ func getPoissonDisc(accuracy int, overlap float64) []geometry.Vector2 {
 	distance := 1.0 / float64(accuracy)
 	distance = distance * distance
 
-	radius := 1.0 + overlap
+	radius := 0.5 + overlap
 
 	disc := make([]geometry.Vector2, 0)
 	var valid bool
@@ -94,10 +115,11 @@ func getPoissonDisc(accuracy int, overlap float64) []geometry.Vector2 {
 	// Create a poisson disc by dart throwing
 	for i := 0; i < numSamples*1000; i++ {
 		valid = true
-		trial := geometry.Vector2{X: (rand.Float64() - 0.5) * radius, Y: (rand.Float64() - 0.5) * radius}
+		trial := geometry.Vector2{X: (rand.Float64() - 0.5) * 2.0 * radius, Y: (rand.Float64() - 0.5) * 2.0 * radius}
 		for k := 0; k < len(disc); k++ {
-			if trial.LengthSquared() > radius || trial.DistanceSquared(disc[k]) < distance {
+			if trial.LengthSquared() > radius*radius || trial.DistanceSquared(disc[k]) < distance {
 				valid = false
+				break
 			}
 		}
 

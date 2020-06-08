@@ -67,15 +67,21 @@ func GetSpritesheets(def manifest.Definition) Spritesheets {
 func getDebugSheets(sheets Spritesheets, def manifest.Definition, bounds image.Rectangle, spriteInfos []SpriteInfo) {
 	debugOutputs := []string{"lighting", "depth", "normals", "occlusion", "shadow", "avg_normals"}
 	var wg sync.WaitGroup
-	wg.Add(len(debugOutputs))
+	wg.Add(len(debugOutputs) + 1)
 
 	for _, s := range debugOutputs {
 		thisS := s
 		go func() {
+			defer wg.Done()
 			sheets.Store(thisS, Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, thisS)})
-			wg.Done()
 		}()
 	}
+
+	go func() {
+		defer wg.Done()
+		smp := sampler.Get(def.Manifest.Sampler)(1, 1, def.Manifest.Accuracy, def.Manifest.Overlap)
+		sheets.Store("sampler", Spritesheet{Image: smp.GetImage()})
+	}()
 
 	wg.Wait()
 }
@@ -85,16 +91,16 @@ func getRegularSheets(sheets Spritesheets, def manifest.Definition, bounds image
 	wg.Add(3)
 
 	go func() {
+		defer wg.Done()
 		sheets.Store("32bpp", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "32bpp")})
-		wg.Done()
 	}()
 	go func() {
+		defer wg.Done()
 		sheets.Store("8bpp", Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "8bpp")})
-		wg.Done()
 	}()
 	go func() {
+		defer wg.Done()
 		sheets.Store("mask", Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "mask")})
-		wg.Done()
 	}()
 
 	wg.Wait()
