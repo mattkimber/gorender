@@ -29,7 +29,7 @@ func getViewportPlane(angle float64, m manifest.Manifest, zError float64, size g
 	}
 
 	midpoint := geometry.Vector3{X: midpointX, Y: float64(size.Y) / 2.0, Z: (m.Size.Z + zError) / 2.0}
-	viewpoint := midpoint.Add(getRenderDirection(angle, elevationAngle).MultiplyByConstant(m.Size.X / 2))
+	viewpoint := midpoint.Add(getRenderDirection(angle, elevationAngle).MultiplyByConstant(m.Size.X))
 
 	planeNormalXComponent := math.Abs(((m.Size.X) / 2.0) * cos * math.Sin(geometry.DegToRad(elevationAngle)))
 	planeNormalYComponent := math.Abs(((m.Size.Y) / 2.0) * sin * math.Sin(geometry.DegToRad(elevationAngle)))
