@@ -26,8 +26,9 @@ func castFpRay(object voxelobject.ProcessedVoxelObject, loc0 geometry.Vector3, l
 }
 
 func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3, flipY bool) (bool, geometry.Vector3) {
-	i := 0
+	i, fi := 0, 0.0
 	bSizeY := uint8(object.Size.Y - 1)
+	loc0 := loc
 
 	for {
 		// CanTerminate is an expensive check but we don't need to run it every cycle
@@ -48,7 +49,8 @@ func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Ve
 		}
 
 		i++
-		loc = loc.Add(ray)
+		fi++
+		loc = loc0.Add(ray.MultiplyByConstant(fi))
 	}
 
 	return false, geometry.Vector3{}
@@ -65,6 +67,7 @@ func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometr
 		ly = bSizeY - ly
 	}
 
+	return
 	if isInsideBoundingVolume(loc, limits) && object.Elements[lx][ly][lz].IsSurface {
 		return
 	}

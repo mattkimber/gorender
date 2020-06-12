@@ -30,22 +30,28 @@ func TestGetViewportPlane(t *testing.T) {
 		expected geometry.Plane
 	}{
 		{0, 126, 40, geometry.Plane{
-			A: geometry.Vector3{X: -63.5, Y: 0, Z: 0},
-			B: geometry.Vector3{X: -63.5, Y: 40, Z: 0},
-			C: geometry.Vector3{X: -63.5, Y: 40, Z: 40},
-			D: geometry.Vector3{X: -63.5, Y: -0, Z: 40},
+			A: geometry.Vector3{X: -63, Y: 0, Z: 0},
+			B: geometry.Vector3{X: -63, Y: 40, Z: 0},
+			C: geometry.Vector3{X: -63, Y: 40, Z: 40},
+			D: geometry.Vector3{X: -63, Y: 0, Z: 40},
 		}},
-		//{45, 126, 40, geometry.Plane{
-		//	A: geometry.Vector3{X: -49.71067811865475, Y: 48.71067811865474, Z: -0.5},
-		//	B: geometry.Vector3{X: 33.28932188134524, Y: 131.71067811865476, Z: -0.5},
-		//	C: geometry.Vector3{X: 33.28932188134524, Y: 131.71067811865476, Z: 39.5},
-		//	D: geometry.Vector3{X: -49.71067811865475, Y: 48.71067811865474, Z: 39.5},
-		//}},
+		{90, 126, 40, geometry.Plane{
+			A: geometry.Vector3{X: 0, Y: 146, Z: 0},
+			B: geometry.Vector3{X: 126, Y: 146, Z: 0},
+			C: geometry.Vector3{X: 126, Y: 146, Z: 40},
+			D: geometry.Vector3{X: 0, Y: 146, Z: 40},
+		}},
 		{180, 126, 40, geometry.Plane{
-			A: geometry.Vector3{X: 188.5, Y: 40, Z: 0},
-			B: geometry.Vector3{X: 188.5, Y: 0, Z: 0},
-			C: geometry.Vector3{X: 188.5, Y: 0, Z: 40},
-			D: geometry.Vector3{X: 188.5, Y: 40, Z: 40},
+			A: geometry.Vector3{X: 189, Y: 40, Z: 0},
+			B: geometry.Vector3{X: 189, Y: 0, Z: 0},
+			C: geometry.Vector3{X: 189, Y: 0, Z: 40},
+			D: geometry.Vector3{X: 189, Y: 40, Z: 40},
+		}},
+		{270, 126, 40, geometry.Plane{
+			A: geometry.Vector3{X: 126, Y: -106, Z: 0},
+			B: geometry.Vector3{X: 0, Y: -106, Z: 0},
+			C: geometry.Vector3{X: 0, Y: -106, Z: 40},
+			D: geometry.Vector3{X: 126, Y: -106, Z: 40},
 		}},
 	}
 

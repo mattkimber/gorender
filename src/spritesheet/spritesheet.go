@@ -88,20 +88,26 @@ func getDebugSheets(sheets Spritesheets, def manifest.Definition, bounds image.R
 
 func getRegularSheets(sheets Spritesheets, def manifest.Definition, bounds image.Rectangle, spriteInfos []SpriteInfo) {
 	var wg sync.WaitGroup
-	wg.Add(3)
+	wg.Add(1)
+	if !def.Only8bpp {
+		wg.Add(2)
+	}
 
-	go func() {
-		defer wg.Done()
-		sheets.Store("32bpp", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "32bpp")})
-	}()
 	go func() {
 		defer wg.Done()
 		sheets.Store("8bpp", Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "8bpp")})
 	}()
-	go func() {
-		defer wg.Done()
-		sheets.Store("mask", Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "mask")})
-	}()
+
+	if !def.Only8bpp {
+		go func() {
+			defer wg.Done()
+			sheets.Store("32bpp", Spritesheet{Image: get32bppSpritesheetImage(def, bounds, spriteInfos, "32bpp")})
+		}()
+		go func() {
+			defer wg.Done()
+			sheets.Store("mask", Spritesheet{Image: get8bppSpritesheetImage(def, bounds, spriteInfos, "mask")})
+		}()
+	}
 
 	wg.Wait()
 }

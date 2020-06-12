@@ -26,6 +26,7 @@ type Flags struct {
 	Fast                          bool
 	SubDirs                       bool
 	ProfileFile                   string
+	Output8bppOnly                bool
 }
 
 var flags Flags
@@ -40,6 +41,7 @@ func init() {
 	flag.BoolVar(&flags.OutputTime, "time", false, "output basic profiling information")
 	flag.BoolVar(&flags.Debug, "debug", false, "output extra debugging spritesheets")
 	flag.StringVar(&flags.ProfileFile, "profile", "", "output Go profiling information to the specified file")
+	flag.BoolVar(&flags.Output8bppOnly, "8bpp", false, "output only 8bpp sprites.")
 
 	flag.BoolVar(&flags.Fast, "fast", false, "force fast rendering output")
 
@@ -52,6 +54,7 @@ func init() {
 	flag.BoolVar(&flags.OutputTime, "t", false, "shorthand for -time")
 	flag.BoolVar(&flags.Debug, "d", false, "shorthand for -debug")
 	flag.BoolVar(&flags.Fast, "f", false, "shorthand for -fast")
+	flag.BoolVar(&flags.Output8bppOnly, "8", false, "shorthand for -8.")
 
 }
 
@@ -134,6 +137,7 @@ func renderScale(scale string, m manifest.Manifest, processedObject voxelobject.
 		Scale:    scaleF,
 		Debug:    flags.Debug,
 		Time:     flags.OutputTime,
+		Only8bpp: flags.Output8bppOnly,
 	}
 
 	sheets := spritesheet.GetSpritesheets(def)

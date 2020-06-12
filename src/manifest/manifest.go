@@ -17,6 +17,7 @@ type Definition struct {
 	Scale    float64
 	Debug    bool
 	Time     bool
+	Only8bpp bool
 }
 
 type Sprite struct {
