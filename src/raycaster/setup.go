@@ -35,9 +35,11 @@ func getViewportPlane(angle float64, m manifest.Manifest, zError float64, size g
 
 	planeNormalXComponent := math.Abs(((m.Size.X) / 2.0) * cos * math.Sin(geometry.DegToRad(elevationAngle)))
 	planeNormalYComponent := math.Abs(((m.Size.Y) / 2.0) * sin * math.Sin(geometry.DegToRad(elevationAngle)))
-	planeNormalZComponent := (m.Size.Z + zError) / 2.0
+	planeNormalZComponent := m.Size.Z / 2.0
 
-	planeNormal := geometry.UnitZ().MultiplyByConstant(planeNormalXComponent + planeNormalYComponent + planeNormalZComponent)
+	constant := planeNormalXComponent + planeNormalYComponent + planeNormalZComponent
+	constant = constant * (1.0 + zError)
+	planeNormal := geometry.UnitZ().MultiplyByConstant(constant)
 
 	renderNormalXComponent := math.Abs(((m.Size.X) / 2.0) * sin)
 	renderNormalYComponent := math.Abs(((m.Size.Y) / 2.0) * cos)

@@ -127,7 +127,8 @@ func renderScale(scale string, m manifest.Manifest, processedObject voxelobject.
 
 	scaleF, err := strconv.ParseFloat(scale, 64)
 	if err != nil {
-		fmt.Errorf("Could not interpret scale %s: %v\n", scale, err)
+		fmt.Printf("Could not interpret scale %s: %v\n", scale, err)
+		return
 	}
 
 	def := manifest.Definition{

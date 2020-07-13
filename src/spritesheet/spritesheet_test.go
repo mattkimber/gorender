@@ -34,12 +34,12 @@ func TestGetSpritesheets(t *testing.T) {
 	}
 
 	sheets := GetSpritesheets(def)
-	testSpritesheet(t, sheets, "32bpp")
-	testSpritesheet(t, sheets, "8bpp")
-	testSpritesheet(t, sheets, "mask")
+	testSpritesheet(t, &sheets, "32bpp")
+	testSpritesheet(t, &sheets, "8bpp")
+	testSpritesheet(t, &sheets, "mask")
 }
 
-func testSpritesheet(t *testing.T, sheets Spritesheets, bpp string) {
+func testSpritesheet(t *testing.T, sheets *Spritesheets, bpp string) {
 	sheet, ok := sheets.Data[bpp]
 
 	if !ok {

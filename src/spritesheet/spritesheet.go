@@ -31,8 +31,7 @@ type SpriteInfo struct {
 
 const spriteSpacing = 8
 
-func GetSpritesheets(def manifest.Definition) Spritesheets {
-	sheets := Spritesheets{}
+func GetSpritesheets(def manifest.Definition) (sheets Spritesheets) {
 	sheets.Data = make(map[string]Spritesheet)
 
 	w, h := 0, 0
@@ -53,18 +52,18 @@ func GetSpritesheets(def manifest.Definition) Spritesheets {
 	})
 
 	timingutils.Time("Spritesheets", def.Time, func() {
-		getRegularSheets(sheets, def, bounds, spriteInfos)
+		getRegularSheets(&sheets, def, bounds, spriteInfos)
 	})
 	if def.Debug {
 		timingutils.Time("Debug output", def.Time, func() {
-			getDebugSheets(sheets, def, bounds, spriteInfos)
+			getDebugSheets(&sheets, def, bounds, spriteInfos)
 		})
 	}
 
-	return sheets
+	return
 }
 
-func getDebugSheets(sheets Spritesheets, def manifest.Definition, bounds image.Rectangle, spriteInfos []SpriteInfo) {
+func getDebugSheets(sheets *Spritesheets, def manifest.Definition, bounds image.Rectangle, spriteInfos []SpriteInfo) {
 	debugOutputs := []string{"lighting", "depth", "normals", "occlusion", "shadow", "avg_normals"}
 	var wg sync.WaitGroup
 	wg.Add(len(debugOutputs) + 1)
@@ -86,7 +85,7 @@ func getDebugSheets(sheets Spritesheets, def manifest.Definition, bounds image.R
 	wg.Wait()
 }
 
-func getRegularSheets(sheets Spritesheets, def manifest.Definition, bounds image.Rectangle, spriteInfos []SpriteInfo) {
+func getRegularSheets(sheets *Spritesheets, def manifest.Definition, bounds image.Rectangle, spriteInfos []SpriteInfo) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	if !def.Only8bpp {
@@ -192,7 +191,7 @@ func (sheets *Spritesheets) Store(key string, s Spritesheet) {
 	sheets.Unlock()
 }
 
-func (sheets Spritesheets) SaveAll(baseFilename string) (err error) {
+func (sheets *Spritesheets) SaveAll(baseFilename string) (err error) {
 	var wg sync.WaitGroup
 	wg.Add(len(sheets.Data))
 

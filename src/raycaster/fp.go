@@ -67,7 +67,6 @@ func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometr
 		ly = bSizeY - ly
 	}
 
-	return
 	if isInsideBoundingVolume(loc, limits) && object.Elements[lx][ly][lz].IsSurface {
 		return
 	}

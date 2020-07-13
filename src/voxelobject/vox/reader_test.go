@@ -13,11 +13,11 @@ func TestIsHeaderValid(t *testing.T) {
 		input    string
 		expected bool
 	}{
-		{"VOX ", true},
-		{"BLAH", false},
-		{"A", false},
-		{"ABCDE", false},
-		{"VOX AAA", true},
+		{input: "VOX ", expected: true},
+		{input: "BLAH"},
+		{input: "A"},
+		{input: "ABCDE"},
+		{input: "VOX AAA", expected: true},
 	}
 
 	for _, testCase := range testCases {
@@ -78,13 +78,13 @@ func TestGetPointDataFromChunk(t *testing.T) {
 		expected []geometry.PointWithColour
 		error    bool
 	}{
-		{getSizedByteSlice(4, []byte{1, 2, 3, 64}),
-			[]geometry.PointWithColour{{geometry.Point{X: 1, Y: 2, Z: 3}, 64}}, false},
-		{getSizedByteSlice(8, []byte{1, 2, 3, 64, 4, 5, 6, 128}),
-			[]geometry.PointWithColour{
-				{geometry.Point{X: 1, Y: 2, Z: 3}, 64},
-				{geometry.Point{X: 4, Y: 5, Z: 6}, 128},
-			}, false},
+		{input: getSizedByteSlice(4, []byte{1, 2, 3, 64}),
+			expected: []geometry.PointWithColour{{Point: geometry.Point{X: 1, Y: 2, Z: 3}, Colour: 64}}},
+		{input: getSizedByteSlice(8, []byte{1, 2, 3, 64, 4, 5, 6, 128}),
+			expected: []geometry.PointWithColour{
+				{Point: geometry.Point{X: 1, Y: 2, Z: 3}, Colour: 64},
+				{Point: geometry.Point{X: 4, Y: 5, Z: 6}, Colour: 128},
+			}},
 		{getSizedByteSlice(5, []byte{1, 2, 3, 4, 5}),
 			[]geometry.PointWithColour{}, true},
 	}
@@ -125,9 +125,9 @@ func TestSkipUnhandledChunk(t *testing.T) {
 func TestGetRawVoxelDataFromXyzi(t *testing.T) {
 	size := geometry.Point{X: 2, Y: 2, Z: 2}
 	data := []geometry.PointWithColour{
-		{geometry.Point{X: 1, Y: 1, Z: 1}, 255},
-		{geometry.Point{X: 0, Y: 1, Z: 1}, 1},
-		{geometry.Point{X: 20, Y: 31, Z: 11}, 1},
+		{Point: geometry.Point{X: 1, Y: 1, Z: 1}, Colour: 255},
+		{Point: geometry.Point{X: 0, Y: 1, Z: 1}, Colour: 1},
+		{Point: geometry.Point{X: 20, Y: 31, Z: 11}, Colour: 1},
 	}
 
 	result := getVoxelObjectFromPointData(size, data)

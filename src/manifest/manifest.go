@@ -110,7 +110,7 @@ func getCalculatedSpriteHeight(m *Manifest, spr Sprite) (height int, delta float
 	spriteSize := ratio * float64(spr.Width)
 
 	spriteSizeRounded := math.Ceil(spriteSize)
-	delta = spriteSizeRounded - spriteSize
+	delta = (spriteSizeRounded - spriteSize) / spriteSizeRounded
 
 	return int(spriteSizeRounded), delta
 }
