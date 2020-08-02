@@ -102,8 +102,10 @@ sprites easier.
 
 Slicing is set up as follows:
 
-* `slice_length`: the length (in voxels) of a slice for one sprite. e.g. if a 128-long voxel object
-                  results in the longest allowable sprite, set this to `128`. A value of `0` disables
+* `slice_threshold`: the length (in voxels) before a sprite should be sliced. e.g. if a 128-long voxel object
+                     results in the longest allowable sprite, set this to `128`. A value of `0` disables
+                     slicing behaviour. This is set at the **manifest** level.
+* `slice_length`: the length (in voxels) of a slice for one sprite. A value of `0` disables
                   slicing behaviour. This is set at the **manifest** level.
 * `slice_overlap`: To avoid edge artifacts it may be desirable to overlap slices slightly. This sets
                    the number of voxels to overlap at the front and rear of each slice.      

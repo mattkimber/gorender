@@ -47,6 +47,7 @@ type Manifest struct {
 	FadeToBlack          bool             `json:"fade_to_black"`
 	EdgeThreshold        float64          `json:"alpha_edge_threshold"`
 	PadToFullLength      bool             `json:"pad_to_full_length"`
+	SliceThreshold       int              `json:"slice_threshold"`
 	SliceLength          int              `json:"slice_length"`
 	SliceOverlap         int              `json:"slice_overlap"`
 }

@@ -8,6 +8,7 @@
   "accuracy": 2,
   "brightness": 0,
   "contrast": 0,
+  "slice_threshold": 48,
   "slice_length": 32,
   "slice_overlap": 4,
   "size": {

@@ -32,7 +32,7 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manife
 
 	// Handle slicing functionality
 	minX, maxX := 0, object.Size.X
-	if m.SliceLength > 0 && m.SliceLength < object.Size.X {
+	if m.SliceLength > 0 && m.SliceThreshold > 0 && m.SliceThreshold < object.Size.X {
 		midpoint := (object.Size.X / 2) - (m.SliceLength / 2)
 		minX = midpoint - (m.SliceLength * spr.Slice)
 		maxX = minX + m.SliceLength
