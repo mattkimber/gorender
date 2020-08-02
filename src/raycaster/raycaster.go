@@ -29,6 +29,28 @@ type RenderOutput [][]RenderInfo
 
 func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manifest, spr manifest.Sprite, sampler sampler.Samples) RenderOutput {
 	size := object.Size
+
+	// Handle slicing functionality
+	minX, maxX := 0, object.Size.X
+	if m.SliceLength > 0 && m.SliceLength < object.Size.X {
+		midpoint := (object.Size.X / 2) - (m.SliceLength / 2)
+		minX = midpoint - (m.SliceLength * spr.Slice)
+		maxX = minX + m.SliceLength
+
+		// Allow sprites to overlap to avoid edge transparency effects
+		minX -= m.SliceOverlap
+		maxX += m.SliceOverlap
+
+		if minX < 0 {
+			minX = 0
+		}
+		if maxX > 255 {
+			maxX = 255
+		}
+	}
+
+	bminX, bmaxX := byte(minX), byte(maxX)
+
 	limits := geometry.Vector3{X: float64(size.X), Y: float64(size.Y), Z: float64(size.Z)}
 
 	viewport := getViewportPlane(spr.Angle, m, spr.ZError, size)
@@ -50,7 +72,7 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manife
 				samples := sampler[thisX][y]
 				result[thisX][y] = make(RenderInfo, len(samples))
 				for i, s := range samples {
-					raycastSample(viewport, s, ray, limits, object, spr, lighting, result, thisX, y, i)
+					raycastSample(viewport, s, ray, limits, object, spr, lighting, result, thisX, y, i, bminX, bmaxX)
 				}
 			}
 			wg.Done()
@@ -62,12 +84,12 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manife
 	return result
 }
 
-func raycastSample(viewport geometry.Plane, s geometry.Vector2, ray geometry.Vector3, limits geometry.Vector3, object voxelobject.ProcessedVoxelObject, spr manifest.Sprite, lighting geometry.Vector3, result RenderOutput, thisX int, y int, i int) {
+func raycastSample(viewport geometry.Plane, s geometry.Vector2, ray geometry.Vector3, limits geometry.Vector3, object voxelobject.ProcessedVoxelObject, spr manifest.Sprite, lighting geometry.Vector3, result RenderOutput, thisX int, y int, i int, minX byte, maxX byte) {
 	loc0 := viewport.BiLerpWithinPlane(s.X, s.Y)
 	loc := getIntersectionWithBounds(loc0, ray, limits)
 
 	rayResult := castFpRay(object, loc0, loc, ray, limits, spr.Flip)
-	if rayResult.HasGeometry {
+	if rayResult.HasGeometry && rayResult.X >= minX && rayResult.X <= maxX {
 		resultVec := geometry.Vector3{X: float64(rayResult.X), Y: float64(rayResult.Y), Z: float64(rayResult.Z)}
 		shadowLoc := resultVec
 		shadowVec := geometry.Zero().Subtract(lighting).Normalise()

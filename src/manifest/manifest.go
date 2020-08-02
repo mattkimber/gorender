@@ -27,6 +27,7 @@ type Sprite struct {
 	X      int
 	ZError float64
 	Flip   bool `json:"flip"`
+	Slice  int  `json:"slice"`
 }
 
 type Manifest struct {
@@ -46,6 +47,8 @@ type Manifest struct {
 	FadeToBlack          bool             `json:"fade_to_black"`
 	EdgeThreshold        float64          `json:"alpha_edge_threshold"`
 	PadToFullLength      bool             `json:"pad_to_full_length"`
+	SliceLength          int              `json:"slice_length"`
+	SliceOverlap         int              `json:"slice_overlap"`
 }
 
 func FromJson(handle io.Reader) (manifest Manifest, err error) {

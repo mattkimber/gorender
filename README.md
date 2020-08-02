@@ -94,6 +94,26 @@ supplied `manifest.json` file will provide good results for OpenTTD vehicles whe
 measuring 126x40x40. `house_manifest.json` (and the accompanying `house.vox`) show how this can be adapted to
 produce different graphical layouts.      
 
+## Slicing
+
+Some games have limits on how large an individual sprite can be, but allow this to be worked around by
+assembling multiple sprites. GoRender offers slicing functionality to make automatic generation of these
+sprites easier.
+
+Slicing is set up as follows:
+
+* `slice_length`: the length (in voxels) of a slice for one sprite. e.g. if a 128-long voxel object
+                  results in the longest allowable sprite, set this to `128`. A value of `0` disables
+                  slicing behaviour. This is set at the **manifest** level.
+* `slice_overlap`: To avoid edge artifacts it may be desirable to overlap slices slightly. This sets
+                   the number of voxels to overlap at the front and rear of each slice.      
+                   This is set at the **manifest** level.            
+* `slice`: which slice to render in this manifest. `0` will render the middle slice, negative numbers
+           will render slices toward the front of the object, positive numbers slices toward the rear
+           of the object. This is set at the **sprite** level.
+           
+For an example, see `files/manifest_slice.json`.
+
 ## Supersampling
 
 GoRender uses supersampling to improve the quality of rendered output. The default renderer uses a square pattern
