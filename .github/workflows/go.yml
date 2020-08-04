@@ -47,5 +47,5 @@ jobs:
 
     - uses: actions/upload-artifact@v2
       with:
-        name: Upload output
+        name: gorender-ubuntu
         path: output/*
