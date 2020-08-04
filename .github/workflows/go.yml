@@ -43,7 +43,7 @@ jobs:
       run: mkdir -p output
     
     - name: Move artifacts
-      run: mv ./renderobject output/
+      run: mv ./renderobject README.md files output/
 
     - uses: actions/upload-artifact@v2
       with:
