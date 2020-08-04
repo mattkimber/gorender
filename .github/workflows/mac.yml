@@ -1,4 +1,4 @@
-name: Build (Windows)
+name: Build (Mac)
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
 
   build:
     name: Build
-    runs-on: windows-latest
+    runs-on: macos-latest
     steps:
 
     - name: Set up Go 1.x
@@ -23,7 +23,12 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Get dependencies
-      run: go get -v -t -d ./...
+      run: |
+        go get -v -t -d ./...
+        if [ -f Gopkg.toml ]; then
+            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+            dep ensure
+        fi
 
     - name: Vet
       run: go vet -v ./...
@@ -35,15 +40,12 @@ jobs:
       run: go build -v ./cmd/renderobject
 
     - name: Create artifact dir
-      run: mkdir output
+      run: mkdir -p output
     
     - name: Move artifacts
-      run: |
-        move renderobject.exe output
-        move README.md output
-        move files output
+      run: mv ./renderobject README.md files output/
 
     - uses: actions/upload-artifact@v2
       with:
-        name: gorender-windows
+        name: gorender-macos
         path: output/*
