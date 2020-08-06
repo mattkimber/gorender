@@ -67,8 +67,10 @@ func GetMaskIndex(s *ShaderInfo) byte {
 	return 0
 }
 
-func GetShaderOutput(renderOutput raycaster.RenderOutput, def manifest.Definition, width int, height int) (output ShaderOutput) {
+func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, def manifest.Definition, width int, height int) (output ShaderOutput) {
 	output = make([][]ShaderInfo, width)
+
+	xoffset, yoffset := int(spr.OffsetX * def.Scale), int(spr.OffsetY * def.Scale)
 
 	// Palettes
 	regularPalette := def.Palette.GetRegularPalette()
@@ -85,7 +87,13 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, def manifest.Definitio
 		output[x] = make([]ShaderInfo, height)
 
 		for y := 0; y < height; y++ {
-			output[x][y] = shade(renderOutput[x][y], def)
+			rx := x + xoffset
+			ry := y + yoffset
+			if rx < 0 || rx >= width || ry < 0 || ry >= height {
+				continue
+			}
+
+			output[x][y] = shade(renderOutput[rx][ry], def)
 			bestIndex := byte(0)
 
 			rng := def.Palette.Entries[output[x][y].ModalIndex].Range

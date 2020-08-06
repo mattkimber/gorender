@@ -120,7 +120,7 @@ func raycast(def manifest.Definition, spriteInfos []SpriteInfo) {
 
 		spriteInfos[i].SpriteBounds = rect
 		renderOutput := raycaster.GetRaycastOutput(def.Object, def.Manifest, spr, smp)
-		spriteInfos[i].ShaderOutput = sprite.GetShaderOutput(renderOutput, def, rect.Max.X, rect.Max.Y)
+		spriteInfos[i].ShaderOutput = sprite.GetShaderOutput(renderOutput, spr, def, rect.Max.X, rect.Max.Y)
 	}
 }
 

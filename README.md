@@ -88,6 +88,8 @@ The fields are as follows:
    * `height`: the height of the output sprite image. Set this to `0` to automatically determine the height based on
                the configured width.
    * `flip`: flip the voxel object along in Y axis (useful for generating tracks or dealing with reversed files)
+   * `offset_x`: move the output sprite this many pixels (at 1x scale, will be multiplied by scale value) along the x axis. Useful for precise alignment of ground sprites.
+   * `offset_y`: move the output sprite this many pixels (at 1x scale, will be multiplied by scale value) along the y axis. Useful for precise alignment of ground sprites.
    
 Rendering sprites to fit a particular game is a careful balance between widths, heights, and angle settings. The
 supplied `manifest.json` file will provide good results for OpenTTD vehicles when used with MagicaVoxel files
