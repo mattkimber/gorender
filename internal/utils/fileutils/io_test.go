@@ -40,12 +40,10 @@ func TestInstantiateFromFile(t *testing.T) {
 }
 
 func TestInstantiateFromFile_FileNotExists(t *testing.T) {
-	const expectedErrorWindows = "open testdata/not_exists.txt: The system cannot find the file specified."
-	const expectedErrorLinux = "open testdata/not_exists.txt: no such file or directory"
 	var f testData
 
-	if err := InstantiateFromFile("testdata/not_exists.txt", &f); err.Error() != expectedErrorWindows && err.Error() != expectedErrorLinux {
-		t.Errorf("unexpected error: %v", err)
+	if err := InstantiateFromFile("testdata/not_exists.txt", &f); err == nil {
+		t.Errorf("expected error, found none")
 	}
 }
 
