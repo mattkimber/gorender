@@ -12,6 +12,11 @@ similar dimetric sprites are required but more/fewer degrees of rotation or diff
 sized sprites are needed. The defaults produce all files needed for both
 8bpp and 32bpp OpenTTD sprites at 1x zoom, with masks.
 
+## Video Tutorial
+
+If you prefer to watch a video to learn how GoRender works, there is a short tutorial
+[on YouTube](https://www.youtube.com/watch?v=kI1hpgqkK9I).
+
 ## Usage
 
 GoRender supports the following command line flags:
