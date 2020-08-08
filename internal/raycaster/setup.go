@@ -19,8 +19,7 @@ func getLightingDirection(angle float64, elevation float64, flipY bool) geometry
 	return geometry.Zero().Subtract(geometry.Vector3{X: x, Y: y, Z: z}).Normalise()
 }
 
-func getViewportPlane(angle float64, m manifest.Manifest, zError float64, size geometry.Point) geometry.Plane {
-	elevationAngle := getElevationAngle(m)
+func getViewportPlane(angle float64, m manifest.Manifest, zError float64, size geometry.Point, elevationAngle float64) geometry.Plane {
 	cos, sin := math.Cos(geometry.DegToRad(angle)), math.Sin(geometry.DegToRad(angle))
 
 	midpointX := float64(size.X) / 2.0
@@ -51,10 +50,6 @@ func getViewportPlane(angle float64, m manifest.Manifest, zError float64, size g
 	d := viewpoint.Subtract(renderNormal).Add(planeNormal)
 
 	return geometry.Plane{A: a, B: b, C: c, D: d}
-}
-
-func getElevationAngle(m manifest.Manifest) float64 {
-	return float64(m.RenderElevationAngle)
 }
 
 func getRenderNormal(angle float64) geometry.Vector3 {

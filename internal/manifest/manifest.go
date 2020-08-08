@@ -30,6 +30,7 @@ type Sprite struct {
 	ZError float64
 	Flip   bool `json:"flip"`
 	Slice  int  `json:"slice"`
+	RenderElevationAngle int `json:"render_elevation"`
 }
 
 type Manifest struct {
@@ -96,6 +97,10 @@ func (m *Manifest) SetSpriteSizes() {
 			height, delta := getCalculatedSpriteHeight(m, m.Sprites[i])
 			m.Sprites[i].Height = height
 			m.Sprites[i].ZError = delta
+		}
+
+		if m.Sprites[i].RenderElevationAngle == 0 {
+			m.Sprites[i].RenderElevationAngle = m.RenderElevationAngle
 		}
 	}
 }

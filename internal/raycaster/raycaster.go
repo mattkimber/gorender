@@ -53,8 +53,8 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manife
 
 	limits := geometry.Vector3{X: float64(size.X), Y: float64(size.Y), Z: float64(size.Z)}
 
-	viewport := getViewportPlane(spr.Angle, m, spr.ZError, size)
-	ray := geometry.Zero().Subtract(getRenderDirection(spr.Angle, getElevationAngle(m)))
+	viewport := getViewportPlane(spr.Angle, m, spr.ZError, size, float64(spr.RenderElevationAngle))
+	ray := geometry.Zero().Subtract(getRenderDirection(spr.Angle, float64(spr.RenderElevationAngle)))
 
 	lighting := getLightingDirection(spr.Angle+float64(m.LightingAngle), float64(m.LightingElevation), spr.Flip)
 	result := make(RenderOutput, len(sampler))
