@@ -12,6 +12,7 @@ import (
 	"github.com/mattkimber/gorender/internal/voxelobject/vox"
 	"log"
 	"os"
+	"path/filepath"
 	"runtime/pprof"
 	"strconv"
 	"strings"
@@ -28,6 +29,9 @@ type Flags struct {
 	SubDirs                       bool
 	ProfileFile                   string
 	Output8bppOnly                bool
+	Suffix						  string
+	StripDirectory				  bool
+	ProgressIndicator			  bool
 }
 
 var flags Flags
@@ -43,6 +47,9 @@ func init() {
 	flag.BoolVar(&flags.Debug, "debug", false, "output extra debugging spritesheets")
 	flag.StringVar(&flags.ProfileFile, "profile", "", "output Go profiling information to the specified file")
 	flag.BoolVar(&flags.Output8bppOnly, "8bpp", false, "output only 8bpp sprites.")
+	flag.StringVar(&flags.Suffix, "suffix", "", "add this suffix to all output files")
+	flag.BoolVar(&flags.StripDirectory, "strip-directory", false, "strip paths from input files")
+	flag.BoolVar(&flags.ProgressIndicator, "progress", false, "show simple progress indicator")
 
 	flag.BoolVar(&flags.Fast, "fast", false, "force fast rendering output")
 
@@ -55,7 +62,10 @@ func init() {
 	flag.BoolVar(&flags.OutputTime, "t", false, "shorthand for -time")
 	flag.BoolVar(&flags.Debug, "d", false, "shorthand for -debug")
 	flag.BoolVar(&flags.Fast, "f", false, "shorthand for -fast")
+	flag.StringVar(&flags.Suffix, "x", "", "shorthand for -suffix")
 	flag.BoolVar(&flags.Output8bppOnly, "8", false, "shorthand for -8.")
+	flag.BoolVar(&flags.StripDirectory, "r", false, "shorthand for -strip-directory")
+	flag.BoolVar(&flags.ProgressIndicator, "p", false, "show simple progress indicator")
 
 }
 
@@ -68,8 +78,18 @@ func main() {
 }
 
 func process() {
-	if !strings.HasSuffix(flags.InputFilename, ".vox") {
-		fmt.Printf("Files does not have .vox extension: %s\n", flags.InputFilename)
+	if flags.InputFilename != "" {
+		processFile(flags.InputFilename)
+	} else {
+		for _, file := range flag.Args() {
+			processFile(file)
+		}
+	}
+}
+
+func processFile(inputFilename string) {
+	if !strings.HasSuffix(inputFilename, ".vox") {
+		fmt.Printf("Files does not have .vox extension: %s\n", inputFilename)
 		return
 	}
 
@@ -80,7 +100,7 @@ func process() {
 
 	// Check if there are files to output
 	for _, scale := range splitScales {
-		exist, err := allPotentialOutputFilesExist(scale, numScales)
+		exist, err := allPotentialOutputFilesExist(inputFilename, scale, numScales)
 
 		if err != nil {
 			fmt.Printf("error attempting to stat files: %v", err)
@@ -94,6 +114,9 @@ func process() {
 	}
 
 	if allFilesExist {
+		if flags.ProgressIndicator {
+			fmt.Print(".")
+		}
 		return
 	}
 
@@ -113,7 +136,7 @@ func process() {
 		manifest.Overlap = 0
 	}
 
-	object, err := getVoxelObject(flags.InputFilename)
+	object, err := getVoxelObject(inputFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -140,15 +163,20 @@ func process() {
 	// Check if there are files to output
 	for _, scale := range splitScales {
 		timingutils.Time(fmt.Sprintf("Total (%sx)", scale), flags.OutputTime, func() {
-			renderScale(scale, manifest, processedObject, palette, numScales)
+			renderScale(inputFilename, scale, manifest, processedObject, palette, numScales)
 		})
 	}
+
+	if flags.ProgressIndicator {
+		fmt.Print("o")
+	}
+
 }
 
-func allPotentialOutputFilesExist(scale string, numScales int) (bool, error) {
-	outputFilename := getOutputFilename(scale, numScales)
+func allPotentialOutputFilesExist(inputFilename string, scale string, numScales int) (bool, error) {
+	outputFilename := getOutputFilename(inputFilename, scale, numScales)
 
-	inputFileStats, err := os.Stat(flags.InputFilename)
+	inputFileStats, err := os.Stat(inputFilename)
 	if err != nil {
 		return false, err
 	}
@@ -191,7 +219,7 @@ func fileIsNewerThanDate(filename string, date time.Time) (bool, error) {
 	return false, nil
 }
 
-func renderScale(scale string, m manifest.Manifest, processedObject voxelobject.ProcessedVoxelObject, palette colour.Palette, numScales int) {
+func renderScale(inputFilename string, scale string, m manifest.Manifest, processedObject voxelobject.ProcessedVoxelObject, palette colour.Palette, numScales int) {
 	if flags.OutputTime {
 		fmt.Printf("\n=== Scale %sx ===\n", scale)
 	}
@@ -214,7 +242,7 @@ func renderScale(scale string, m manifest.Manifest, processedObject voxelobject.
 
 	sheets := spritesheet.GetSpritesheets(def)
 
-	outputFilename := getOutputFilename(scale, numScales)
+	outputFilename := getOutputFilename(inputFilename, scale, numScales)
 
 	timingutils.Time("PNG output", flags.OutputTime, func() {
 		if err := sheets.SaveAll(outputFilename); err != nil {
@@ -223,8 +251,20 @@ func renderScale(scale string, m manifest.Manifest, processedObject voxelobject.
 	})
 }
 
-func getOutputFilename(scale string, numScales int) string {
-	outputFilename := flags.OutputFilename
+func getOutputFilename(inputFilename string, scale string, numScales int) string {
+	var outputFilename string
+
+	if flags.StripDirectory {
+		inputFilename = filepath.Base(inputFilename)
+	}
+
+	if flags.OutputFilename == "" {
+		outputFilename = fileutils.GetBaseFilename(inputFilename)
+	} else {
+		outputFilename = fileutils.GetBaseFilename(flags.OutputFilename)
+	}
+
+	outputFilename += flags.Suffix
 
 	if numScales > 1 || flags.SubDirs {
 		if flags.SubDirs {
@@ -238,21 +278,16 @@ func getOutputFilename(scale string, numScales int) string {
 			outputFilename = outputFilename + "_" + scale + "x"
 		}
 	}
+
 	return outputFilename
 }
 
 func setupFlags() error {
 	flag.Parse()
 
-	if flags.InputFilename == "" {
+	if flags.InputFilename == "" && len(flag.Args()) == 0 {
 		flag.Usage()
-		return fmt.Errorf("input flag not set")
-	}
-
-	if flags.OutputFilename == "" {
-		flags.OutputFilename = fileutils.GetBaseFilename(flags.InputFilename)
-	} else {
-		flags.OutputFilename = fileutils.GetBaseFilename(flags.OutputFilename)
+		return fmt.Errorf("no files supplied on command line and input flag not set")
 	}
 
 	return nil

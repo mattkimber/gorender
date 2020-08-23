@@ -19,9 +19,14 @@ If you prefer to watch a video to learn how GoRender works, there is a short tut
 
 ## Usage
 
+* `gorender file.vox`
+* `gorender file1.vox file2.vox`
+* ``
+
+
 GoRender supports the following command line flags:
 
-* `-i`, `-input`: A MagicaVoxel file to process
+* `-i`, `-input`: A MagicaVoxel file to process (legacy support, overrides default command line)
 * `-o`, `-output`: The base name of output files. e.g. if `-o test` is set, the files `test_8bpp.png`, `test_32bpp.png` and `test_mask.png` will be output.
 * `-m`, `-manifest`: The path to a JSON **manifest** detailing how to create sprites. Defaults to `files/manifest.json`
 * `-s`, `-scale`: The scale of sprites to produce (default: `1.0`). `1.0` corresponds to the default zoom level of OpenTTD. A comma-separated list can be passed to generate multiple scales.
@@ -29,6 +34,9 @@ GoRender supports the following command line flags:
 * `-d`, `-debug`: A boolean flag for outputting extra debug images (e.g voxel normals and lighting information)
 * `-u`, `-subdirs`: A boolean flag for outputting multiple scales in their own subdirectory (e.g. `1x/`, `2x/`) instead of appending the scale to the filename when outputting multiple scales
 * `-f`, `-fast`: A boolean flag to force the fastest rendering settings, useful for debugging situations where image quality is less important
+* `-x`, `-suffix`: The suffix to put on all output files, e.g. `_sfx` will cause `test.vox` to be output as `test_sfx_8bpp.png` (and so on)
+* `-r`, `-strip-directory`: Strips directory information from all input files (e.g. `/files/foo/bar.vox` will be output to `bar.png`, not `/files/foo/bar.png`)
+* `-p`, `-progress`: Show a simple progress indicator (`o` for each file processed, `.` for each file skipped because the output already exists)
 
 GoRender will look for a JSON palette file (default `files/ttd_palette.json`) on run - if this
 is not present it will exit.
