@@ -15,6 +15,7 @@ import (
 	"runtime/pprof"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Flags struct {
@@ -72,6 +73,30 @@ func process() {
 		return
 	}
 
+	splitScales := strings.Split(flags.Scales, ",")
+	numScales := len(splitScales)
+
+	allFilesExist := true
+
+	// Check if there are files to output
+	for _, scale := range splitScales {
+		exist, err := allPotentialOutputFilesExist(scale, numScales)
+
+		if err != nil {
+			fmt.Printf("error attempting to stat files: %v", err)
+			return
+		}
+
+		if !exist {
+			allFilesExist = false
+			break
+		}
+	}
+
+	if allFilesExist {
+		return
+	}
+
 	palette, err := getPalette("files/ttd_palette.json")
 	if err != nil {
 		panic(err)
@@ -110,14 +135,60 @@ func process() {
 		processedObject = object.GetProcessedVoxelObject(&palette, manifest.TiledNormals)
 	})
 
-	splitScales := strings.Split(flags.Scales, ",")
-	numScales := len(splitScales)
 
+
+	// Check if there are files to output
 	for _, scale := range splitScales {
 		timingutils.Time(fmt.Sprintf("Total (%sx)", scale), flags.OutputTime, func() {
 			renderScale(scale, manifest, processedObject, palette, numScales)
 		})
 	}
+}
+
+func allPotentialOutputFilesExist(scale string, numScales int) (bool, error) {
+	outputFilename := getOutputFilename(scale, numScales)
+
+	inputFileStats, err := os.Stat(flags.InputFilename)
+	if err != nil {
+		return false, err
+	}
+
+	check := []string{"8bpp"}
+	if !flags.Output8bppOnly {
+		check = []string{"8bpp","32bpp","mask"}
+	}
+
+	for _, f := range check {
+		newer, err := fileIsNewerThanDate(outputFilename+"_"+f+".png", inputFileStats.ModTime())
+		if err != nil {
+			return false, err
+		}
+
+		if !newer {
+			return false, nil
+		}
+
+	}
+
+	return true, nil
+}
+
+func fileIsNewerThanDate(filename string, date time.Time) (bool, error) {
+	fileStats, err := os.Stat(filename)
+
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+
+	if err != nil {
+		return false, err
+	}
+
+	if fileStats.ModTime().After(date) {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func renderScale(scale string, m manifest.Manifest, processedObject voxelobject.ProcessedVoxelObject, palette colour.Palette, numScales int) {

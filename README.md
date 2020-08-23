@@ -35,6 +35,9 @@ is not present it will exit.
 
 The `num_sprites` flag from previous versions has been replaced by a new Manifests function.
 
+Note that GoRender will only overwrite output files in the event the input file is newer than
+at least one of the possible outputs.
+
 ## Manifest
 
 The Manifest is a JSON file detailing which sprites are to be created and their details. An example manifest:
