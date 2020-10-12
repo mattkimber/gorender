@@ -92,17 +92,21 @@ func raycastSample(viewport geometry.Plane, s geometry.Vector2, ray geometry.Vec
 	if rayResult.HasGeometry && rayResult.X >= minX && rayResult.X <= maxX {
 		resultVec := geometry.Vector3{X: float64(rayResult.X), Y: float64(rayResult.Y), Z: float64(rayResult.Z)}
 		shadowLoc := resultVec
+
 		shadowVec := geometry.Zero().Subtract(lighting).Normalise()
 
 		for {
-			if !shadowLoc.Equals(resultVec) {
+			sx, sy, sz := byte(shadowLoc.X), byte(shadowLoc.Y), byte(shadowLoc.Z)
+
+			if sx != rayResult.X || sy != rayResult.Y || sz != rayResult.Z {
 				break
 			}
 
 			shadowLoc = shadowLoc.Add(shadowVec)
 		}
 
-		shadowResult := castFpRay(object, shadowLoc, shadowLoc, shadowVec, limits, spr.Flip).Depth
+		// Don't flip Y when calculating shadows, as it has been pre-flipped on input.
+		shadowResult := castFpRay(object, shadowLoc, shadowLoc, shadowVec, limits, false).Depth
 		setResult(&result[thisX][y][i], object.Elements[rayResult.X][rayResult.Y][rayResult.Z], lighting, rayResult.Depth, shadowResult)
 	}
 }
