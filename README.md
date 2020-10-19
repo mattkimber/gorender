@@ -37,7 +37,7 @@ GoRender supports the following command line flags:
 * `-x`, `-suffix`: The suffix to put on all output files, e.g. `_sfx` will cause `test.vox` to be output as `test_sfx_8bpp.png` (and so on)
 * `-r`, `-strip-directory`: Strips directory information from all input files (e.g. `/files/foo/bar.vox` will be output to `bar.png`, not `/files/foo/bar.png`)
 * `-p`, `-progress`: Show a simple progress indicator (`o` for each file processed, `.` for each file skipped because the output already exists)
-* `-palette`: Specify a palete file location other than the default.
+* `-palette`: Specify a palette file location other than the default `files/ttd_palette.json`.
 
 GoRender will look for a JSON palette file (default `files/ttd_palette.json`) on run - if this
 is not present it will exit.
