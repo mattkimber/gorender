@@ -2,7 +2,6 @@ package colour
 
 import "image/color"
 
-
 type RGB struct {
 	R float64
 	G float64

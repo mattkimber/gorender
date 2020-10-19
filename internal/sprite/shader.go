@@ -70,7 +70,7 @@ func GetMaskIndex(s *ShaderInfo) byte {
 func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, def manifest.Definition, width int, height int) (output ShaderOutput) {
 	output = make([][]ShaderInfo, width)
 
-	xoffset, yoffset := int(spr.OffsetX * def.Scale), int(spr.OffsetY * def.Scale)
+	xoffset, yoffset := int(spr.OffsetX*def.Scale), int(spr.OffsetY*def.Scale)
 
 	// Palettes
 	regularPalette := def.Palette.GetRegularPalette()

@@ -29,9 +29,10 @@ type Flags struct {
 	SubDirs                       bool
 	ProfileFile                   string
 	Output8bppOnly                bool
-	Suffix						  string
-	StripDirectory				  bool
-	ProgressIndicator			  bool
+	Suffix                        string
+	StripDirectory                bool
+	ProgressIndicator             bool
+	PaletteFile                   string
 }
 
 var flags Flags
@@ -50,6 +51,7 @@ func init() {
 	flag.StringVar(&flags.Suffix, "suffix", "", "add this suffix to all output files")
 	flag.BoolVar(&flags.StripDirectory, "strip-directory", false, "strip paths from input files")
 	flag.BoolVar(&flags.ProgressIndicator, "progress", false, "show simple progress indicator")
+	flag.StringVar(&flags.PaletteFile, "palette", "files/ttd_palette.json", "specify a palette file other than the default")
 
 	flag.BoolVar(&flags.Fast, "fast", false, "force fast rendering output")
 
@@ -120,14 +122,14 @@ func processFile(inputFilename string) {
 		return
 	}
 
-	palette, err := getPalette("files/ttd_palette.json")
+	palette, err := getPalette(flags.PaletteFile)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	manifest, err := getManifest(flags.ManifestFilename)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	if flags.Fast {
@@ -138,7 +140,7 @@ func processFile(inputFilename string) {
 
 	object, err := getVoxelObject(inputFilename)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	if flags.ProfileFile != "" {
@@ -157,8 +159,6 @@ func processFile(inputFilename string) {
 	timingutils.Time("Voxel processing", flags.OutputTime, func() {
 		processedObject = object.GetProcessedVoxelObject(&palette, manifest.TiledNormals)
 	})
-
-
 
 	// Check if there are files to output
 	for _, scale := range splitScales {
@@ -183,7 +183,7 @@ func allPotentialOutputFilesExist(inputFilename string, scale string, numScales 
 
 	check := []string{"8bpp"}
 	if !flags.Output8bppOnly {
-		check = []string{"8bpp","32bpp","mask"}
+		check = []string{"8bpp", "32bpp", "mask"}
 	}
 
 	for _, f := range check {
@@ -246,7 +246,7 @@ func renderScale(inputFilename string, scale string, m manifest.Manifest, proces
 
 	timingutils.Time("PNG output", flags.OutputTime, func() {
 		if err := sheets.SaveAll(outputFilename); err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 	})
 }
@@ -271,7 +271,7 @@ func getOutputFilename(inputFilename string, scale string, numScales int) string
 			outputFilename = scale + "x/" + outputFilename
 			if _, err := os.Stat(scale + "x/"); os.IsNotExist(err) {
 				if err := os.Mkdir(scale+"x/", 0755); err != nil {
-					panic(err)
+					log.Fatal(err)
 				}
 			}
 		} else {

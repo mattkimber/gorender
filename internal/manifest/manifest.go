@@ -21,16 +21,16 @@ type Definition struct {
 }
 
 type Sprite struct {
-	Angle  float64 `json:"angle"`
-	Width  int     `json:"width"`
-	Height int     `json:"height"`
-	OffsetX float64	`json:"offset_x"`
-	OffsetY float64	`json:"offset_y"`
-	X      int
-	ZError float64
-	Flip   bool `json:"flip"`
-	Slice  int  `json:"slice"`
-	RenderElevationAngle int `json:"render_elevation"`
+	Angle                float64 `json:"angle"`
+	Width                int     `json:"width"`
+	Height               int     `json:"height"`
+	OffsetX              float64 `json:"offset_x"`
+	OffsetY              float64 `json:"offset_y"`
+	X                    int
+	ZError               float64
+	Flip                 bool `json:"flip"`
+	Slice                int  `json:"slice"`
+	RenderElevationAngle int  `json:"render_elevation"`
 }
 
 type Manifest struct {
