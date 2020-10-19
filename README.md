@@ -21,7 +21,7 @@ If you prefer to watch a video to learn how GoRender works, there is a short tut
 
 * `gorender file.vox`
 * `gorender file1.vox file2.vox`
-* ``
+* `gorender *.vox`
 
 
 GoRender supports the following command line flags:
