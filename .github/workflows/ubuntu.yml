@@ -37,7 +37,7 @@ jobs:
       run: go test -v ./...
       
     - name: Build
-      run: go build -v ./cmd/renderobject
+      run: go build -v ./cmd/renderobject.go
 
     - name: Create artifact dir
       run: mkdir -p output
