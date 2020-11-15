@@ -157,7 +157,7 @@ func processFile(inputFilename string) {
 
 	var processedObject voxelobject.ProcessedVoxelObject
 	timingutils.Time("Voxel processing", flags.OutputTime, func() {
-		processedObject = object.GetProcessedVoxelObject(&palette, manifest.TiledNormals)
+		processedObject = object.GetProcessedVoxelObject(&palette, manifest.TiledNormals, manifest.SolidBase)
 	})
 
 	// Check if there are files to output

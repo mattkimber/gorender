@@ -39,7 +39,7 @@ const normalAverageDistance = 1
 const occlusionRadius = 4
 const accessBorder = 8
 
-func (r RawVoxelObject) GetProcessedVoxelObject(pal *colour.Palette, isTiled bool) (p ProcessedVoxelObject) {
+func (r RawVoxelObject) GetProcessedVoxelObject(pal *colour.Palette, isTiled, hasBase bool) (p ProcessedVoxelObject) {
 	p.Size = r.Size()
 	p.Palette = pal
 
@@ -47,7 +47,7 @@ func (r RawVoxelObject) GetProcessedVoxelObject(pal *colour.Palette, isTiled boo
 		startValues = map[int]radiusStartValues{}
 	}
 
-	p.setElements(r, isTiled)
+	p.setElements(r, isTiled, hasBase)
 	p.calculatePass(processFirstPassElement)
 	p.calculatePass(processSecondPassElement)
 
@@ -295,7 +295,7 @@ func (p *ProcessedVoxelObject) isSurface(x, y, z int) bool {
 	//p.Elements[x][y-1][z+1].Index == 0 || p.Elements[x][y+1][z+1].Index == 0)
 }
 
-func (p *ProcessedVoxelObject) setElements(r RawVoxelObject, isTiled bool) {
+func (p *ProcessedVoxelObject) setElements(r RawVoxelObject, isTiled bool, hasBase bool) {
 	p.Elements = make([][][]ProcessedElement, p.Size.X)
 	borderedElementLookup = make([][][]int, p.Size.X+(accessBorder*2))
 
@@ -324,6 +324,11 @@ func (p *ProcessedVoxelObject) setElements(r RawVoxelObject, isTiled bool) {
 					}
 				} else {
 					borderedElementLookup[x][y][z] = 1
+				}
+
+				if hasBase && z < accessBorder {
+					// If this object has a solid base then the lookup below z=0 is considered to be solid
+					borderedElementLookup[x][y][z] = 0
 				}
 			}
 		}

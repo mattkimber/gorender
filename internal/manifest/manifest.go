@@ -41,6 +41,7 @@ type Manifest struct {
 	Sprites              []Sprite         `json:"sprites"`
 	DepthInfluence       float64          `json:"depth_influence"`
 	TiledNormals         bool             `json:"tiled_normals"`
+	SolidBase            bool             `json:"solid_base"`
 	SoftenEdges          float64          `json:"soften_edges"`
 	Accuracy             int              `json:"accuracy"`
 	Sampler              string           `json:"sampler"`

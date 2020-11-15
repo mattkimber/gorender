@@ -130,6 +130,6 @@ func getObjectForBenchmark(filename string, b *testing.B) voxelobject.ProcessedV
 		b.Fatalf("error loading test file: %v", err)
 	}
 
-	v := voxelobject.RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{}, false)
+	v := voxelobject.RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{}, false, false)
 	return v
 }

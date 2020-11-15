@@ -83,6 +83,10 @@ The fields are as follows:
 * `depth_influence`: the amount object depth contributes to lighting. Setting this to `0` may be preferable for objects which are to be tiled.
 * `tiled_normals`: whether to treat the object as tiled for the purposes of normal calculation. When set to `true`, this will prevent the edge 
    voxels from being lit as if they are a corner if they would line up with the opposite edge when placed in a tiled layout.
+* `solid_base`: whether the "base" below an object is considered solid. This is useful for buildings as it prevents the
+   normals of the first layer of voxels being calculated as if they are the outside of an object. If you are creating
+   buildings and find the base of your tile comes out too dark or with strange lighting effects, set this to `true`.
+   Stacks with `tiled_normals` - this will override the "tiling" effect of top and bottom layers.
 * `size`: the assumed size of an input object. This allows you to get consistent output across a variety of different
    input sizes, including the possibility of having "oversize" voxel objects to add details in places which would not
    overrun the rendering boundaries. Objects will be centred in the rendering area by length and width, but not by
