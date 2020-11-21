@@ -79,8 +79,6 @@ func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometr
 	x, y, z := ray.X, ray.Y, ray.Z
 
 	for i := 0; i < 10; i++ {
-
-		loc = loc.Subtract(ray.Normalise())
 		lx, ly, lz = byte(loc.X), byte(loc.Y), byte(loc.Z)
 		if flipY {
 			ly = bSizeY - ly
@@ -137,6 +135,7 @@ func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometr
 			}
 		}
 
+		loc = loc.Subtract(ray.Normalise())
 	}
 
 	lx, ly, lz = byte(loc0.X), byte(loc0.Y), byte(loc0.Z)
