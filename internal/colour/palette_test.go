@@ -67,7 +67,7 @@ func TestPalette_GetLitRGB(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		rgb := palette.GetLitRGB(testCase.index, testCase.lighting, 0.0, 1.0, false)
+		rgb := palette.GetLitRGB(testCase.index, testCase.lighting, 0.0, 1.0, false, 1.0)
 		result := []uint16{uint16(rgb.R), uint16(rgb.G), uint16(rgb.B)}
 		if result[0] != testCase.expected[0] || result[1] != testCase.expected[1] || result[2] != testCase.expected[2] {
 			t.Errorf("index %d with lighting %f returned %v, expected %v", testCase.index, testCase.lighting, result, testCase.expected)

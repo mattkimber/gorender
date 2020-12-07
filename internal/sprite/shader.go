@@ -184,26 +184,27 @@ func squareDiff(a, b float64) float64 {
 }
 
 func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInfo) {
-	total, filled := 0, 0
-	values := map[byte]int{}
+	totalInfluence, filledInfluence := 0.0, 0.0
+	values := map[byte]float64{}
 
 	for _, s := range info {
-		total++
+		totalInfluence += s.Influence
 
 		if s.Collision && def.Palette.IsRenderable(s.Index) {
-			output.Colour = output.Colour.Add(Colour(s, def, true))
-			output.SpecialColour = output.SpecialColour.Add(Colour(s, def, false))
+			filledInfluence += s.Influence
+
+			output.Colour = output.Colour.Add(Colour(s, def, true, s.Influence))
+			output.SpecialColour = output.SpecialColour.Add(Colour(s, def, false, s.Influence))
 
 			if def.Palette.IsSpecialColour(s.Index) {
-				output.Specialness += 1.0
+				output.Specialness += 1.0 * s.Influence
 				values[s.Index]++
 			}
 
 			if s.Index != 0 {
-				values[s.Index]++
+				values[s.Index] += s.Influence
 			}
 
-			filled++
 
 			if def.Debug {
 				output.Normal = output.Normal.Add(Normal(s))
@@ -216,7 +217,7 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 		}
 	}
 
-	max := 0
+	max := 0.0
 
 	for k, v := range values {
 		if v > max {
@@ -226,7 +227,7 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 	}
 
 	// No collisions = transparent
-	if filled == 0 {
+	if filledInfluence <= 0.1 {
 		return
 	}
 
@@ -235,14 +236,14 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 	// makes them more likely to suffer aliasing artifacts but also clearer at small
 	// sizes
 	output.Alpha = 1.0
-	divisor := float64(filled)
+	divisor := filledInfluence
 
 	if def.SoftenEdges() {
-		output.Alpha = divisor / float64(total)
+		output.Alpha = divisor / totalInfluence
 	}
 
 	if def.Manifest.FadeToBlack {
-		divisor = float64(total)
+		divisor = totalInfluence
 	}
 
 	output.Colour.DivideAndClamp(divisor)

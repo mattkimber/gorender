@@ -8,9 +8,14 @@ import (
 	"math/rand"
 )
 
-type Sample []geometry.Vector2
+type Sample struct {
+	Location geometry.Vector2
+	Influence float64
+}
 
-type Samples [][]Sample
+type SampleList []Sample
+
+type Samples [][]SampleList
 
 func (s Samples) Width() int {
 	return len(s)
@@ -29,9 +34,9 @@ func (s Samples) GetImage() (img *image.RGBA) {
 
 	samples := s[0][0]
 	for _, smp := range samples {
-		x, y := int(100.0+(smp.X*50.0)), int(100.0+(smp.Y*50.0))
+		x, y := int(100.0+(smp.Location.X*50.0)), int(100.0+(smp.Location.Y*50.0))
 		if x >= 0 && y >= 0 && x < 200 && y < 200 {
-			img.Set(x, y, color.Black)
+			img.Set(x, y, color.RGBA{R: uint8(smp.Influence*255.0), G: 0, B: 0, A: 0})
 		}
 	}
 
@@ -50,16 +55,52 @@ func Get(name string) func(int, int, int, float64) Samples {
 }
 
 func Square(width, height int, accuracy int, overlap float64) (result Samples) {
-	result = make([][]Sample, width)
+	fAccuracy := float64(accuracy)
+
+	centre := geometry.Vector2{
+		X: 0.5,
+		Y: 0.5,
+	}
+
+	// distance = x^2 + y^2 (from centre)
+	maxDistance := (1 + overlap) * (1 + overlap)
+
+
+	var location geometry.Vector2
+
+	result = make([][]SampleList, width)
 	for i := 0; i < width; i++ {
-		result[i] = make([]Sample, height)
+		result[i] = make([]SampleList, height)
 		for j := 0; j < height; j++ {
-			result[i][j] = make(Sample, accuracy*accuracy)
+			result[i][j] = make(SampleList, accuracy*accuracy)
+
+
+
 			for k := 0; k < accuracy; k++ {
+				fractionK := (1.0 + float64(k)) / (1.0 + fAccuracy)
+
 				for l := 0; l < accuracy; l++ {
-					result[i][j][l+(k*accuracy)] = geometry.Vector2{
-						X: (float64(i*accuracy) + (float64(k) * (1.0 + overlap))) / (float64(width * accuracy)),
-						Y: (float64(j*accuracy) + (float64(l) * (1.0 + overlap))) / (float64(height * accuracy)),
+					fractionL := (1.0 + float64(l)) / (1.0 + fAccuracy)
+
+					fraction := geometry.Vector2{
+						X: fractionK,
+						Y: fractionL,
+					}
+
+					location = geometry.Vector2{
+						X: (float64(i*accuracy) + (fractionK * (1.0 + overlap))*fAccuracy) / (float64(width*accuracy)),
+						Y: (float64(j*accuracy) + (fractionL * (1.0 + overlap))*fAccuracy) / (float64(height*accuracy)),
+					}
+
+					influence := 1.0 - (centre.DistanceSquared(fraction) / maxDistance)
+
+					if influence < 0 {
+						influence = 0
+					}
+
+					result[i][j][l+(k*accuracy)] = Sample{
+						Location: location,
+						Influence: influence,
 					}
 				}
 			}
@@ -74,17 +115,30 @@ const discs = 10
 var discCache [][]geometry.Vector2
 
 func Disc(width, height int, accuracy int, overlap float64) (result Samples) {
-	result = make([][]Sample, width)
+	radiusSquared := (0.5 + overlap) * (0.5 + overlap)
+	var location geometry.Vector2
+
+	result = make([][]SampleList, width)
 	scaleVec := geometry.Vector2{X: float64(width), Y: float64(height)}
 	for i := 0; i < width; i++ {
-		result[i] = make([]Sample, height)
+		result[i] = make([]SampleList, height)
 		for j := 0; j < height; j++ {
 			loc := geometry.Vector2{X: float64(i) / scaleVec.X, Y: float64(j) / scaleVec.Y}
 			disc := getPoissonDisc(accuracy, overlap)
 
-			result[i][j] = make(Sample, len(disc))
+			result[i][j] = make(SampleList, len(disc))
 			for k, s := range disc {
-				result[i][j][k] = loc.Add(s.DivideByVector(scaleVec))
+				location = loc.Add(s.DivideByVector(scaleVec))
+				influence := 1.0 - (radiusSquared - s.LengthSquared())
+
+				if influence < 0 {
+					influence = 0
+				}
+
+				result[i][j][k] = Sample{
+					Location: location,
+					Influence: influence,
+				}
 			}
 		}
 	}

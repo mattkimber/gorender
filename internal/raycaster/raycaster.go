@@ -17,6 +17,7 @@ type RenderSample struct {
 	Depth, Occlusion       int
 	LightAmount            float64
 	Shadowing              float64
+	Influence 			   float64
 }
 
 type RayResult struct {
@@ -84,8 +85,8 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manife
 	return result
 }
 
-func raycastSample(viewport geometry.Plane, s geometry.Vector2, ray geometry.Vector3, limits geometry.Vector3, object voxelobject.ProcessedVoxelObject, spr manifest.Sprite, lighting geometry.Vector3, result RenderOutput, thisX int, y int, i int, minX byte, maxX byte) {
-	loc0 := viewport.BiLerpWithinPlane(s.X, s.Y)
+func raycastSample(viewport geometry.Plane, s sampler.Sample, ray geometry.Vector3, limits geometry.Vector3, object voxelobject.ProcessedVoxelObject, spr manifest.Sprite, lighting geometry.Vector3, result RenderOutput, thisX int, y int, i int, minX byte, maxX byte) {
+	loc0 := viewport.BiLerpWithinPlane(s.Location.X, s.Location.Y)
 	loc := getIntersectionWithBounds(loc0, ray, limits)
 
 	rayResult := castFpRay(object, loc0, loc, ray, limits, spr.Flip)
@@ -107,11 +108,11 @@ func raycastSample(viewport geometry.Plane, s geometry.Vector2, ray geometry.Vec
 
 		// Don't flip Y when calculating shadows, as it has been pre-flipped on input.
 		shadowResult := castFpRay(object, shadowLoc, shadowLoc, shadowVec, limits, false).Depth
-		setResult(&result[thisX][y][i], object.Elements[rayResult.X][rayResult.Y][rayResult.Z], lighting, rayResult.Depth, shadowResult)
+		setResult(&result[thisX][y][i], object.Elements[rayResult.X][rayResult.Y][rayResult.Z], lighting, rayResult.Depth, shadowResult, s.Influence)
 	}
 }
 
-func setResult(result *RenderSample, element voxelobject.ProcessedElement, lighting geometry.Vector3, depth int, shadowLength int) {
+func setResult(result *RenderSample, element voxelobject.ProcessedElement, lighting geometry.Vector3, depth int, shadowLength int, influence float64) {
 
 	if shadowLength > 0 && shadowLength < 10 {
 		result.Shadowing = 1.0
@@ -126,6 +127,7 @@ func setResult(result *RenderSample, element voxelobject.ProcessedElement, light
 	result.Normal = element.Normal
 	result.Occlusion = element.Occlusion
 	result.AveragedNormal = element.AveragedNormal
+	result.Influence = influence
 }
 
 func getLightingValue(normal, lighting geometry.Vector3) float64 {

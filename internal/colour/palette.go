@@ -202,7 +202,7 @@ func (p Palette) GetLitIndexed(index byte, l float64) (idx byte) {
 	return index
 }
 
-func (p Palette) GetLitRGB(index byte, l float64, brightness float64, contrast float64, resolveSpecialColours bool) (output RGB) {
+func (p Palette) GetLitRGB(index byte, l float64, brightness float64, contrast float64, resolveSpecialColours bool, influence float64) (output RGB) {
 	output = p.GetRGB(index, resolveSpecialColours)
 
 	entry := p.Entries[index]
@@ -238,9 +238,9 @@ func (p Palette) GetLitRGB(index byte, l float64, brightness float64, contrast f
 	output.G += brightness
 	output.B += brightness
 
-	output.R = contrast*(output.R-32767) + 32767
-	output.G = contrast*(output.G-32767) + 32767
-	output.B = contrast*(output.B-32767) + 32767
+	output.R = (contrast*(output.R-32767) + 32767) * influence
+	output.G = (contrast*(output.G-32767) + 32767) * influence
+	output.B = (contrast*(output.B-32767) + 32767) * influence
 
 	return
 }

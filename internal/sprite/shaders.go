@@ -7,9 +7,9 @@ import (
 	"github.com/mattkimber/gorender/internal/raycaster"
 )
 
-func Colour(smp raycaster.RenderSample, d manifest.Definition, resolveSpecialColours bool) colour.RGB {
+func Colour(smp raycaster.RenderSample, d manifest.Definition, resolveSpecialColours bool, influence float64) colour.RGB {
 	lightingOffset := getLightingOffset(smp, d.Manifest.DepthInfluence)
-	return d.Palette.GetLitRGB(smp.Index, lightingOffset, d.Manifest.Brightness, d.Manifest.Contrast, resolveSpecialColours)
+	return d.Palette.GetLitRGB(smp.Index, lightingOffset, d.Manifest.Brightness, d.Manifest.Contrast, resolveSpecialColours, influence)
 }
 
 func Normal(smp raycaster.RenderSample) colour.RGB {
