@@ -120,14 +120,9 @@ func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometr
 				pointF := geometry.Vector3{X: float64(point.X), Y: float64(point.Y), Z: float64(point.Z)}
 
 				lx, ly, lz = point.X, point.Y, point.Z
-				if flipY {
-					ly = bSizeY - ly
-				}
 
 				if isInsideBoundingVolume(pointF, limits) {
 					if object.Elements[lx][ly][lz].IsSurface {
-						//fmt.Printf("Recovered surface voxel at %d %d %d (%d)\n", lx, ly, lz, k)
-						//fmt.Printf("%v\n", check)
 						return
 					}
 				}

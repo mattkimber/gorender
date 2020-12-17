@@ -209,7 +209,6 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 				values[s.Index] += s.Influence
 			}
 
-
 			if def.Debug {
 				output.Normal = output.Normal.Add(Normal(s))
 				output.AveragedNormal = output.AveragedNormal.Add(AveragedNormal(s))
