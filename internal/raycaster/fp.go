@@ -18,8 +18,8 @@ func castFpRay(object voxelobject.ProcessedVoxelObject, loc0 geometry.Vector3, l
 	}
 
 	if collision, loc := castRayToCandidate(object, loc, ray, limits, flipY); collision {
-		lx, ly, lz := recoverNonSurfaceVoxel(object, loc, ray, limits, flipY)
-		return RayResult{X: lx, Y: ly, Z: lz, HasGeometry: true, Depth: int(loc0.Subtract(loc).Length())}
+		lx, ly, lz, isRecovered := recoverNonSurfaceVoxel(object, loc, ray, limits, flipY)
+		return RayResult{X: lx, Y: ly, Z: lz, IsRecovered: isRecovered, HasGeometry: true, Depth: int(loc0.Subtract(loc).Length())}
 	}
 
 	return
@@ -58,7 +58,7 @@ func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Ve
 
 // Attempt to recover a non-surface voxel by taking a more DDA-like approach where we trace backward up the ray
 // starting with X, then Y, then Z, then repeat until we find a surface voxel or bail.
-func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3, flipY bool) (lx byte, ly byte, lz byte) {
+func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3, flipY bool) (lx byte, ly byte, lz byte, isRecovered bool) {
 
 	bSizeY := uint8(object.Size.Y - 1)
 
@@ -70,6 +70,9 @@ func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometr
 	if isInsideBoundingVolume(loc, limits) && object.Elements[lx][ly][lz].IsSurface {
 		return
 	}
+
+	// Signify this voxel was recovered
+	isRecovered = true
 
 	// Check always checks a 9 voxel "halo"
 	check := make([]geometry.PointB, 9)

@@ -188,6 +188,10 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 	values := map[byte]float64{}
 
 	for _, s := range info {
+		if s.IsRecovered {
+			s.Influence = s.Influence * (1.0 - def.Manifest.RecoveredVoxelSuppression)
+		}
+
 		totalInfluence += s.Influence
 
 		if s.Collision && def.Palette.IsRenderable(s.Index) {

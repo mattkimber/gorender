@@ -18,12 +18,14 @@ type RenderSample struct {
 	LightAmount            float64
 	Shadowing              float64
 	Influence 			   float64
+	IsRecovered            bool
 }
 
 type RayResult struct {
 	X, Y, Z     byte
 	HasGeometry bool
 	Depth       int
+	IsRecovered bool
 }
 
 type RenderOutput [][]RenderInfo
@@ -108,11 +110,11 @@ func raycastSample(viewport geometry.Plane, s sampler.Sample, ray geometry.Vecto
 
 		// Don't flip Y when calculating shadows, as it has been pre-flipped on input.
 		shadowResult := castFpRay(object, shadowLoc, shadowLoc, shadowVec, limits, false).Depth
-		setResult(&result[thisX][y][i], object.Elements[rayResult.X][rayResult.Y][rayResult.Z], lighting, rayResult.Depth, shadowResult, s.Influence)
+		setResult(&result[thisX][y][i], object.Elements[rayResult.X][rayResult.Y][rayResult.Z], lighting, rayResult.Depth, shadowResult, s.Influence, rayResult.IsRecovered)
 	}
 }
 
-func setResult(result *RenderSample, element voxelobject.ProcessedElement, lighting geometry.Vector3, depth int, shadowLength int, influence float64) {
+func setResult(result *RenderSample, element voxelobject.ProcessedElement, lighting geometry.Vector3, depth int, shadowLength int, influence float64, isRecovered bool) {
 
 	if shadowLength > 0 && shadowLength < 10 {
 		result.Shadowing = 1.0
@@ -128,6 +130,7 @@ func setResult(result *RenderSample, element voxelobject.ProcessedElement, light
 	result.Occlusion = element.Occlusion
 	result.AveragedNormal = element.AveragedNormal
 	result.Influence = influence
+	result.IsRecovered = isRecovered
 }
 
 func getLightingValue(normal, lighting geometry.Vector3) float64 {

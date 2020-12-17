@@ -103,6 +103,9 @@ The fields are as follows:
 * `alpha_edge_threshold`: The alpha value above which a pixel will be output instead of set to transparent. (Default 0.5)
 * `pad_to_full_length`: If this is set to `true`, voxel objects will be padded in their length (x) dimension to the size
    configured in the manifest. This can help with aligning many sizes of object consistently.
+* `recovered_voxel_suppression`: Sometimes surface voxel recovery gives unexpected results. Set this to a value greater
+   than zero to reduce how much non-surface voxels contribute to the output. `1.0` completely disables non-surface
+   voxel contribution, which can result in gaps at low accuracy settings.
 * `sprites`: the set of sprites to produce, as an array. Each sprite must have the following properties:
    * `angle`: the angle of the object for this sprite.
    * `width`: the width of the output sprite image.
