@@ -18,6 +18,7 @@ type RenderSample struct {
 	LightAmount            float64
 	Shadowing              float64
 	Influence 			   float64
+	Detail				   float64
 	IsRecovered            bool
 }
 
@@ -129,6 +130,7 @@ func setResult(result *RenderSample, element voxelobject.ProcessedElement, light
 	result.Normal = element.Normal
 	result.Occlusion = element.Occlusion
 	result.AveragedNormal = element.AveragedNormal
+	result.Detail = element.Detail
 	result.Influence = influence
 	result.IsRecovered = isRecovered
 }

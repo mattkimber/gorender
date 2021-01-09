@@ -18,6 +18,7 @@ type ShaderInfo struct {
 	Occlusion      colour.RGB
 	Lighting       colour.RGB
 	Shadowing      colour.RGB
+	Detail         colour.RGB
 	ModalIndex     byte
 	DitheredIndex  byte
 	IsMaskColour   bool
@@ -53,6 +54,11 @@ func GetLighting(s *ShaderInfo) colour.RGB {
 func GetShadowing(s *ShaderInfo) colour.RGB {
 	return s.Shadowing
 }
+
+func GetDetail(s *ShaderInfo) colour.RGB {
+	return s.Detail
+}
+
 
 func GetIndex(s *ShaderInfo) byte {
 	return s.DitheredIndex
@@ -192,6 +198,12 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 			s.Influence = s.Influence * (1.0 - def.Manifest.RecoveredVoxelSuppression)
 		}
 
+		// Voxel samples considered to be more representative of fine details can be boosted
+		// to make them more likely to appear in the output.
+		if def.Manifest.DetailBoost != 0 {
+			s.Influence = s.Influence * (1.0 + (s.Detail * def.Manifest.DetailBoost))
+		}
+
 		totalInfluence += s.Influence
 
 		if s.Collision && def.Palette.IsRenderable(s.Index) {
@@ -216,6 +228,7 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 				output.Occlusion = output.Occlusion.Add(Occlusion(s))
 				output.Shadowing = output.Shadowing.Add(Shadow(s))
 				output.Lighting = output.Lighting.Add(Lighting(s))
+				output.Detail = output.Detail.Add(Detail(s))
 			}
 		}
 	}
@@ -261,6 +274,7 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 		output.Occlusion.DivideAndClamp(divisor)
 		output.Shadowing.DivideAndClamp(divisor)
 		output.Lighting.DivideAndClamp(divisor)
+		output.Detail.DivideAndClamp(divisor)
 	}
 
 	return

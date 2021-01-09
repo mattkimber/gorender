@@ -9,6 +9,7 @@ import (
 type ProcessedElement struct {
 	Normal         geometry.Vector3
 	AveragedNormal geometry.Vector3
+	Detail         float64
 	Occlusion      int
 	Index          byte
 	IsSurface      bool
@@ -82,6 +83,7 @@ func processFirstPassElement(p *ProcessedVoxelObject, x int, y int, z int) {
 func processSecondPassElement(p *ProcessedVoxelObject, x int, y int, z int) {
 	p.Elements[x][y][z].AveragedNormal = p.getAverageNormal(x, y, z)
 	p.Elements[x][y][z].Occlusion = p.getOcclusion(x, y, z)
+	p.Elements[x][y][z].Detail = p.getDetail(x, y, z)
 }
 
 func (p *ProcessedVoxelObject) getNormalRadius(index byte) (radius int) {
@@ -143,6 +145,40 @@ func getRadiusStartValues(radius int) (values radiusStartValues) {
 	startValuesLock.Unlock()
 
 	return
+}
+
+
+func (p *ProcessedVoxelObject) getDetail(x, y, z int) (detail float64) {
+	if !p.Elements[x][y][z].IsSurface {
+		return
+	}
+
+	thisIndex := p.Elements[x][y][z].Index
+	total, diff := 0.0, 0.0
+
+	distance := 2
+	minI, maxI, minJ, maxJ, minK, maxK := p.getSafeDistance(x, y, z, distance)
+
+	for i := minI; i <= maxI; i++ {
+		for j := minJ; j <= maxJ; j++ {
+			for k := minK; k <= maxK; k++ {
+				if p.Elements[x+i][y+j][z+k].IsSurface && (i != 0 || j != 0 || k != 0) {
+					total += 1.0
+					if p.Elements[x+i][y+j][z+k].Index != thisIndex {
+						diff += 1.0
+					}
+				}
+			}
+		}
+	}
+
+	if total == 0.0 {
+		return 0.0
+	}
+
+	// Return the proportion of surrounding surface voxels which are different,
+	// aka the "detailed-ness" of this voxel.
+	return diff / total
 }
 
 func (p *ProcessedVoxelObject) calculateNormal(x, y, z int) (normal geometry.Vector3) {

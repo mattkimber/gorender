@@ -42,6 +42,11 @@ func Lighting(smp raycaster.RenderSample) colour.RGB {
 	return colour.RGB{R: v, G: v, B: v}
 }
 
+func Detail(smp raycaster.RenderSample) colour.RGB {
+	v := 32767 + (smp.Detail * 32767)
+	return colour.RGB{R: v, G: v, B: v}
+}
+
 func getLightingOffset(smp raycaster.RenderSample, depthInfluence float64) float64 {
 	lightingOffset := -0.3
 	lightingOffset += smp.LightAmount * 0.6

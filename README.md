@@ -106,6 +106,8 @@ The fields are as follows:
 * `recovered_voxel_suppression`: Sometimes surface voxel recovery gives unexpected results. Set this to a value greater
    than zero to reduce how much non-surface voxels contribute to the output. `1.0` completely disables non-surface
    voxel contribution, which can result in gaps at low accuracy settings.
+* `detail_boost`: Boost the influence of small details. Useful when used at a high accuracy setting, to recover 
+   single-voxel detail elements and make output more "pixel art"-like. 
 * `sprites`: the set of sprites to produce, as an array. Each sprite must have the following properties:
    * `angle`: the angle of the object for this sprite.
    * `width`: the width of the output sprite image.

@@ -36,7 +36,7 @@ func (s Samples) GetImage() (img *image.RGBA) {
 	for _, smp := range samples {
 		x, y := int(100.0+(smp.Location.X*50.0)), int(100.0+(smp.Location.Y*50.0))
 		if x >= 0 && y >= 0 && x < 200 && y < 200 {
-			img.Set(x, y, color.RGBA{R: uint8(smp.Influence*255.0), G: 0, B: 0, A: 0})
+			img.Set(x, y, color.RGBA{R: uint8(smp.Influence*255.0), G: 0, B: 0, A: 255})
 		}
 	}
 
