@@ -108,7 +108,12 @@ The fields are as follows:
    voxel contribution, which can result in gaps at low accuracy settings.
 * `detail_boost`: Boost the influence of small details. Useful when used at a high accuracy setting, to recover 
    single-voxel detail elements and make output more "pixel art"-like.
-* `falloff_adjustment`: Control how much surrounding samples influence the output (see below). 
+* `falloff_adjustment`: Control how much surrounding samples influence the output (see below).
+* `joggle`: It's likely your voxel model will not align cleanly with the output pixel grid. This causes problems
+            with areas of colour bleeding into each other and lines not appearing straight. By some trial and error
+            it is possible to use small values for `joggle` to realign the object (typically in the range -0.5 to
+            0.5, with 0.5 often producing good results on objects which are large in relation to
+            the output sprite size).  
 * `sprites`: the set of sprites to produce, as an array. Each sprite must have the following properties:
    * `angle`: the angle of the object for this sprite.
    * `width`: the width of the output sprite image.
@@ -118,6 +123,7 @@ The fields are as follows:
    * `offset_x`: move the output sprite this many pixels (at 1x scale, will be multiplied by scale value) along the x axis. Useful for precise alignment of ground sprites.
    * `offset_y`: move the output sprite this many pixels (at 1x scale, will be multiplied by scale value) along the y axis. Useful for precise alignment of ground sprites.
    * `render_elevation`: if set to non-zero, will override the base render elevation.
+   * `joggle`: additional joggle for this specific sprite. Additive with the global `joggle` setting.
    
 Rendering sprites to fit a particular game is a careful balance between widths, heights, and angle settings. The
 supplied `manifest.json` file will provide good results for OpenTTD vehicles when used with MagicaVoxel files

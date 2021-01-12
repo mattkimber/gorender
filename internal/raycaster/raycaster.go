@@ -66,6 +66,8 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manife
 	wg := sync.WaitGroup{}
 	wg.Add(sampler.Width())
 
+	joggle := spr.Joggle + m.Joggle
+
 	w, h := sampler.Width(), sampler.Height()
 
 	for x := 0; x < w; x++ {
@@ -76,7 +78,7 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manife
 				samples := sampler[thisX][y]
 				result[thisX][y] = make(RenderInfo, len(samples))
 				for i, s := range samples {
-					raycastSample(viewport, s, ray, limits, object, spr, lighting, result, thisX, y, i, bminX, bmaxX)
+					raycastSample(viewport, s, ray, limits, object, spr, lighting, result, thisX, y, i, bminX, bmaxX, joggle)
 				}
 			}
 			wg.Done()
@@ -88,8 +90,9 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manife
 	return result
 }
 
-func raycastSample(viewport geometry.Plane, s sampler.Sample, ray geometry.Vector3, limits geometry.Vector3, object voxelobject.ProcessedVoxelObject, spr manifest.Sprite, lighting geometry.Vector3, result RenderOutput, thisX int, y int, i int, minX byte, maxX byte) {
+func raycastSample(viewport geometry.Plane, s sampler.Sample, ray geometry.Vector3, limits geometry.Vector3, object voxelobject.ProcessedVoxelObject, spr manifest.Sprite, lighting geometry.Vector3, result RenderOutput, thisX int, y int, i int, minX byte, maxX byte, joggle float64) {
 	loc0 := viewport.BiLerpWithinPlane(s.Location.X, s.Location.Y)
+	loc0.Z += joggle
 	loc := getIntersectionWithBounds(loc0, ray, limits)
 
 	rayResult := castFpRay(object, loc0, loc, ray, limits, spr.Flip)

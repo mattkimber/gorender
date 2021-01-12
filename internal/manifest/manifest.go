@@ -31,6 +31,7 @@ type Sprite struct {
 	Flip                 bool `json:"flip"`
 	Slice                int  `json:"slice"`
 	RenderElevationAngle int  `json:"render_elevation"`
+	Joggle               float64 `json:"joggle"`
 }
 
 type Manifest struct {
@@ -57,6 +58,7 @@ type Manifest struct {
 	SliceOverlap         int              `json:"slice_overlap"`
 	Falloff              float64          `json:"falloff_adjustment"`
 	RecoveredVoxelSuppression float64     `json:"recovered_voxel_suppression"`
+	Joggle               float64 `json:"joggle"`
 }
 
 func FromJson(handle io.Reader) (manifest Manifest, err error) {
