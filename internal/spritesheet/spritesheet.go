@@ -78,7 +78,7 @@ func getDebugSheets(sheets *Spritesheets, def manifest.Definition, bounds image.
 
 	go func() {
 		defer wg.Done()
-		smp := sampler.Get(def.Manifest.Sampler)(1, 1, def.Manifest.Accuracy, def.Manifest.Overlap)
+		smp := sampler.Get(def.Manifest.Sampler)(1, 1, def.Manifest.Accuracy, def.Manifest.Overlap, 0.5 + def.Manifest.Falloff)
 		sheets.Store("sampler", Spritesheet{Image: smp.GetImage()})
 	}()
 
@@ -116,7 +116,7 @@ func raycast(def manifest.Definition, spriteInfos []SpriteInfo) {
 		rect := getSpriteSizeForAngle(spr, def.Scale)
 
 		smpFunc := sampler.Get(def.Manifest.Sampler)
-		smp := smpFunc(rect.Max.X, rect.Max.Y, def.Manifest.Accuracy, def.Manifest.Overlap)
+		smp := smpFunc(rect.Max.X, rect.Max.Y, def.Manifest.Accuracy, def.Manifest.Overlap, 0.5 + def.Manifest.Falloff)
 
 		spriteInfos[i].SpriteBounds = rect
 		renderOutput := raycaster.GetRaycastOutput(def.Object, def.Manifest, spr, smp)

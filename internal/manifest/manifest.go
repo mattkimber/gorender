@@ -55,6 +55,7 @@ type Manifest struct {
 	SliceThreshold       int              `json:"slice_threshold"`
 	SliceLength          int              `json:"slice_length"`
 	SliceOverlap         int              `json:"slice_overlap"`
+	Falloff              float64          `json:"falloff_adjustment"`
 	RecoveredVoxelSuppression float64     `json:"recovered_voxel_suppression"`
 }
 

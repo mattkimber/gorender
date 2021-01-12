@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"math"
 	"math/rand"
 )
 
@@ -43,7 +44,7 @@ func (s Samples) GetImage() (img *image.RGBA) {
 	return
 }
 
-func Get(name string) func(int, int, int, float64) Samples {
+func Get(name string) func(int, int, int, float64, float64) Samples {
 	switch name {
 	case "square":
 		return Square
@@ -54,17 +55,13 @@ func Get(name string) func(int, int, int, float64) Samples {
 	}
 }
 
-func Square(width, height int, accuracy int, overlap float64) (result Samples) {
+func Square(width, height int, accuracy int, overlap float64, falloff float64) (result Samples) {
 	fAccuracy := float64(accuracy)
 
 	centre := geometry.Vector2{
 		X: 0.5,
 		Y: 0.5,
 	}
-
-	// distance = x^2 + y^2 (from centre)
-	maxDistance := (1 + overlap) * (1 + overlap)
-
 
 	var location geometry.Vector2
 
@@ -73,8 +70,6 @@ func Square(width, height int, accuracy int, overlap float64) (result Samples) {
 		result[i] = make([]SampleList, height)
 		for j := 0; j < height; j++ {
 			result[i][j] = make(SampleList, accuracy*accuracy)
-
-
 
 			for k := 0; k < accuracy; k++ {
 				fractionK := (1.0 + float64(k)) / (1.0 + fAccuracy)
@@ -87,12 +82,13 @@ func Square(width, height int, accuracy int, overlap float64) (result Samples) {
 						Y: fractionL,
 					}
 
+
 					location = geometry.Vector2{
 						X: (float64(i*accuracy) + (fractionK * (1.0 + overlap))*fAccuracy) / (float64(width*accuracy)),
 						Y: (float64(j*accuracy) + (fractionL * (1.0 + overlap))*fAccuracy) / (float64(height*accuracy)),
 					}
 
-					influence := 1.0 - (centre.DistanceSquared(fraction) / maxDistance)
+					influence := 1.0 - (math.Pow(centre.DistanceSquared(fraction), falloff) * 2.0)
 
 					if influence < 0 {
 						influence = 0
@@ -114,7 +110,7 @@ const discs = 10
 
 var discCache [][]geometry.Vector2
 
-func Disc(width, height int, accuracy int, overlap float64) (result Samples) {
+func Disc(width, height int, accuracy int, overlap float64, falloff float64) (result Samples) {
 	radiusSquared := (0.5 + overlap) * (0.5 + overlap)
 	var location geometry.Vector2
 
@@ -129,7 +125,8 @@ func Disc(width, height int, accuracy int, overlap float64) (result Samples) {
 			result[i][j] = make(SampleList, len(disc))
 			for k, s := range disc {
 				location = loc.Add(s.DivideByVector(scaleVec))
-				influence := 1.0 - (radiusSquared - s.LengthSquared())
+
+				influence := 1.0 - (math.Pow(radiusSquared, falloff))
 
 				if influence < 0 {
 					influence = 0

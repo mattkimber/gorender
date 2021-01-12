@@ -107,7 +107,8 @@ The fields are as follows:
    than zero to reduce how much non-surface voxels contribute to the output. `1.0` completely disables non-surface
    voxel contribution, which can result in gaps at low accuracy settings.
 * `detail_boost`: Boost the influence of small details. Useful when used at a high accuracy setting, to recover 
-   single-voxel detail elements and make output more "pixel art"-like. 
+   single-voxel detail elements and make output more "pixel art"-like.
+* `falloff_adjustment`: Control how much surrounding samples influence the output (see below). 
 * `sprites`: the set of sprites to produce, as an array. Each sprite must have the following properties:
    * `angle`: the angle of the object for this sprite.
    * `width`: the width of the output sprite image.
@@ -171,6 +172,37 @@ positive values can be used to produce output with a gaussian blur pre-applied.
 As an example of why you might want to use this, consider an example of rendering a chain link fence at small
 resolution. Overlap <= 0 will produce a "grainy" result in which individual links can be seen, whereas overlap >0 will 
 produce a "smooth" result where the fence links resolve to a uniform transparent surface.
+
+### Falloff Adjustment
+
+GoRender uses an "influence-based" renderer for its supersampling. Consider the case in which
+we have a square grid of accuracy **3**:
+
+```
+* * *
+* * *
+* * *
+```
+
+If all samples contribute to the output evenly, this causes blurring and loss of small details.
+So the sampler gives more weight to values in the centre, giving a weighted sample grid more
+like this:
+
+```
+. o .
+o O o
+. o .
+```
+
+The default settings (since 1.4.0) are chosen to give a sharp falloff for detailed objects.
+This may not be desirable, so you can adjust how steep (or gentle) the falloff is by tweaking
+the `falloff_adjustment` parameter.
+
+Here is an example of how changing `falloff_adjustment` affects the output:
+
+![Demo](doc_img/falloff_adjustment.gif)
+
+To match renderer behaviour from 1.3.x, set `falloff_adjustment` to `0.5`.
 
 ## Lighting tweaks
 
