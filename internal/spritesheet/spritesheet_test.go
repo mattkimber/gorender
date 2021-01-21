@@ -95,7 +95,7 @@ func benchmarkSpritesheet(b *testing.B, spritesheetImage func(def manifest.Defin
 	for i := 0; i < b.N; i++ {
 		rect := getSpriteSizeForAngle(def.Manifest.Sprites[0], def.Scale)
 
-		smp := sampler.Disc(rect.Max.X, rect.Max.Y, def.Manifest.Accuracy, 0)
+		smp := sampler.Disc(rect.Max.X, rect.Max.Y, def.Manifest.Accuracy, 0, 0)
 		spr := manifest.Sprite{OffsetX: 0, OffsetY: 0}
 		ro := raycaster.GetRaycastOutput(def.Object, def.Manifest, def.Manifest.Sprites[0], smp)
 		so := sprite.GetShaderOutput(ro, spr, def, rect.Max.X, rect.Max.Y)
