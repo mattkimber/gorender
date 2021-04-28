@@ -1,5 +1,15 @@
 package geometry
 
+import gandalf_geo "github.com/mattkimber/gandalf/geometry"
+
+func FromGandalfPoint(point gandalf_geo.Point) Point {
+	return Point{
+		X: point.X,
+		Y: point.Y,
+		Z: point.Z,
+	}
+}
+
 type Point struct {
 	X, Y, Z int
 }

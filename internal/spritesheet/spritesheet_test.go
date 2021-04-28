@@ -1,16 +1,15 @@
 package spritesheet
 
 import (
+	"github.com/mattkimber/gandalf/magica"
 	"github.com/mattkimber/gorender/internal/colour"
 	"github.com/mattkimber/gorender/internal/geometry"
 	"github.com/mattkimber/gorender/internal/manifest"
 	"github.com/mattkimber/gorender/internal/raycaster"
 	"github.com/mattkimber/gorender/internal/sampler"
 	"github.com/mattkimber/gorender/internal/sprite"
-	"github.com/mattkimber/gorender/internal/utils/fileutils"
 	"github.com/mattkimber/gorender/internal/utils/imageutils"
 	"github.com/mattkimber/gorender/internal/voxelobject"
-	"github.com/mattkimber/gorender/internal/voxelobject/vox"
 	"image"
 	"os"
 	"testing"
@@ -125,11 +124,11 @@ func getPalette(b *testing.B) colour.Palette {
 }
 
 func getObjectForBenchmark(filename string, b *testing.B) voxelobject.ProcessedVoxelObject {
-	var mv vox.MagicaVoxelObject
-	if err := fileutils.InstantiateFromFile("../raycaster/testdata/"+filename, &mv); err != nil {
+	mv, err := magica.FromFile("../raycaster/testdata/"+filename)
+	if err != nil {
 		b.Fatalf("error loading test file: %v", err)
 	}
 
-	v := voxelobject.RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{}, false, false)
+	v := voxelobject.GetProcessedVoxelObject(mv, &colour.Palette{}, false, false)
 	return v
 }

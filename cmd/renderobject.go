@@ -3,13 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/mattkimber/gandalf/magica"
 	"github.com/mattkimber/gorender/internal/colour"
 	"github.com/mattkimber/gorender/internal/manifest"
 	"github.com/mattkimber/gorender/internal/spritesheet"
 	"github.com/mattkimber/gorender/internal/utils/fileutils"
 	"github.com/mattkimber/gorender/internal/utils/timingutils"
 	"github.com/mattkimber/gorender/internal/voxelobject"
-	"github.com/mattkimber/gorender/internal/voxelobject/vox"
 	"log"
 	"os"
 	"path/filepath"
@@ -33,6 +33,7 @@ type Flags struct {
 	StripDirectory                bool
 	ProgressIndicator             bool
 	PaletteFile                   string
+	Overwrite                     bool
 }
 
 var flags Flags
@@ -52,6 +53,7 @@ func init() {
 	flag.BoolVar(&flags.StripDirectory, "strip-directory", false, "strip paths from input files")
 	flag.BoolVar(&flags.ProgressIndicator, "progress", false, "show simple progress indicator")
 	flag.StringVar(&flags.PaletteFile, "palette", "files/ttd_palette.json", "specify a palette file other than the default")
+	flag.BoolVar(&flags.Overwrite, "overwrite", false, "force overwriting of existing files")
 
 	flag.BoolVar(&flags.Fast, "fast", false, "force fast rendering output")
 
@@ -138,7 +140,7 @@ func processFile(inputFilename string) {
 		manifest.Overlap = 0
 	}
 
-	object, err := getVoxelObject(inputFilename)
+	object, err := magica.FromFile(inputFilename)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -157,7 +159,7 @@ func processFile(inputFilename string) {
 
 	var processedObject voxelobject.ProcessedVoxelObject
 	timingutils.Time("Voxel processing", flags.OutputTime, func() {
-		processedObject = object.GetProcessedVoxelObject(&palette, manifest.TiledNormals, manifest.SolidBase)
+		processedObject = voxelobject.GetProcessedVoxelObject(object, &palette, manifest.TiledNormals, manifest.SolidBase)
 	})
 
 	// Check if there are files to output
@@ -174,6 +176,11 @@ func processFile(inputFilename string) {
 }
 
 func allPotentialOutputFilesExist(inputFilename string, scale string, numScales int) (bool, error) {
+	// Always overwrite files if the flag is set
+	if flags.Overwrite {
+		return false, nil
+	}
+
 	outputFilename := getOutputFilename(inputFilename, scale, numScales)
 
 	inputFileStats, err := os.Stat(inputFilename)
@@ -291,12 +298,6 @@ func setupFlags() error {
 	}
 
 	return nil
-}
-
-func getVoxelObject(filename string) (object voxelobject.RawVoxelObject, err error) {
-	var mv vox.MagicaVoxelObject
-	err = fileutils.InstantiateFromFile(filename, &mv)
-	return voxelobject.RawVoxelObject(mv), err
 }
 
 func getPalette(filename string) (palette colour.Palette, err error) {

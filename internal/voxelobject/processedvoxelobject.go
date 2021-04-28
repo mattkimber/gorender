@@ -1,6 +1,7 @@
 package voxelobject
 
 import (
+	"github.com/mattkimber/gandalf/magica"
 	"github.com/mattkimber/gorender/internal/colour"
 	"github.com/mattkimber/gorender/internal/geometry"
 	"sync"
@@ -40,15 +41,15 @@ const normalAverageDistance = 1
 const occlusionRadius = 4
 const accessBorder = 8
 
-func (r RawVoxelObject) GetProcessedVoxelObject(pal *colour.Palette, isTiled, hasBase bool) (p ProcessedVoxelObject) {
-	p.Size = r.Size()
+func GetProcessedVoxelObject(o magica.VoxelObject, pal *colour.Palette, isTiled, hasBase bool) (p ProcessedVoxelObject) {
+	p.Size = geometry.FromGandalfPoint(o.Size)
 	p.Palette = pal
 
 	if startValues == nil {
 		startValues = map[int]radiusStartValues{}
 	}
 
-	p.setElements(r, isTiled, hasBase)
+	p.setElements(o, isTiled, hasBase)
 	p.calculatePass(processFirstPassElement)
 	p.calculatePass(processSecondPassElement)
 
@@ -331,7 +332,7 @@ func (p *ProcessedVoxelObject) isSurface(x, y, z int) bool {
 	//p.Elements[x][y-1][z+1].Index == 0 || p.Elements[x][y+1][z+1].Index == 0)
 }
 
-func (p *ProcessedVoxelObject) setElements(r RawVoxelObject, isTiled bool, hasBase bool) {
+func (p *ProcessedVoxelObject) setElements(r magica.VoxelObject, isTiled bool, hasBase bool) {
 	p.Elements = make([][][]ProcessedElement, p.Size.X)
 	borderedElementLookup = make([][][]int, p.Size.X+(accessBorder*2))
 
@@ -355,7 +356,7 @@ func (p *ProcessedVoxelObject) setElements(r RawVoxelObject, isTiled bool, hasBa
 			borderedElementLookup[x][y] = make([]int, p.Size.Z+(accessBorder*2))
 			for z := 0; z < p.Size.Z+(accessBorder*2); z++ {
 				if isTiled {
-					if r[(x+sx-accessBorder)%p.Size.X][(y+sy-accessBorder)%p.Size.Y][(z+sz-accessBorder)%p.Size.Z] == 0 {
+					if r.Voxels[(x+sx-accessBorder)%p.Size.X][(y+sy-accessBorder)%p.Size.Y][(z+sz-accessBorder)%p.Size.Z] == 0 {
 						borderedElementLookup[x][y][z] = 1
 					}
 				} else {
@@ -375,12 +376,12 @@ func (p *ProcessedVoxelObject) setElements(r RawVoxelObject, isTiled bool, hasBa
 		for y := 0; y < p.Size.Y; y++ {
 			p.Elements[x][y] = make([]ProcessedElement, p.Size.Z)
 			for z := 0; z < p.Size.Z; z++ {
-				p.Elements[x][y][z].Index = r[x][y][z]
+				p.Elements[x][y][z].Index = r.Voxels[x][y][z]
 
 				// This is a performance hack which saves ~15% time in the voxel processing by providing
 				// a value that can be multiplied by every time rather than needing an `if thing == 0`
 				// in the inner normal calculation loop
-				if r[x][y][z] != 0 && !isTiled {
+				if r.Voxels[x][y][z] != 0 && !isTiled {
 					borderedElementLookup[x+accessBorder][y+accessBorder][z+accessBorder] = 0
 				}
 			}

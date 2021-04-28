@@ -1,38 +1,37 @@
 package voxelobject
 
 import (
+	"github.com/mattkimber/gandalf/magica"
 	"github.com/mattkimber/gorender/internal/colour"
 	"github.com/mattkimber/gorender/internal/geometry"
-	"github.com/mattkimber/gorender/internal/utils/fileutils"
-	"github.com/mattkimber/gorender/internal/voxelobject/vox"
 	"testing"
 )
 
 func TestRawVoxelObject_GetProcessedVoxelObject(t *testing.T) {
-	var mv vox.MagicaVoxelObject
-	if err := fileutils.InstantiateFromFile("testdata/testcube", &mv); err != nil {
+	mv, err := magica.FromFile("testdata/testcube")
+	if err != nil {
 		t.Fatalf("error loading test file: %v", err)
 	}
 
-	v := RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{}, false, false)
+	v := GetProcessedVoxelObject(mv, &colour.Palette{}, false, false)
 	testObject(t, mv, v)
 
-	v = RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{}, true, false)
+	v = GetProcessedVoxelObject(mv, &colour.Palette{}, true, false)
 	testObject(t, mv, v)
 
-	v = RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{}, true, true)
+	v = GetProcessedVoxelObject(mv, &colour.Palette{}, true, true)
 	testObject(t, mv, v)
 
-	v = RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{}, false, true)
+	v = GetProcessedVoxelObject(mv, &colour.Palette{}, false, true)
 	testObject(t, mv, v)
 }
 
-func testObject(t *testing.T, mv vox.MagicaVoxelObject, v ProcessedVoxelObject) {
-	for x := 0; x < len(mv); x++ {
-		for y := 0; y < len(mv[x]); y++ {
-			for z := 0; z < len(mv[x][y]); z++ {
-				if v.SafeGetData(x, y, z).Index != mv[x][y][z] {
-					t.Errorf("voxel at [%d,%d,%d] not equal - got %d, expected %d", x, y, z, v.SafeGetData(x, y, z).Index, mv[x][y][z])
+func testObject(t *testing.T, mv magica.VoxelObject, v ProcessedVoxelObject) {
+	for x := 0; x < len(mv.Voxels); x++ {
+		for y := 0; y < len(mv.Voxels[x]); y++ {
+			for z := 0; z < len(mv.Voxels[x][y]); z++ {
+				if v.SafeGetData(x, y, z).Index != mv.Voxels[x][y][z] {
+					t.Errorf("voxel at [%d,%d,%d] not equal - got %d, expected %d", x, y, z, v.SafeGetData(x, y, z).Index, mv.Voxels[x][y][z])
 				}
 			}
 		}
@@ -92,12 +91,12 @@ func TestRawVoxelObject_GetProcessedVoxelObject_AveragedNormals(t *testing.T) {
 }
 
 func getObject(filename string, t *testing.T) ProcessedVoxelObject {
-	var mv vox.MagicaVoxelObject
-	if err := fileutils.InstantiateFromFile("testdata/"+filename, &mv); err != nil {
+	mv, err := magica.FromFile("testdata/"+filename)
+	if err != nil {
 		t.Fatalf("error loading test file: %v", err)
 	}
 
-	v := RawVoxelObject(mv).GetProcessedVoxelObject(&colour.Palette{}, false, false)
+	v := GetProcessedVoxelObject(mv, &colour.Palette{}, false, false)
 	return v
 }
 
