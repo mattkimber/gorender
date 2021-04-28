@@ -385,7 +385,9 @@ func (p *ProcessedVoxelObject) setElements(r magica.VoxelObject, isTiled bool, h
 		for y := 0; y < p.Size.Y; y++ {
 			p.Elements[x][y] = make([]ProcessedElement, p.Size.Z)
 			for z := 0; z < p.Size.Z; z++ {
-				p.Elements[x][y][z].Index = r.Voxels[x][y][z]
+				if r.Voxels[x][y][z] != 0 {
+					p.Elements[x][y][z].Index = r.Voxels[x][y][z] - 2
+				}
 
 				// This is a performance hack which saves ~15% time in the voxel processing by providing
 				// a value that can be multiplied by every time rather than needing an `if thing == 0`
