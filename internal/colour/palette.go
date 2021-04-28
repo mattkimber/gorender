@@ -20,6 +20,7 @@ type PaletteRange struct {
 	IsPrimaryCompanyColour   bool `json:"is_primary_company_colour"`
 	IsSecondaryCompanyColour bool `json:"is_secondary_company_colour"`
 	IsAnimatedLight          bool `json:"is_animated_light"`
+	IsProcessColour          bool `json:"is_process_colour"`
 	Smoothness               int  `json:"smoothness"`
 	IsNonRenderable          bool `json:"non_renderable"`
 }

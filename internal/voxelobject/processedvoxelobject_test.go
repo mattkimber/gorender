@@ -13,16 +13,27 @@ func TestRawVoxelObject_GetProcessedVoxelObject(t *testing.T) {
 		t.Fatalf("error loading test file: %v", err)
 	}
 
-	v := GetProcessedVoxelObject(mv, &colour.Palette{}, false, false)
+	entries := make([]colour.PaletteEntry, 256)
+
+	pal := colour.Palette{
+		Entries: 						   entries,
+		CompanyColourLightingContribution: 0,
+		DefaultBrightness:                 0,
+		CompanyColourLightingScale:        0,
+	}
+
+	pal.SetRanges([]colour.PaletteRange{{Start: 0, End: 255}})
+
+	v := GetProcessedVoxelObject(mv, &pal, false, false)
 	testObject(t, mv, v)
 
-	v = GetProcessedVoxelObject(mv, &colour.Palette{}, true, false)
+	v = GetProcessedVoxelObject(mv, &pal, true, false)
 	testObject(t, mv, v)
 
-	v = GetProcessedVoxelObject(mv, &colour.Palette{}, true, true)
+	v = GetProcessedVoxelObject(mv, &pal, true, true)
 	testObject(t, mv, v)
 
-	v = GetProcessedVoxelObject(mv, &colour.Palette{}, false, true)
+	v = GetProcessedVoxelObject(mv, &pal, false, true)
 	testObject(t, mv, v)
 }
 
@@ -96,7 +107,18 @@ func getObject(filename string, t *testing.T) ProcessedVoxelObject {
 		t.Fatalf("error loading test file: %v", err)
 	}
 
-	v := GetProcessedVoxelObject(mv, &colour.Palette{}, false, false)
+	entries := make([]colour.PaletteEntry, 256)
+
+	pal := colour.Palette{
+		Entries: 						   entries,
+		CompanyColourLightingContribution: 0,
+		DefaultBrightness:                 0,
+		CompanyColourLightingScale:        0,
+	}
+
+	pal.SetRanges([]colour.PaletteRange{{Start: 0, End: 255}})
+
+	v := GetProcessedVoxelObject(mv, &pal, false, false)
 	return v
 }
 

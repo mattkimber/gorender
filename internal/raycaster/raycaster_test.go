@@ -50,7 +50,18 @@ func getObject(filename string, t *testing.T) voxelobject.ProcessedVoxelObject {
 		t.Fatalf("error loading test file: %v", err)
 	}
 
-	v := voxelobject.GetProcessedVoxelObject(mv, &colour.Palette{}, false, false)
+	entries := make([]colour.PaletteEntry, 256)
+
+	pal := colour.Palette{
+		Entries: 						   entries,
+		CompanyColourLightingContribution: 0,
+		DefaultBrightness:                 0,
+		CompanyColourLightingScale:        0,
+	}
+
+	pal.SetRanges([]colour.PaletteRange{{Start: 0, End: 255}})
+
+	v := voxelobject.GetProcessedVoxelObject(mv, &pal, false, false)
 	return v
 }
 

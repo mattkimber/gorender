@@ -4,31 +4,32 @@ import (
 	"github.com/mattkimber/gorender/internal/geometry"
 	"github.com/mattkimber/gorender/internal/voxelobject"
 	"math"
-	"math/rand"
 )
 
-var jitter []geometry.Vector3
-
 func castFpRay(object voxelobject.ProcessedVoxelObject, loc0 geometry.Vector3, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3, flipY bool) (result RayResult) {
-	if len(jitter) == 0 {
-		jitter = make([]geometry.Vector3, 20)
-		for i := 0; i < 20; i++ {
-			jitter[i] = geometry.Vector3{X: rand.Float64(), Y: rand.Float64(), Z: rand.Float64()}.Normalise().MultiplyByConstant(0.01)
-		}
-	}
-
-	if collision, loc := castRayToCandidate(object, loc, ray, limits, flipY); collision {
+	if collision, loc, hitBB := castRayToCandidate(object, loc, ray, limits, flipY); collision {
 		lx, ly, lz, isRecovered := recoverNonSurfaceVoxel(object, loc, ray, limits, flipY)
-		return RayResult{X: lx, Y: ly, Z: lz, IsRecovered: isRecovered, HasGeometry: true, Depth: int(loc0.Subtract(loc).Length())}
+		return RayResult{
+			X: lx,
+			Y: ly,
+			Z: lz,
+			IsRecovered: isRecovered,
+			HasGeometry: true,
+			Depth: int(loc0.Subtract(loc).Length()),
+			HitBoundingBox: hitBB,
+		}
+	} else if hitBB {
+		return RayResult{HitBoundingBox: true}
 	}
 
 	return
 }
 
-func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3, flipY bool) (bool, geometry.Vector3) {
+func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3, flipY bool) (bool, geometry.Vector3, bool) {
 	i, fi := 0, 0.0
 	bSizeY := uint8(object.Size.Y - 1)
 	loc0 := loc
+	hitBB := false
 
 	for {
 		// CanTerminate is an expensive check but we don't need to run it every cycle
@@ -37,6 +38,7 @@ func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Ve
 		}
 
 		if isInsideBoundingVolume(loc, limits) {
+			hitBB = true
 			lx, ly, lz := byte(loc.X), byte(loc.Y), byte(loc.Z)
 
 			if flipY {
@@ -44,7 +46,7 @@ func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Ve
 			}
 
 			if object.Elements[lx][ly][lz].Index != 0 {
-				return true, loc
+				return true, loc, hitBB
 			}
 		}
 
@@ -53,7 +55,7 @@ func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Ve
 		loc = loc0.Add(ray.MultiplyByConstant(fi))
 	}
 
-	return false, geometry.Vector3{}
+	return false, geometry.Vector3{}, hitBB
 }
 
 // Attempt to recover a non-surface voxel by taking a more DDA-like approach where we trace backward up the ray

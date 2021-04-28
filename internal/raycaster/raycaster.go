@@ -27,6 +27,7 @@ type RayResult struct {
 	HasGeometry bool
 	Depth       int
 	IsRecovered bool
+	HitBoundingBox bool
 }
 
 type RenderOutput [][]RenderInfo
@@ -77,9 +78,7 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manife
 			for y := 0; y < h; y++ {
 				samples := sampler[thisX][y]
 				result[thisX][y] = make(RenderInfo, len(samples))
-				for i, s := range samples {
-					raycastSample(viewport, s, ray, limits, object, spr, lighting, result, thisX, y, i, bminX, bmaxX, joggle)
-				}
+				raycastSamples(viewport, &samples, ray, limits, object, spr, lighting, result, thisX, y, bminX, bmaxX, joggle)
 			}
 			wg.Done()
 		}()
@@ -90,32 +89,51 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manife
 	return result
 }
 
-func raycastSample(viewport geometry.Plane, s sampler.Sample, ray geometry.Vector3, limits geometry.Vector3, object voxelobject.ProcessedVoxelObject, spr manifest.Sprite, lighting geometry.Vector3, result RenderOutput, thisX int, y int, i int, minX byte, maxX byte, joggle float64) {
-	loc0 := viewport.BiLerpWithinPlane(s.Location.X, s.Location.Y)
-	loc0.Z += joggle
-	loc := getIntersectionWithBounds(loc0, ray, limits)
+func raycastSamples(
+	viewport geometry.Plane,
+	samples *sampler.SampleList,
+	ray geometry.Vector3,
+	limits geometry.Vector3,
+	object voxelobject.ProcessedVoxelObject,
+	spr manifest.Sprite,
+	lighting geometry.Vector3,
+	result RenderOutput,
+	thisX int,
+	y int,
+	minX byte,
+	maxX byte,
+	joggle float64) {
+	for i, s := range *samples {
+		loc0 := viewport.BiLerpWithinPlane(s.Location.X, s.Location.Y)
+		loc0.Z += joggle
+		loc := getIntersectionWithBounds(loc0, ray, limits)
 
-	rayResult := castFpRay(object, loc0, loc, ray, limits, spr.Flip)
-	if rayResult.HasGeometry && rayResult.X >= minX && rayResult.X <= maxX {
-		resultVec := geometry.Vector3{X: float64(rayResult.X), Y: float64(rayResult.Y), Z: float64(rayResult.Z)}
-		shadowLoc := resultVec
+		rayResult := castFpRay(object, loc0, loc, ray, limits, spr.Flip)
+		if rayResult.HasGeometry && rayResult.X >= minX && rayResult.X <= maxX {
+			resultVec := geometry.Vector3{X: float64(rayResult.X), Y: float64(rayResult.Y), Z: float64(rayResult.Z)}
+			shadowLoc := resultVec
 
-		shadowVec := geometry.Zero().Subtract(lighting).Normalise()
+			shadowVec := geometry.Zero().Subtract(lighting).Normalise()
 
-		for {
-			sx, sy, sz := byte(shadowLoc.X), byte(shadowLoc.Y), byte(shadowLoc.Z)
+			for {
+				sx, sy, sz := byte(shadowLoc.X), byte(shadowLoc.Y), byte(shadowLoc.Z)
 
-			if sx != rayResult.X || sy != rayResult.Y || sz != rayResult.Z {
-				break
+				if sx != rayResult.X || sy != rayResult.Y || sz != rayResult.Z {
+					break
+				}
+
+				shadowLoc = shadowLoc.Add(shadowVec)
 			}
 
-			shadowLoc = shadowLoc.Add(shadowVec)
+			// Don't flip Y when calculating shadows, as it has been pre-flipped on input.
+			shadowResult := castFpRay(object, shadowLoc, shadowLoc, shadowVec, limits, false).Depth
+			setResult(&result[thisX][y][i], object.Elements[rayResult.X][rayResult.Y][rayResult.Z], lighting, rayResult.Depth, shadowResult, s.Influence, rayResult.IsRecovered)
+		} else if !rayResult.HitBoundingBox {
+			// Optimise the outside-bounding-box cases by skipping all further samples
+			break
 		}
-
-		// Don't flip Y when calculating shadows, as it has been pre-flipped on input.
-		shadowResult := castFpRay(object, shadowLoc, shadowLoc, shadowVec, limits, false).Depth
-		setResult(&result[thisX][y][i], object.Elements[rayResult.X][rayResult.Y][rayResult.Z], lighting, rayResult.Depth, shadowResult, s.Influence, rayResult.IsRecovered)
 	}
+
 }
 
 func setResult(result *RenderSample, element voxelobject.ProcessedElement, lighting geometry.Vector3, depth int, shadowLength int, influence float64, isRecovered bool) {

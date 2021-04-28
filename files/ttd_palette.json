@@ -154,9 +154,10 @@
       "end": 214
     },
     {
-      "_comment": "reserved",
+      "_comment": "process pink",
       "start": 215,
-      "end": 226
+      "end": 226,
+      "is_process_colour": true
     },
     {
       "_comment": "block cycle",

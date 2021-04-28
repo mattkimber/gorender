@@ -218,3 +218,17 @@ model. These are:
 * `company_colour_lighting_contribution` (`0.0`-`1.0`): how much a colour in the "company colours" range will contribute its own lightness to the lighting model.
 * `default_brightness` (`0.0`-`2.0`): the default brightness used to blend with company colour brightness when this happens. 
 * `company_colour_lighting_scale`: (default `2.0`): how responsive colours in the "company colours" range are to the lighting model.
+
+## Special palette colour properties
+
+The following properties can be used to change palette range behaviour in the palette file:
+
+* `is_primary_company_colour`: This is considered a primary company colour and not blended
+                               with other colours (including the secondary colour).
+* `is_secondary_company_colour`: This is considered a secondary company colour and not blended
+                                with other colours (including the primary colour).
+* `is_process_colour`: This colour will be considered a valid voxel when calculating normals, 
+                       but ignored when rendering and calculating shadows/occlusion/etc.
+                       
+Use the process colour (by default the range of pinks 217-224) to influence how normals
+are generated for very thin objects.

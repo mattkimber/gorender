@@ -19,6 +19,7 @@ type ShaderInfo struct {
 	Lighting       colour.RGB
 	Shadowing      colour.RGB
 	Detail         colour.RGB
+	Transparency   colour.RGB
 	ModalIndex     byte
 	DitheredIndex  byte
 	IsMaskColour   bool
@@ -59,6 +60,9 @@ func GetDetail(s *ShaderInfo) colour.RGB {
 	return s.Detail
 }
 
+func GetTransparency(s *ShaderInfo) colour.RGB {
+	return s.Transparency
+}
 
 func GetIndex(s *ShaderInfo) byte {
 	return s.DitheredIndex
@@ -191,7 +195,16 @@ func squareDiff(a, b float64) float64 {
 
 func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInfo) {
 	totalInfluence, filledInfluence := 0.0, 0.0
+	filledSamples, totalSamples := 0, 0
 	values := map[byte]float64{}
+	fAccuracy := float64(def.Manifest.Accuracy)
+
+	minDepth := math.MaxInt64
+	for _, s := range info {
+		if s.Collision && s.Depth < minDepth {
+			minDepth = s.Depth
+		}
+	}
 
 	for _, s := range info {
 		if s.IsRecovered {
@@ -204,10 +217,16 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 			s.Influence = s.Influence * (1.0 + (s.Detail * def.Manifest.DetailBoost))
 		}
 
+		// Boost samples closest to the camera
+		if s.Depth != minDepth {
+			s.Influence = s.Influence / fAccuracy
+		}
+
 		totalInfluence += s.Influence
 
 		if s.Collision && def.Palette.IsRenderable(s.Index) {
 			filledInfluence += s.Influence
+			filledSamples += 1
 
 			output.Colour = output.Colour.Add(Colour(s, def, true, s.Influence))
 			output.SpecialColour = output.SpecialColour.Add(Colour(s, def, false, s.Influence))
@@ -231,6 +250,8 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 				output.Detail = output.Detail.Add(Detail(s))
 			}
 		}
+
+		totalSamples++
 	}
 
 	max := 0.0
@@ -242,9 +263,9 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 		}
 	}
 
-	// No collisions = transparent
-	if filledInfluence <= 0.1 {
-		return
+	// Fewer than 50% collisions = transparent
+	if totalSamples == 0 || filledSamples * 100 / totalSamples <= 50 {
+		return ShaderInfo{}
 	}
 
 	// Soften edges means that when only some rays collided (typically near edges
@@ -268,13 +289,15 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 	output.Specialness = output.Specialness / divisor
 
 	if def.Debug {
-		output.Normal.DivideAndClamp(divisor)
-		output.AveragedNormal.DivideAndClamp(divisor)
-		output.Depth.DivideAndClamp(divisor)
-		output.Occlusion.DivideAndClamp(divisor)
-		output.Shadowing.DivideAndClamp(divisor)
-		output.Lighting.DivideAndClamp(divisor)
-		output.Detail.DivideAndClamp(divisor)
+		debugDivisor := float64(filledSamples)
+		output.Normal.DivideAndClamp(debugDivisor)
+		output.AveragedNormal.DivideAndClamp(debugDivisor)
+		output.Depth.DivideAndClamp(debugDivisor)
+		output.Occlusion.DivideAndClamp(debugDivisor)
+		output.Shadowing.DivideAndClamp(debugDivisor)
+		output.Lighting.DivideAndClamp(debugDivisor)
+		output.Detail.DivideAndClamp(debugDivisor)
+		output.Transparency = FloatValue(float64(filledSamples)/ float64(totalSamples))
 	}
 
 	return

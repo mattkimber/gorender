@@ -82,6 +82,11 @@ func processFirstPassElement(p *ProcessedVoxelObject, x int, y int, z int) {
 }
 
 func processSecondPassElement(p *ProcessedVoxelObject, x int, y int, z int) {
+	// Remove process colours before doing the second pass
+	if p.Elements[x][y][z].Index != 0 && p.Palette.Entries[p.Elements[x][y][z].Index].Range.IsProcessColour {
+		p.Elements[x][y][z].Index = 0
+	}
+
 	p.Elements[x][y][z].AveragedNormal = p.getAverageNormal(x, y, z)
 	p.Elements[x][y][z].Occlusion = p.getOcclusion(x, y, z)
 	p.Elements[x][y][z].Detail = p.getDetail(x, y, z)
@@ -324,12 +329,16 @@ func (p *ProcessedVoxelObject) isSurface(x, y, z int) bool {
 	// The edges of the voxel object are trivially surface voxels
 	return p.Elements[x][y][z].Index != 0 && (x == 0 || y == 0 || z == 0 || // Edges are surface voxels
 		x == p.Size.X-1 || y == p.Size.Y-1 || z == p.Size.Z-1 || // Edges are surface voxels
-		p.Elements[x+1][y][z].Index == 0 || p.Elements[x-1][y][z].Index == 0 ||
-		p.Elements[x][y+1][z].Index == 0 || p.Elements[x][y-1][z].Index == 0 ||
-		p.Elements[x][y][z+1].Index == 0 || p.Elements[x][y][z-1].Index == 0)
-	//p.Elements[x][y][z-1].Index == 0 || p.Elements[x-1][y][z+1].Index == 0 ||
-	//p.Elements[x][y][z+1].Index == 0 || p.Elements[x+1][y][z+1].Index == 0 ||
-	//p.Elements[x][y-1][z+1].Index == 0 || p.Elements[x][y+1][z+1].Index == 0)
+		p.isInvisibleColourIndex(p.Elements[x+1][y][z].Index) ||
+		p.isInvisibleColourIndex(p.Elements[x-1][y][z].Index) ||
+		p.isInvisibleColourIndex(p.Elements[x][y+1][z].Index) ||
+		p.isInvisibleColourIndex(p.Elements[x][y-1][z].Index) ||
+		p.isInvisibleColourIndex(p.Elements[x][y][z+1].Index) ||
+		p.isInvisibleColourIndex(p.Elements[x][y][z-1].Index))
+}
+
+func (p *ProcessedVoxelObject) isInvisibleColourIndex(idx byte) bool {
+	return idx == 0 || p.Palette.Entries[idx].Range.IsProcessColour
 }
 
 func (p *ProcessedVoxelObject) setElements(r magica.VoxelObject, isTiled bool, hasBase bool) {

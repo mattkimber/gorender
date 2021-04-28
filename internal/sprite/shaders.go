@@ -23,7 +23,7 @@ func AveragedNormal(smp raycaster.RenderSample) colour.RGB {
 }
 
 func Depth(smp raycaster.RenderSample) colour.RGB {
-	v := float64(smp.Depth * 400)
+	v := float64(smp.Depth * 100)
 	return colour.RGB{R: v, G: v, B: v}
 }
 
@@ -45,6 +45,11 @@ func Lighting(smp raycaster.RenderSample) colour.RGB {
 func Detail(smp raycaster.RenderSample) colour.RGB {
 	v := 32767 + (smp.Detail * 32767)
 	return colour.RGB{R: v, G: v, B: v}
+}
+
+func FloatValue(value float64) colour.RGB {
+	v := 32767 + (value * 32767)
+	return colour.ClampRGB(colour.RGB{R: v, G: v, B: v})
 }
 
 func getLightingOffset(smp raycaster.RenderSample, depthInfluence float64) float64 {
