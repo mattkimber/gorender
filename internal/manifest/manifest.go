@@ -52,13 +52,14 @@ type Manifest struct {
 	DetailBoost          float64          `json:"detail_boost"`
 	FadeToBlack          bool             `json:"fade_to_black"`
 	EdgeThreshold        float64          `json:"alpha_edge_threshold"`
+	HardEdgeThreshold    float64          `json:"hard_edge_threshold"`
 	PadToFullLength      bool             `json:"pad_to_full_length"`
 	SliceThreshold       int              `json:"slice_threshold"`
 	SliceLength          int              `json:"slice_length"`
 	SliceOverlap         int              `json:"slice_overlap"`
 	Falloff              float64          `json:"falloff_adjustment"`
 	RecoveredVoxelSuppression float64     `json:"recovered_voxel_suppression"`
-	Joggle               float64 `json:"joggle"`
+	Joggle               float64 		  `json:"joggle"`
 }
 
 func FromJson(handle io.Reader) (manifest Manifest, err error) {

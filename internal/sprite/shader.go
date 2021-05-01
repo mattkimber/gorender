@@ -198,6 +198,7 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 	filledSamples, totalSamples := 0, 0
 	values := map[byte]float64{}
 	fAccuracy := float64(def.Manifest.Accuracy)
+	hardEdgeThreshold := int(def.Manifest.HardEdgeThreshold * 100.0)
 
 	minDepth := math.MaxInt64
 	for _, s := range info {
@@ -263,8 +264,8 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 		}
 	}
 
-	// Fewer than 50% collisions = transparent
-	if totalSamples == 0 || filledSamples * 100 / totalSamples <= 50 {
+	// Fewer than hard edge threshold collisions = transparent
+	if totalSamples == 0 || filledSamples * 100 / totalSamples <= hardEdgeThreshold {
 		return ShaderInfo{}
 	}
 

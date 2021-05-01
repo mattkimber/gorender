@@ -2,4 +2,4 @@ module github.com/mattkimber/gorender
 
 go 1.14
 
-require github.com/mattkimber/gandalf v1.1.0
+require github.com/mattkimber/gandalf v1.0.0

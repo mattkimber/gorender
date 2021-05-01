@@ -100,7 +100,8 @@ The fields are as follows:
 * `brightness`: A value between `[-1.0, 1.0]` for adjusting the brightness of the output. `0` (the default) means no change.
 * `contrast`: A value between `[-1.0, 1.0]` for adjusting the contrast of the output. `0` (the default) means no change.
 * `fade_to_black`: When edge-softening, whether to allow edge colours to fade to black or to keep their original shade. When true, produces black borders on objects.
-* `alpha_edge_threshold`: The alpha value above which a pixel will be output instead of set to transparent. (Default 0.5)
+* `alpha_edge_threshold`: The alpha value above which a pixel will be output instead of set to transparent, when above the edge-softening scale. (Default 0.5)
+* `hard_edge_threshold`: The alpha value above which a pixel will be output instead of set to transparent, even when not above the edge-softening scale. (Default 0.0)
 * `pad_to_full_length`: If this is set to `true`, voxel objects will be padded in their length (x) dimension to the size
    configured in the manifest. This can help with aligning many sizes of object consistently.
 * `recovered_voxel_suppression`: Sometimes surface voxel recovery gives unexpected results. Set this to a value greater

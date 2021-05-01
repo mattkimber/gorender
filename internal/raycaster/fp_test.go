@@ -56,7 +56,7 @@ func Test_castFpRay(t *testing.T) {
 
 }
 
-func testFpResult(t *testing.T, result RayResult, expectedY uint8) {
+func testFpResult(t *testing.T, result RayResult, expectedY int) {
 	if !result.HasGeometry {
 		t.Errorf("did not find geometry")
 	}
