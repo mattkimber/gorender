@@ -49,8 +49,8 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manife
 		if minX < 0 {
 			minX = 0
 		}
-		if maxX > 255 {
-			maxX = 255
+		if maxX > object.Size.X {
+			maxX = object.Size.X
 		}
 	}
 
