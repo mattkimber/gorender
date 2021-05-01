@@ -23,7 +23,7 @@ type RenderSample struct {
 }
 
 type RayResult struct {
-	X, Y, Z     byte
+	X, Y, Z     int
 	HasGeometry bool
 	Depth       int
 	IsRecovered bool
@@ -54,8 +54,6 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manife
 		}
 	}
 
-	bminX, bmaxX := byte(minX), byte(maxX)
-
 	limits := geometry.Vector3{X: float64(size.X), Y: float64(size.Y), Z: float64(size.Z)}
 
 	viewport := getViewportPlane(spr.Angle, m, spr.ZError, size, float64(spr.RenderElevationAngle))
@@ -78,7 +76,7 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manife
 			for y := 0; y < h; y++ {
 				samples := sampler[thisX][y]
 				result[thisX][y] = make(RenderInfo, len(samples))
-				raycastSamples(viewport, &samples, ray, limits, object, spr, lighting, result, thisX, y, bminX, bmaxX, joggle)
+				raycastSamples(viewport, &samples, ray, limits, object, spr, lighting, result, thisX, y, minX, maxX, joggle)
 			}
 			wg.Done()
 		}()
@@ -100,8 +98,8 @@ func raycastSamples(
 	result RenderOutput,
 	thisX int,
 	y int,
-	minX byte,
-	maxX byte,
+	minX int,
+	maxX int,
 	joggle float64) {
 	for i, s := range *samples {
 		loc0 := viewport.BiLerpWithinPlane(s.Location.X, s.Location.Y)
@@ -116,7 +114,7 @@ func raycastSamples(
 			shadowVec := geometry.Zero().Subtract(lighting).Normalise()
 
 			for {
-				sx, sy, sz := byte(shadowLoc.X), byte(shadowLoc.Y), byte(shadowLoc.Z)
+				sx, sy, sz := int(shadowLoc.X), int(shadowLoc.Y), int(shadowLoc.Z)
 
 				if sx != rayResult.X || sy != rayResult.Y || sz != rayResult.Z {
 					break

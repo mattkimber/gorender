@@ -14,10 +14,6 @@ type Point struct {
 	X, Y, Z int
 }
 
-type PointB struct {
-	X, Y, Z byte
-}
-
 type PointWithColour struct {
 	Point  Point
 	Colour byte

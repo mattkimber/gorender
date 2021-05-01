@@ -60,11 +60,11 @@ func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Ve
 
 // Attempt to recover a non-surface voxel by taking a more DDA-like approach where we trace backward up the ray
 // starting with X, then Y, then Z, then repeat until we find a surface voxel or bail.
-func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3, flipY bool) (lx byte, ly byte, lz byte, isRecovered bool) {
+func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3, flipY bool) (lx int, ly int, lz int, isRecovered bool) {
 
-	bSizeY := uint8(object.Size.Y - 1)
+	bSizeY := object.Size.Y - 1
 
-	lx, ly, lz = byte(loc.X), byte(loc.Y), byte(loc.Z)
+	lx, ly, lz = int(loc.X), int(loc.Y), int(loc.Z)
 	if flipY {
 		ly = bSizeY - ly
 	}
@@ -77,14 +77,14 @@ func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometr
 	isRecovered = true
 
 	// Check always checks a 9 voxel "halo"
-	check := make([]geometry.PointB, 9)
+	check := make([]geometry.Point, 9)
 	checkOrder := []int{4, 1, 7, 3, 5, 0, 2, 6, 8}
 
 	loc0 := loc
 	x, y, z := ray.X, ray.Y, ray.Z
 
 	for i := 0; i < 10; i++ {
-		lx, ly, lz = byte(loc.X), byte(loc.Y), byte(loc.Z)
+		lx, ly, lz = int(loc.X), int(loc.Y), int(loc.Z)
 		if flipY {
 			ly = bSizeY - ly
 		}
@@ -94,24 +94,24 @@ func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometr
 			if math.Abs(x) > math.Abs(y) && math.Abs(x) > math.Abs(z) {
 				// X-major
 
-				for k := byte(0); k < 9; k++ {
-					check[k] = geometry.PointB{X: lx, Y: ly - 1 + (k % 3), Z: lz - 1 + (k / 3)}
+				for k := 0; k < 9; k++ {
+					check[k] = geometry.Point{X: lx, Y: ly - 1 + (k % 3), Z: lz - 1 + (k / 3)}
 				}
 
 				x = 0
 			} else if math.Abs(y) > math.Abs(x) && math.Abs(y) > math.Abs(z) {
 				// Y-major
 
-				for k := byte(0); k < 9; k++ {
-					check[k] = geometry.PointB{X: lx - 1 + (k % 3), Y: ly, Z: lz - 1 + (k / 3)}
+				for k := 0; k < 9; k++ {
+					check[k] = geometry.Point{X: lx - 1 + (k % 3), Y: ly, Z: lz - 1 + (k / 3)}
 				}
 
 				y = 0
 			} else if math.Abs(z) > math.Abs(x) && math.Abs(z) > math.Abs(y) {
 				// Z-major
 
-				for k := byte(0); k < 9; k++ {
-					check[k] = geometry.PointB{X: lx - 1 + (k % 3), Y: ly - 1 + (k / 3), Z: lz}
+				for k := 0; k < 9; k++ {
+					check[k] = geometry.Point{X: lx - 1 + (k % 3), Y: ly - 1 + (k / 3), Z: lz}
 				}
 
 				z = 0
@@ -138,7 +138,7 @@ func recoverNonSurfaceVoxel(object voxelobject.ProcessedVoxelObject, loc geometr
 		loc = loc.Subtract(ray.Normalise())
 	}
 
-	lx, ly, lz = byte(loc0.X), byte(loc0.Y), byte(loc0.Z)
+	lx, ly, lz = int(loc0.X), int(loc0.Y), int(loc0.Z)
 
 	if flipY {
 		ly = bSizeY - ly
