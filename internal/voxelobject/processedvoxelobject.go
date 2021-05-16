@@ -4,6 +4,7 @@ import (
 	"github.com/mattkimber/gandalf/magica"
 	"github.com/mattkimber/gorender/internal/colour"
 	"github.com/mattkimber/gorender/internal/geometry"
+	"log"
 	"sync"
 )
 
@@ -161,6 +162,12 @@ func (p *ProcessedVoxelObject) getDetail(x, y, z int) (detail float64) {
 
 	thisIndex := p.Elements[x][y][z].Index
 	thisRange := p.Palette.Entries[p.Elements[x][y][z].Index].Range
+
+	if thisRange == nil {
+		thisRange = &colour.PaletteRange{}
+		log.Printf("Invalid range for colour %d", thisIndex)
+	}
+
 	total, diff := 0.0, 0.0
 
 	distance := 2
@@ -169,6 +176,7 @@ func (p *ProcessedVoxelObject) getDetail(x, y, z int) (detail float64) {
 	for i := minI; i <= maxI; i++ {
 		for j := minJ; j <= maxJ; j++ {
 			for k := minK; k <= maxK; k++ {
+
 				if p.Elements[x+i][y+j][z+k].IsSurface && (i != 0 || j != 0 || k != 0) {
 					total += 1.0
 					elem := p.Elements[x+i][y+j][z+k].Index
@@ -335,7 +343,7 @@ func (p *ProcessedVoxelObject) getOcclusion(x, y, z int) (occlusion int) {
 func (p *ProcessedVoxelObject) isSurface(x, y, z int) bool {
 	// A voxel is a surface voxel if any of the adjacent directions is zero
 	// The edges of the voxel object are trivially surface voxels
-	return p.Elements[x][y][z].Index != 0 && (x == 0 || y == 0 || z == 0 || // Edges are surface voxels
+	return !p.isInvisibleColourIndex(p.Elements[x][y][z].Index) && (x == 0 || y == 0 || z == 0 || // Edges are surface voxels
 		x == p.Size.X-1 || y == p.Size.Y-1 || z == p.Size.Z-1 || // Edges are surface voxels
 		p.isInvisibleColourIndex(p.Elements[x+1][y][z].Index) ||
 		p.isInvisibleColourIndex(p.Elements[x-1][y][z].Index) ||

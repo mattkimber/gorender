@@ -19,6 +19,7 @@ type RenderSample struct {
 	Shadowing              float64
 	Influence 			   float64
 	Detail				   float64
+	Count                  int
 	IsRecovered            bool
 }
 
@@ -103,6 +104,11 @@ func raycastSamples(
 	joggle float64) {
 
 	px, py, pz, pi := 0, 0, 0, 0
+
+	for i, _ := range *samples {
+		result[thisX][y][i].Count = 1
+	}
+
 	for i, s := range *samples {
 		loc0 := viewport.BiLerpWithinPlane(s.Location.X, s.Location.Y)
 		loc0.Z += joggle
@@ -115,6 +121,10 @@ func raycastSamples(
 			// later
 			if rayResult.X == px && rayResult.Y == py && rayResult.Z == pz {
 				result[thisX][y][pi].Influence += s.Influence
+				result[thisX][y][pi].Count++
+
+				// Set the count for this element to 0
+				result[thisX][y][i].Count = 0
 				continue
 			} else {
 				px = rayResult.X
@@ -146,7 +156,6 @@ func raycastSamples(
 			break
 		}
 	}
-
 }
 
 func setResult(result *RenderSample, element voxelobject.ProcessedElement, lighting geometry.Vector3, depth int, shadowLength int, influence float64, isRecovered bool) {
@@ -166,6 +175,7 @@ func setResult(result *RenderSample, element voxelobject.ProcessedElement, light
 	result.AveragedNormal = element.AveragedNormal
 	result.Detail = element.Detail
 	result.Influence = influence
+	result.Count = 1
 	result.IsRecovered = isRecovered
 }
 

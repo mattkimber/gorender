@@ -237,7 +237,7 @@ func shade(info raycaster.RenderInfo, def manifest.Definition, prevIndex byte) (
 
 		if s.Collision && def.Palette.IsRenderable(s.Index) {
 			filledInfluence += s.Influence
-			filledSamples += 1
+			filledSamples += s.Count
 
 			output.Colour = output.Colour.Add(Colour(s, def, true, s.Influence))
 			output.SpecialColour = output.SpecialColour.Add(Colour(s, def, false, s.Influence))
@@ -262,7 +262,7 @@ func shade(info raycaster.RenderInfo, def manifest.Definition, prevIndex byte) (
 			}
 		}
 
-		totalSamples++
+		totalSamples = totalSamples + s.Count
 	}
 
 	max := 0.0
@@ -278,7 +278,7 @@ func shade(info raycaster.RenderInfo, def manifest.Definition, prevIndex byte) (
 	}
 
 	// Supply a same-range alternative if we are going to repeat the same colour and we have an alternative
-	if output.ModalIndex == prevIndex && def.Palette.Entries[output.ModalIndex].Range == def.Palette.Entries[alternateModal].Range {
+	if output.ModalIndex == prevIndex && def.Palette.Entries[output.ModalIndex].Range == def.Palette.Entries[alternateModal].Range && alternateModal != 0 {
 		output.ModalIndex = alternateModal
 	}
 
