@@ -93,6 +93,8 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 
 	var error colour.RGB
 
+	prevIndex := byte(0)
+
 	for x := 0; x < width; x++ {
 		output[x] = make([]ShaderInfo, height)
 
@@ -103,7 +105,15 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 				continue
 			}
 
-			output[x][y] = shade(renderOutput[rx][ry], def)
+			if x > 1 {
+				prevIndex = output[x-1][y].ModalIndex
+			} else {
+				prevIndex = 0
+			}
+
+			output[x][y] = shade(renderOutput[rx][ry], def, prevIndex)
+
+
 			bestIndex := byte(0)
 
 			rng := def.Palette.Entries[output[x][y].ModalIndex].Range
@@ -193,7 +203,7 @@ func squareDiff(a, b float64) float64 {
 	return diff * diff
 }
 
-func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInfo) {
+func shade(info raycaster.RenderInfo, def manifest.Definition, prevIndex byte) (output ShaderInfo) {
 	totalInfluence, filledInfluence := 0.0, 0.0
 	filledSamples, totalSamples := 0, 0
 	values := map[byte]float64{}
@@ -256,12 +266,20 @@ func shade(info raycaster.RenderInfo, def manifest.Definition) (output ShaderInf
 	}
 
 	max := 0.0
+	alternateModal := byte(0)
 
 	for k, v := range values {
 		if v > max {
 			max = v
+			// Store the previous modal
+			alternateModal = output.ModalIndex
 			output.ModalIndex = k
 		}
+	}
+
+	// Supply a same-range alternative if we are going to repeat the same colour and we have an alternative
+	if output.ModalIndex == prevIndex && def.Palette.Entries[output.ModalIndex].Range == def.Palette.Entries[alternateModal].Range {
+		output.ModalIndex = alternateModal
 	}
 
 	// Fewer than hard edge threshold collisions = transparent

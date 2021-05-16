@@ -173,7 +173,12 @@ func (p *ProcessedVoxelObject) getDetail(x, y, z int) (detail float64) {
 					total += 1.0
 					elem := p.Elements[x+i][y+j][z+k].Index
 					elemRange := p.Palette.Entries[elem].Range
-					if elemRange != thisRange || (elemRange == thisRange && (thisRange.IsPrimaryCompanyColour || thisRange.IsSecondaryCompanyColour) && elem != thisIndex)  {
+
+					// Rules for "different":
+					// more than 2 palette indexes apart
+					// not the same range
+					// in a company colour range and different colours
+					if elem - thisIndex > 2 || thisIndex - elem > 2 || elemRange != thisRange || (elemRange == thisRange && (thisRange.IsPrimaryCompanyColour || thisRange.IsSecondaryCompanyColour) && elem != thisIndex)  {
 						diff += 1.0
 					}
 				}
