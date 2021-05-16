@@ -160,6 +160,7 @@ func (p *ProcessedVoxelObject) getDetail(x, y, z int) (detail float64) {
 	}
 
 	thisIndex := p.Elements[x][y][z].Index
+	thisRange := p.Palette.Entries[p.Elements[x][y][z].Index].Range
 	total, diff := 0.0, 0.0
 
 	distance := 2
@@ -170,7 +171,9 @@ func (p *ProcessedVoxelObject) getDetail(x, y, z int) (detail float64) {
 			for k := minK; k <= maxK; k++ {
 				if p.Elements[x+i][y+j][z+k].IsSurface && (i != 0 || j != 0 || k != 0) {
 					total += 1.0
-					if p.Elements[x+i][y+j][z+k].Index != thisIndex {
+					elem := p.Elements[x+i][y+j][z+k].Index
+					elemRange := p.Palette.Entries[elem].Range
+					if elemRange != thisRange || (elemRange == thisRange && (thisRange.IsPrimaryCompanyColour || thisRange.IsSecondaryCompanyColour) && elem != thisIndex)  {
 						diff += 1.0
 					}
 				}

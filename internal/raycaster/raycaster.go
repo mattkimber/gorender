@@ -101,13 +101,28 @@ func raycastSamples(
 	minX int,
 	maxX int,
 	joggle float64) {
+
+	px, py, pz, pi := 0, 0, 0, 0
 	for i, s := range *samples {
 		loc0 := viewport.BiLerpWithinPlane(s.Location.X, s.Location.Y)
 		loc0.Z += joggle
 		loc := getIntersectionWithBounds(loc0, ray, limits)
 
 		rayResult := castFpRay(object, loc0, loc, ray, limits, spr.Flip)
+
 		if rayResult.HasGeometry && rayResult.X >= minX && rayResult.X <= maxX {
+			// Speed up for cases where we already encountered this voxel - reduce the amount of sampling needed
+			// later
+			if rayResult.X == px && rayResult.Y == py && rayResult.Z == pz {
+				result[thisX][y][pi].Influence += s.Influence
+				continue
+			} else {
+				px = rayResult.X
+				py = rayResult.Y
+				pz = rayResult.Z
+				pi = i
+			}
+
 			resultVec := geometry.Vector3{X: float64(rayResult.X), Y: float64(rayResult.Y), Z: float64(rayResult.Z)}
 			shadowLoc := resultVec
 

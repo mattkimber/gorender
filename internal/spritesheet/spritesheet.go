@@ -47,9 +47,8 @@ func GetSpritesheets(def manifest.Definition) (sheets Spritesheets) {
 	bounds := image.Rectangle{Max: image.Point{X: w, Y: h}}
 	spriteInfos := make([]SpriteInfo, len(def.Manifest.Sprites))
 
-	timingutils.Time("Raycasting/sampling", def.Time, func() {
-		raycast(def, spriteInfos)
-	})
+	raycast(def, spriteInfos)
+
 
 	timingutils.Time("Spritesheets", def.Time, func() {
 		getRegularSheets(&sheets, def, bounds, spriteInfos)
@@ -112,16 +111,27 @@ func getRegularSheets(sheets *Spritesheets, def manifest.Definition, bounds imag
 }
 
 func raycast(def manifest.Definition, spriteInfos []SpriteInfo) {
-	for i, spr := range def.Manifest.Sprites {
-		rect := getSpriteSizeForAngle(spr, def.Scale)
+	renderOutputs := make([]raycaster.RenderOutput, len(def.Manifest.Sprites))
 
-		smpFunc := sampler.Get(def.Manifest.Sampler)
-		smp := smpFunc(rect.Max.X, rect.Max.Y, def.Manifest.Accuracy, def.Manifest.Overlap, 0.5 + def.Manifest.Falloff)
+	timingutils.Time("Raycasting", def.Time, func() {
+		for i, spr := range def.Manifest.Sprites {
+			rect := getSpriteSizeForAngle(spr, def.Scale)
 
-		spriteInfos[i].SpriteBounds = rect
-		renderOutput := raycaster.GetRaycastOutput(def.Object, def.Manifest, spr, smp)
-		spriteInfos[i].ShaderOutput = sprite.GetShaderOutput(renderOutput, spr, def, rect.Max.X, rect.Max.Y)
-	}
+			smpFunc := sampler.Get(def.Manifest.Sampler)
+			smp := smpFunc(rect.Max.X, rect.Max.Y, def.Manifest.Accuracy, def.Manifest.Overlap, 0.5+def.Manifest.Falloff)
+
+			spriteInfos[i].SpriteBounds = rect
+			renderOutputs[i] = raycaster.GetRaycastOutput(def.Object, def.Manifest, spr, smp)
+		}
+	})
+
+
+	timingutils.Time("Sampling", def.Time, func() {
+		for i, spr := range def.Manifest.Sprites {
+			rect := getSpriteSizeForAngle(spr, def.Scale)
+			spriteInfos[i].ShaderOutput = sprite.GetShaderOutput(renderOutputs[i], spr, def, rect.Max.X, rect.Max.Y)
+		}
+	})
 }
 
 func get8bppSpritesheetImage(def manifest.Definition, bounds image.Rectangle, spriteInfos []SpriteInfo, depth string) image.Image {
