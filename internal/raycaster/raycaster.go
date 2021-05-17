@@ -24,11 +24,11 @@ type RenderSample struct {
 }
 
 type RayResult struct {
-	X, Y, Z     int
-	HasGeometry bool
-	Depth       int
-	IsRecovered bool
-	HitBoundingBox bool
+	X, Y, Z               int
+	HasGeometry           bool
+	Depth                 int
+	IsRecovered           bool
+	ApproachedBoundingBox bool
 }
 
 type RenderOutput [][]RenderInfo
@@ -151,7 +151,7 @@ func raycastSamples(
 			// Don't flip Y when calculating shadows, as it has been pre-flipped on input.
 			shadowResult := castFpRay(object, shadowLoc, shadowLoc, shadowVec, limits, false).Depth
 			setResult(&result[thisX][y][i], object.Elements[rayResult.X][rayResult.Y][rayResult.Z], lighting, rayResult.Depth, shadowResult, s.Influence, rayResult.IsRecovered)
-		} else if !rayResult.HitBoundingBox {
+		} else if !rayResult.ApproachedBoundingBox {
 			// Optimise the outside-bounding-box cases by skipping all further samples
 			break
 		}

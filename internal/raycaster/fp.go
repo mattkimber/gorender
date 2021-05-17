@@ -7,19 +7,19 @@ import (
 )
 
 func castFpRay(object voxelobject.ProcessedVoxelObject, loc0 geometry.Vector3, loc geometry.Vector3, ray geometry.Vector3, limits geometry.Vector3, flipY bool) (result RayResult) {
-	if collision, loc, hitBB := castRayToCandidate(object, loc, ray, limits, flipY); collision {
+	if collision, loc, approachedBB := castRayToCandidate(object, loc, ray, limits, flipY); collision {
 		lx, ly, lz, isRecovered := recoverNonSurfaceVoxel(object, loc, ray, limits, flipY)
 		return RayResult{
-			X: lx,
-			Y: ly,
-			Z: lz,
-			IsRecovered: isRecovered,
-			HasGeometry: true,
-			Depth: int(loc0.Subtract(loc).Length()),
-			HitBoundingBox: hitBB,
+			X:                     lx,
+			Y:                     ly,
+			Z:                     lz,
+			IsRecovered:           isRecovered,
+			HasGeometry:           true,
+			Depth:                 int(loc0.Subtract(loc).Length()),
+			ApproachedBoundingBox: approachedBB,
 		}
-	} else if hitBB {
-		return RayResult{HitBoundingBox: true}
+	} else if approachedBB {
+		return RayResult{ApproachedBoundingBox: true}
 	}
 
 	return
@@ -29,7 +29,7 @@ func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Ve
 	i, fi := 0, 0.0
 	bSizeY := object.Size.Y - 1
 	loc0 := loc
-	hitBB := false
+	approachedBB := false
 
 	for {
 		// CanTerminate is an expensive check but we don't need to run it every cycle
@@ -38,7 +38,7 @@ func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Ve
 		}
 
 		if isInsideBoundingVolume(loc, limits) {
-			hitBB = true
+			approachedBB = true
 			lx, ly, lz := int(loc.X), int(loc.Y), int(loc.Z)
 
 			if flipY {
@@ -46,8 +46,10 @@ func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Ve
 			}
 
 			if object.Elements[lx][ly][lz].Index != 0 {
-				return true, loc, hitBB
+				return true, loc, approachedBB
 			}
+		} else if !approachedBB && isNearlyInsideBoundingVolume(loc, limits) {
+			approachedBB = true
 		}
 
 		i++
@@ -55,7 +57,7 @@ func castRayToCandidate(object voxelobject.ProcessedVoxelObject, loc geometry.Ve
 		loc = loc0.Add(ray.MultiplyByConstant(fi))
 	}
 
-	return false, geometry.Vector3{}, hitBB
+	return false, geometry.Vector3{}, approachedBB
 }
 
 // Attempt to recover a non-surface voxel by taking a more DDA-like approach where we trace backward up the ray
@@ -173,6 +175,11 @@ func getIntersectionVector(rayDimension, locDimension, limitDimension float64, r
 	}
 
 	return geometry.Zero()
+}
+
+func isNearlyInsideBoundingVolume(loc geometry.Vector3, limits geometry.Vector3) bool {
+	// We are within 3 voxels of the bounding box, which is considered "approached"
+	return loc.X >= -3 && loc.Y >= -3 && loc.Z >= -3 && loc.X < limits.X + 3 && loc.Y < limits.Y + 3 && loc.Z < limits.Z + 3
 }
 
 func isInsideBoundingVolume(loc geometry.Vector3, limits geometry.Vector3) bool {
