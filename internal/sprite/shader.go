@@ -252,13 +252,16 @@ func shade(info raycaster.RenderInfo, def manifest.Definition, prevIndex byte) (
 			}
 
 			if def.Debug {
-				output.Normal = output.Normal.Add(Normal(s))
-				output.AveragedNormal = output.AveragedNormal.Add(AveragedNormal(s))
-				output.Depth = output.Depth.Add(Depth(s))
-				output.Occlusion = output.Occlusion.Add(Occlusion(s))
-				output.Shadowing = output.Shadowing.Add(Shadow(s))
-				output.Lighting = output.Lighting.Add(Lighting(s))
-				output.Detail = output.Detail.Add(Detail(s))
+				// Loop makes this a little slower but is fine for debug purposes
+				for i := 0; i < s.Count; i++ {
+					output.Normal = output.Normal.Add(Normal(s))
+					output.AveragedNormal = output.AveragedNormal.Add(AveragedNormal(s))
+					output.Depth = output.Depth.Add(Depth(s))
+					output.Occlusion = output.Occlusion.Add(Occlusion(s))
+					output.Shadowing = output.Shadowing.Add(Shadow(s))
+					output.Lighting = output.Lighting.Add(Lighting(s))
+					output.Detail = output.Detail.Add(Detail(s))
+				}
 			}
 		}
 

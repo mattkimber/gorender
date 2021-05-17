@@ -56,7 +56,7 @@ func getLightingOffset(smp raycaster.RenderSample, depthInfluence float64) float
 	lightingOffset := -0.3
 	lightingOffset += smp.LightAmount * 0.6
 	lightingOffset += (-(float64(smp.Depth-120) / 40)) * depthInfluence
-	lightingOffset += (-float64(smp.Occlusion) / 10.0) * 0.2
+	lightingOffset += (-float64(smp.Occlusion) / 10.0) * 0.3
 	lightingOffset -= smp.Shadowing * 0.2
 
 	lightingOffset = lightingOffset / 1.5
