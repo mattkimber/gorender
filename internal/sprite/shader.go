@@ -4,6 +4,7 @@ import (
 	"github.com/mattkimber/gorender/internal/colour"
 	"github.com/mattkimber/gorender/internal/manifest"
 	"github.com/mattkimber/gorender/internal/raycaster"
+	"log"
 	"math"
 )
 
@@ -20,6 +21,7 @@ type ShaderInfo struct {
 	Shadowing      colour.RGB
 	Detail         colour.RGB
 	Transparency   colour.RGB
+	Region         int
 	ModalIndex     byte
 	DitheredIndex  byte
 	IsMaskColour   bool
@@ -27,6 +29,13 @@ type ShaderInfo struct {
 }
 
 type ShaderOutput [][]ShaderInfo
+
+type RegionInfo struct {
+	ModalCount map[byte]int
+	MinIndex byte
+	MaxIndex byte
+	Range *colour.PaletteRange
+}
 
 func GetColour(s *ShaderInfo) colour.RGB {
 	return s.Colour
@@ -77,6 +86,14 @@ func GetMaskIndex(s *ShaderInfo) byte {
 	return 0
 }
 
+func GetRegion(s *ShaderInfo)  colour.RGB {
+	return colour.RGB{
+		R: float64(s.Region % 4 * (65535/4)),
+		G: float64((s.Region/4) % 4 * (65535/4)),
+		B: float64((s.Region/16) % 4 * (65535/4)),
+	}
+}
+
 func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, def manifest.Definition, width int, height int) (output ShaderOutput) {
 	output = make([][]ShaderInfo, width)
 
@@ -113,6 +130,42 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 
 			output[x][y] = shade(renderOutput[rx][ry], def, prevIndex)
 
+		}
+	}
+
+	currentRegion := 1
+	regions := make(map[int]RegionInfo)
+
+	// Calculate regions from the shaded output
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			info := RegionInfo{}
+
+			// No region for transparent/empty voxels
+			if output[x][y].ModalIndex == 0 {
+				continue
+			}
+
+			// Don't set region if it was already set
+			if output[x][y].Region != 0 {
+				continue
+			}
+
+			// Flood fill the region connected to this pixel
+			paletteRange := def.Palette.Entries[output[x][y].ModalIndex].Range
+			info.Range = paletteRange
+			info.ModalCount = make(map[byte]int)
+
+			floodFill(&output, currentRegion, x, y, width, height, &def.Palette, paletteRange)
+
+			regions[currentRegion] = info
+			currentRegion++
+		}
+	}
+
+	// Get the first pass dithered output to find what the colour ranges are
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
 
 			bestIndex := byte(0)
 
@@ -153,6 +206,28 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 
 			output[x][y].DitheredIndex = bestIndex
 
+			// Update the range stats
+			ditheredRange := def.Palette.Entries[bestIndex].Range
+			info := regions[output[x][y].Region]
+
+			if ditheredRange == info.Range && bestIndex != 0 {
+				if bestIndex < info.MinIndex || info.MinIndex == 0 {
+					info.MinIndex = bestIndex
+				}
+
+				if bestIndex > info.MaxIndex || info.MaxIndex == 0 {
+					info.MaxIndex = bestIndex
+				}
+
+				if ct, ok := info.ModalCount[bestIndex]; !ok {
+					info.ModalCount[bestIndex] = 1
+				} else {
+					info.ModalCount[bestIndex] = ct + 1
+				}
+
+				regions[output[x][y].Region] = info
+			}
+
 			if def.Palette.IsSpecialColour(bestIndex) {
 				output[x][y].IsMaskColour = true
 			}
@@ -172,11 +247,45 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 			errCurr[y+1] = colour.RGB{}
 		}
 
+		for idx, region := range regions {
+			log.Printf("region %d: min %d max %d (%d/%d)", idx, region.MinIndex, region.MaxIndex, region.Range.Start, region.Range.End)
+		}
+
 		// Swap the next and current error lines
 		errCurr, errNext = errNext, errCurr
 	}
 
 	return
+}
+
+func floodFill(output *ShaderOutput, region int, x, y int, width, height int, palette *colour.Palette, paletteRange *colour.PaletteRange) {
+	index := (*output)[x][y].ModalIndex
+	thisRegion := (*output)[x][y].Region
+	thisRange := (*palette).Entries[index].Range
+
+	// If not the same palette range, or we already set the region, return
+	if thisRange != paletteRange || thisRegion == region {
+		return
+	}
+
+	(*output)[x][y].Region = region
+
+	// Recursively flood fill in the adjacent directions
+	if x > 0 {
+		floodFill(output, region, x - 1, y, width, height, palette, paletteRange)
+	}
+
+	if y > 0 {
+		floodFill(output, region, x, y - 1, width, height, palette, paletteRange)
+	}
+
+	if x < width - 1 {
+		floodFill(output, region, x + 1, y, width, height, palette, paletteRange)
+	}
+
+	if y < height - 1 {
+		floodFill(output, region, x, y + 1, width, height, palette, paletteRange)
+	}
 }
 
 func getBestIndex(error colour.RGB, palette []colour.RGB) byte {
