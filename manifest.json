@@ -1,0 +1,31 @@
+{
+    "lighting_angle": 50,
+    "lighting_elevation": 45,
+  "depth_influence": 0,
+  "soften_edges": 1.5,
+  "alpha_edge_threshold": 0.75,
+  "hard_edge_threshold": 0.25,
+  "sampler": "square",
+  "accuracy": 7,
+  "overlap": 0.05,
+  "brightness": -0.025,
+  "contrast": 0.025,
+  "pad_to_full_length": false,
+  "detail_boost": 15.0,
+  "falloff_adjustment": 0.25,
+  "joggle": 0.5,
+  "is_hill": false,
+  "size": {
+    "x": 256,
+    "y": 42,
+    "z": 72
+  },
+  "render_elevation": 30,
+  "sprites": [
+    { 
+        "angle": 225,
+        "width": 36
+    }
+]
+}
+
