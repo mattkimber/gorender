@@ -63,7 +63,7 @@ func GetSpritesheets(def manifest.Definition) (sheets Spritesheets) {
 }
 
 func getDebugSheets(sheets *Spritesheets, def manifest.Definition, bounds image.Rectangle, spriteInfos []SpriteInfo) {
-	debugOutputs := []string{"lighting", "depth", "normals", "occlusion", "shadow", "avg_normals", "detail", "transparency", "region"}
+	debugOutputs := []string{"lighting", "depth", "normals", "occlusion", "shadow", "avg_normals", "detail", "transparency", "region", "midpoint_distance"}
 	var wg sync.WaitGroup
 	wg.Add(len(debugOutputs) + 1)
 
@@ -189,7 +189,9 @@ func applySprite32bpp(img *image.RGBA, def manifest.Definition, spriteInfo Sprit
 		sprite.Apply32bppSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.ShaderOutput, sprite.GetTransparency)
 	} else if depth == "region" {
 		sprite.Apply32bppSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.ShaderOutput, sprite.GetRegion)
-	}else {
+	} else if depth == "midpoint_distance" {
+		sprite.Apply32bppSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.ShaderOutput, sprite.GetMidpointDistance)
+	} else {
 		sprite.Apply32bppSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.ShaderOutput, sprite.GetColour)
 	}
 

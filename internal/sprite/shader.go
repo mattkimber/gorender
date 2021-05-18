@@ -4,7 +4,6 @@ import (
 	"github.com/mattkimber/gorender/internal/colour"
 	"github.com/mattkimber/gorender/internal/manifest"
 	"github.com/mattkimber/gorender/internal/raycaster"
-	"log"
 	"math"
 )
 
@@ -26,40 +25,21 @@ type ShaderInfo struct {
 	DitheredIndex  byte
 	IsMaskColour   bool
 	IsAnimated     bool
+	Midpoint 	   float64
+	DistanceFromMidpoint float64
 }
 
 type ShaderOutput [][]ShaderInfo
 
 type RegionInfo struct {
-	ModalCount map[byte]int
-	AverageColour colour.RGB
-	Distance ColourDistance
-	MinIndex byte
-	MaxIndex byte
+	MinDistanceFromMidpoint float64
+	MaxDistanceFromMidpoint float64
+	LowColourPush float64
+	HighColourPush float64
+	RangeLength float64
 	Size int
 	SizeInRange int
 	Range *colour.PaletteRange
-}
-
-type ColourDistance struct {
-	Low float64
-	High float64
-}
-
-func (cd *ColourDistance) MultiplyColours(midpoint, c colour.RGB) colour.RGB {
-	if c.R + c.G + c.B < midpoint.R + midpoint.G + midpoint.B {
-		return colour.ClampRGB(colour.RGB{
-			R: midpoint.R - ((midpoint.R - c.R) * cd.Low),
-			G: midpoint.G - ((midpoint.G - c.G) * cd.Low),
-			B: midpoint.B - ((midpoint.B - c.B) * cd.Low),
-		})
-	}
-
-	return colour.ClampRGB(colour.RGB{
-		R: midpoint.R + ((c.R - midpoint.R) * cd.High),
-		G: midpoint.G + ((c.G - midpoint.G) * cd.High),
-		B: midpoint.B + ((c.B - midpoint.B) * cd.High),
-	})
 }
 
 func GetColour(s *ShaderInfo) colour.RGB {
@@ -111,7 +91,7 @@ func GetMaskIndex(s *ShaderInfo) byte {
 	return 0
 }
 
-func GetRegion(s *ShaderInfo)  colour.RGB {
+func GetRegion(s *ShaderInfo) colour.RGB {
 	return colour.RGB{
 		R: float64(s.Region % 4 * (65535/4)),
 		G: float64((s.Region/4) % 4 * (65535/4)),
@@ -119,15 +99,14 @@ func GetRegion(s *ShaderInfo)  colour.RGB {
 	}
 }
 
+func GetMidpointDistance(s *ShaderInfo) colour.RGB {
+	return FloatValue(s.DistanceFromMidpoint)
+}
+
 func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, def manifest.Definition, width int, height int) (output ShaderOutput) {
 	output = make([][]ShaderInfo, width)
 
 	xoffset, yoffset := int(spr.OffsetX*def.Scale), int(spr.OffsetY*def.Scale)
-
-	// Palettes
-	regularPalette := def.Palette.GetRegularPalette()
-	primaryCCPalette := def.Palette.GetPrimaryCompanyColourPalette()
-	secondaryCCPalette := def.Palette.GetSecondaryCompanyColourPalette()
 
 
 	prevIndex := byte(0)
@@ -174,7 +153,6 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 			// Flood fill the region connected to this pixel
 			paletteRange := def.Palette.Entries[output[x][y].ModalIndex].Range
 			info.Range = paletteRange
-			info.ModalCount = make(map[byte]int)
 
 			floodFill(&output, currentRegion, x, y, width, height, &def.Palette, paletteRange)
 
@@ -188,46 +166,54 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 	errCurr := make([]colour.RGB, height+2)
 	errNext := make([]colour.RGB, height+2)
 
-	var error colour.RGB
+	// Palettes
+	regularPalette := def.Palette.GetRegularPalette()
+	primaryCCPalette := def.Palette.GetPrimaryCompanyColourPalette()
+	secondaryCCPalette := def.Palette.GetSecondaryCompanyColourPalette()
 
 	// Get the first pass dithered output to find what the colour ranges are
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
 
-			bestIndex := ditherOutput(def, output, x, y, error, errCurr, primaryCCPalette, secondaryCCPalette, regularPalette, errNext)
+			bestIndex, ditherErr := ditherOutput(def, output, x, y, errCurr, primaryCCPalette, secondaryCCPalette, regularPalette, errNext)
 
 			// Update the range stats
 			ditheredRange := def.Palette.Entries[bestIndex].Range
+
+			if ditheredRange != nil {
+				position := 0.0
+
+				if bestIndex != ditheredRange.Start && bestIndex != ditheredRange.End {
+					otherIndex := bestIndex + 1
+
+					resultErr := ditherErr.Subtract(def.Palette.Entries[bestIndex].GetRGB())
+					otherResultErr := ditherErr.Subtract(def.Palette.Entries[otherIndex].GetRGB())
+
+					distance := math.Sqrt(resultErr.R*resultErr.R) + math.Sqrt(resultErr.G*resultErr.G) + math.Sqrt(resultErr.B*resultErr.B)
+					otherDistance := math.Sqrt(otherResultErr.R*otherResultErr.R) + math.Sqrt(otherResultErr.G*otherResultErr.G) + math.Sqrt(otherResultErr.B*otherResultErr.B)
+
+					position = distance / (distance + otherDistance)
+				}
+
+				rangeLength := float64(ditheredRange.End - ditheredRange.Start)
+				midpoint := float64(ditheredRange.Start) + (rangeLength / 2.0)
+				output[x][y].Midpoint = midpoint
+				output[x][y].DistanceFromMidpoint = ((float64(bestIndex) + position) - midpoint) / (rangeLength / 2.0)
+			}
+
 			info := regions[output[x][y].Region]
 			info.Size++
 
 			if ditheredRange == info.Range && bestIndex != 0 {
 
 				info.SizeInRange++
-				col := output[x][y].Colour
 
-				if def.Palette.IsSpecialColour(output[x][y].ModalIndex) {
-					col = output[x][y].SpecialColour
+				if output[x][y].DistanceFromMidpoint < info.MinDistanceFromMidpoint {
+					info.MinDistanceFromMidpoint = output[x][y].DistanceFromMidpoint
 				}
 
-				// Update the "average" in-range colour of this section
-				r := ((info.AverageColour.R * (float64(info.SizeInRange) - 1)) + col.R) / float64(info.SizeInRange)
-				g := ((info.AverageColour.G * (float64(info.SizeInRange) - 1)) + col.G) / float64(info.SizeInRange)
-				b := ((info.AverageColour.B * (float64(info.SizeInRange) - 1)) + col.B) / float64(info.SizeInRange)
-				info.AverageColour = colour.RGB{R: r, G: g, B: b}
-
-				if bestIndex < info.MinIndex || info.MinIndex == 0 {
-					info.MinIndex = bestIndex
-				}
-
-				if bestIndex > info.MaxIndex || info.MaxIndex == 0 {
-					info.MaxIndex = bestIndex
-				}
-
-				if ct, ok := info.ModalCount[bestIndex]; !ok {
-					info.ModalCount[bestIndex] = 1
-				} else {
-					info.ModalCount[bestIndex] = ct + 1
+				if output[x][y].DistanceFromMidpoint > info.MaxDistanceFromMidpoint {
+					info.MaxDistanceFromMidpoint = output[x][y].DistanceFromMidpoint
 				}
 
 				regions[output[x][y].Region] = info
@@ -240,83 +226,68 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 
 	for idx, region := range regions {
 		if region.Size > 1 {
-			log.Printf("region %d: size %d (in range %d) min %d max %d (%d/%d)", idx, region.Size, region.SizeInRange, region.MinIndex, region.MaxIndex, region.Range.Start, region.Range.End)
-			log.Printf(" - avg colour: %.0f %.0f %.0f", region.AverageColour.R, region.AverageColour.G, region.AverageColour.B)
-			minColour := def.Palette.Entries[region.MinIndex].GetRGB()
-			maxColour := def.Palette.Entries[region.MaxIndex].GetRGB()
-			log.Printf(" - min colour: %.0f %.0f %.0f", minColour.R, minColour.G, minColour.B)
-			log.Printf(" - max colour: %.0f %.0f %.0f", maxColour.R, maxColour.G, maxColour.B)
+			rng := region.Range
+			rangeLength := float64(rng.End - rng.Start)
 
-			lowIndex, highIndex := region.MinIndex, region.MaxIndex
+			region.RangeLength = rangeLength
 
-			// Get the new high and low indexes (expand by up to 3 - TODO: should this be configurable in the definition?)
-			if region.Range.Start < region.MinIndex {
-				if region.MinIndex - region.Range.Start > 3 {
-					lowIndex = region.MinIndex - 3
-				} else {
-					lowIndex = region.Range.Start
+			// TODO: should be configurable in manifest
+			const MAX_PUSH_AMOUNT = 2.0
+
+			region.HighColourPush = 1.0
+			region.LowColourPush = 1.0
+
+			if region.MaxDistanceFromMidpoint < 1.0 && region.MaxDistanceFromMidpoint > 0.1 {
+				region.HighColourPush = 1.0 / region.MaxDistanceFromMidpoint
+				if region.HighColourPush > MAX_PUSH_AMOUNT {
+					region.HighColourPush = MAX_PUSH_AMOUNT
 				}
 			}
 
-			if region.Range.End > region.MaxIndex {
-				if region.Range.End - region.MaxIndex > 3 {
-					highIndex = region.MaxIndex + 3
-				} else {
-					highIndex = region.Range.End
+			if region.MinDistanceFromMidpoint > -1.0 && region.MinDistanceFromMidpoint < -0.1 {
+				region.LowColourPush = -1.0 / region.MinDistanceFromMidpoint
+				if region.LowColourPush > MAX_PUSH_AMOUNT {
+					region.LowColourPush = MAX_PUSH_AMOUNT
 				}
 			}
 
-			lowColour := def.Palette.Entries[lowIndex].GetRGB()
-			highColour := def.Palette.Entries[highIndex].GetRGB()
-
-			distance := ColourDistance{
-				Low: ((region.AverageColour.R - lowColour.R) / (region.AverageColour.R - minColour.R) +
-					(region.AverageColour.G - lowColour.G) / (region.AverageColour.G - minColour.G) +
-					(region.AverageColour.B - lowColour.B) / (region.AverageColour.B - minColour.B)) / 3,
-				High: ((region.AverageColour.R - highColour.R) / (region.AverageColour.R - maxColour.R) +
-					(region.AverageColour.G - highColour.G) / (region.AverageColour.G - maxColour.G) +
-					(region.AverageColour.B - highColour.B) / (region.AverageColour.B - maxColour.B)) / 3,
-				}
-
-			region.Distance = distance
 			regions[idx] = region
-
-			log.Printf(" - distance: %+v", distance)
-
 		}
 	}
 
 
 	// Do the second pass dithered output to expand the colour range
-
+	// TODO: do something useful
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
-			info := regions[output[x][y].Region]
-			prev := output[x][y].Colour
-			if info.Size > 1 {
-				if def.Palette.IsSpecialColour(output[x][y].ModalIndex) {
-					output[x][y].SpecialColour = info.Distance.MultiplyColours(info.AverageColour, output[x][y].SpecialColour)
-					log.Printf("went from %+v to %+v", prev, output[x][y].SpecialColour)
+			region, ok := regions[output[x][y].Region]
+			paletteRange := def.Palette.Entries[output[x][y].DitheredIndex].Range
+
+			if ok && region.SizeInRange > 1 && output[x][y].DitheredIndex != 0 && region.RangeLength > 0 &&
+				output[x][y].Midpoint != 0 && region.Range == paletteRange {
+
+				distance := output[x][y].DistanceFromMidpoint * (region.RangeLength/2.0)
+				if float64(output[x][y].DitheredIndex) > output[x][y].Midpoint {
+					distance = distance * region.HighColourPush
 				} else {
-					output[x][y].Colour = info.Distance.MultiplyColours(info.AverageColour, output[x][y].Colour)
-					log.Printf("went from %+v to %+v", prev, output[x][y].Colour)
+					distance = distance * region.LowColourPush
+				}
+
+				output[x][y].DitheredIndex = byte(math.Round(output[x][y].Midpoint + distance))
+				if output[x][y].DitheredIndex < region.Range.Start {
+					output[x][y].DitheredIndex = region.Range.Start
+				} else if output[x][y].DitheredIndex > region.Range.End {
+					output[x][y].DitheredIndex = region.Range.End
 				}
 
 			}
-
-			ditherOutput(def, output, x, y, error, errCurr, primaryCCPalette, secondaryCCPalette, regularPalette, errNext)
 		}
-
-		// Swap the next and current error lines
-		errCurr, errNext = errNext, errCurr
 	}
 
 	return
 }
 
-func ditherOutput(def manifest.Definition, output ShaderOutput, x int, y int, error colour.RGB, errCurr []colour.RGB, primaryCCPalette []colour.RGB, secondaryCCPalette []colour.RGB, regularPalette []colour.RGB, errNext []colour.RGB) byte {
-	bestIndex := byte(0)
-
+func ditherOutput(def manifest.Definition, output ShaderOutput, x int, y int, errCurr []colour.RGB, primaryCCPalette []colour.RGB, secondaryCCPalette []colour.RGB, regularPalette []colour.RGB, errNext []colour.RGB) (bestIndex byte, ditherError colour.RGB) {
 	rng := def.Palette.Entries[output[x][y].ModalIndex].Range
 	if rng == nil {
 		rng = &colour.PaletteRange{}
@@ -326,30 +297,30 @@ func ditherOutput(def manifest.Definition, output ShaderOutput, x int, y int, er
 		bestIndex = 0
 	} else if rng.IsPrimaryCompanyColour {
 		if y > 0 && def.Palette.IsSpecialColour(output[x][y-1].ModalIndex) {
-			error = output[x][y].SpecialColour
+			ditherError = output[x][y].SpecialColour
 		} else {
-			error = output[x][y].SpecialColour.Add(errCurr[y+1])
+			ditherError = output[x][y].SpecialColour.Add(errCurr[y+1])
 		}
-		bestIndex = getBestIndex(error, primaryCCPalette)
+		bestIndex = getBestIndex(ditherError, primaryCCPalette)
 	} else if rng.IsSecondaryCompanyColour {
 		if y > 0 && def.Palette.IsSpecialColour(output[x][y-1].ModalIndex) {
-			error = output[x][y].SpecialColour
+			ditherError = output[x][y].SpecialColour
 		} else {
-			error = output[x][y].SpecialColour.Add(errCurr[y+1])
+			ditherError = output[x][y].SpecialColour.Add(errCurr[y+1])
 		}
-		bestIndex = getBestIndex(error, secondaryCCPalette)
+		bestIndex = getBestIndex(ditherError, secondaryCCPalette)
 	} else if rng.IsAnimatedLight {
 		output[x][y].IsAnimated = true
 		// Never add error values to special colours
 		bestIndex = output[x][y].ModalIndex
-		error = def.Palette.Entries[bestIndex].GetRGB()
+		ditherError = def.Palette.Entries[bestIndex].GetRGB()
 	} else {
 		if y > 0 && def.Palette.IsSpecialColour(output[x][y-1].ModalIndex) {
-			error = output[x][y].Colour
+			ditherError = output[x][y].Colour
 		} else {
-			error = output[x][y].Colour.Add(errCurr[y+1])
+			ditherError = output[x][y].Colour.Add(errCurr[y+1])
 		}
-		bestIndex = getBestIndex(error, regularPalette)
+		bestIndex = getBestIndex(ditherError, regularPalette)
 	}
 
 	output[x][y].DitheredIndex = bestIndex
@@ -358,20 +329,20 @@ func ditherOutput(def manifest.Definition, output ShaderOutput, x int, y int, er
 		output[x][y].IsMaskColour = true
 	}
 
+	resultError := colour.RGB{}
+
 	if output[x][y].Alpha >= def.Manifest.EdgeThreshold {
-		error = colour.ClampRGB(error.Subtract(def.Palette.Entries[bestIndex].GetRGB()))
-	} else {
-		error = colour.RGB{}
+		resultError = colour.PermissiveClampRGB(ditherError.Subtract(def.Palette.Entries[bestIndex].GetRGB()))
 	}
 
 	// Apply Floyd-Steinberg error
-	errNext[y+0] = errNext[y+0].Add(error.MultiplyBy(3.0 / 16))
-	errNext[y+1] = errNext[y+1].Add(error.MultiplyBy(5.0 / 16))
-	errNext[y+2] = errNext[y+2].Add(error.MultiplyBy(1.0 / 16))
-	errCurr[y+2] = errCurr[y+2].Add(error.MultiplyBy(7.0 / 16))
+	errNext[y+0] = errNext[y+0].Add(resultError.MultiplyBy(3.0 / 16))
+	errNext[y+1] = errNext[y+1].Add(resultError.MultiplyBy(5.0 / 16))
+	errNext[y+2] = errNext[y+2].Add(resultError.MultiplyBy(1.0 / 16))
+	errCurr[y+2] = errCurr[y+2].Add(resultError.MultiplyBy(7.0 / 16))
 
 	errCurr[y+1] = colour.RGB{}
-	return bestIndex
+	return
 }
 
 func floodFill(output *ShaderOutput, region int, x, y int, width, height int, palette *colour.Palette, paletteRange *colour.PaletteRange) bool {

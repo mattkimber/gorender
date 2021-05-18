@@ -23,8 +23,9 @@
   "render_elevation": 30,
   "sprites": [
     { 
-        "angle": 225,
-        "width": 36
+        "angle": 300,
+        "width": 45,
+        "height": 26
     }
 ]
 }
