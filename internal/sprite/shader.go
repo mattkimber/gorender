@@ -27,6 +27,8 @@ type ShaderInfo struct {
 	IsAnimated     bool
 	Midpoint 	   float64
 	DistanceFromMidpoint float64
+	IsBottom bool
+	IsLeft bool
 }
 
 type ShaderOutput [][]ShaderInfo
@@ -34,8 +36,10 @@ type ShaderOutput [][]ShaderInfo
 type RegionInfo struct {
 	MinDistanceFromMidpoint float64
 	MaxDistanceFromMidpoint float64
-	LowColourPush float64
-	HighColourPush float64
+	MinIndex byte
+	MaxIndex byte
+	Histogram []int
+	FilledHistogramBuckets int
 	RangeLength float64
 	Size int
 	SizeInRange int
@@ -154,7 +158,7 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 			paletteRange := def.Palette.Entries[output[x][y].ModalIndex].Range
 			info.Range = paletteRange
 
-			floodFill(&output, currentRegion, x, y, width, height, &def.Palette, paletteRange)
+			floodFill(&output, currentRegion, x, y, width, height, output[x][y].ModalIndex, &def.Palette, paletteRange)
 
 			regions[currentRegion] = info
 			currentRegion++
@@ -205,8 +209,13 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 			info.Size++
 
 			if ditheredRange == info.Range && bestIndex != 0 {
-
+				if info.Histogram == nil {
+					info.Histogram = make([]int, 256)
+				}
 				info.SizeInRange++
+
+				byteDistance := byte((output[x][y].DistanceFromMidpoint + 1.0) / 2.0 * 255)
+				info.Histogram[byteDistance]++
 
 				if output[x][y].DistanceFromMidpoint < info.MinDistanceFromMidpoint {
 					info.MinDistanceFromMidpoint = output[x][y].DistanceFromMidpoint
@@ -214,6 +223,14 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 
 				if output[x][y].DistanceFromMidpoint > info.MaxDistanceFromMidpoint {
 					info.MaxDistanceFromMidpoint = output[x][y].DistanceFromMidpoint
+				}
+
+				if output[x][y].DitheredIndex < info.MinIndex || info.MinIndex == 0 {
+					info.MinIndex = output[x][y].DitheredIndex
+				}
+
+				if output[x][y].DitheredIndex > info.MaxIndex {
+					info.MaxIndex = output[x][y].DitheredIndex
 				}
 
 				regions[output[x][y].Region] = info
@@ -228,26 +245,44 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 		if region.Size > 1 {
 			rng := region.Range
 			rangeLength := float64(rng.End - rng.Start)
-
 			region.RangeLength = rangeLength
 
-			// TODO: should be configurable in manifest
-			const MAX_PUSH_AMOUNT = 2.0
 
-			region.HighColourPush = 1.0
-			region.LowColourPush = 1.0
+			// Expand the range if not many colours are used
+			if region.MaxIndex - region.MinIndex < 4 {
+				if region.MinIndex > rng.Start {
+					region.MinIndex = region.MinIndex - 1
+				}
 
-			if region.MaxDistanceFromMidpoint < 1.0 && region.MaxDistanceFromMidpoint > 0.1 {
-				region.HighColourPush = 1.0 / region.MaxDistanceFromMidpoint
-				if region.HighColourPush > MAX_PUSH_AMOUNT {
-					region.HighColourPush = MAX_PUSH_AMOUNT
+				if region.MaxIndex < rng.End {
+					region.MaxIndex = region.MaxIndex + 1
 				}
 			}
 
-			if region.MinDistanceFromMidpoint > -1.0 && region.MinDistanceFromMidpoint < -0.1 {
-				region.LowColourPush = -1.0 / region.MinDistanceFromMidpoint
-				if region.LowColourPush > MAX_PUSH_AMOUNT {
-					region.LowColourPush = MAX_PUSH_AMOUNT
+
+			usedRangeLength := region.MaxIndex - region.MinIndex
+
+			if usedRangeLength > 0 {
+				curIndex := region.MinIndex
+				visited := 0
+				partitionSize := region.SizeInRange / int(usedRangeLength)
+				for i := 0; i < len(region.Histogram); i++ {
+					visited += region.Histogram[i]
+					if visited >= partitionSize {
+						visited -= partitionSize
+						curIndex++
+						if curIndex > region.MaxIndex {
+							curIndex = region.MaxIndex
+						}
+					}
+
+					if region.Histogram[i] > 0 {
+						region.FilledHistogramBuckets++
+					}
+
+					// Replace the histogram entry with the palette index it will
+					// correspond to
+					region.Histogram[i] = int(curIndex)
 				}
 			}
 
@@ -257,29 +292,35 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 
 
 	// Do the second pass dithered output to expand the colour range
-	// TODO: do something useful
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
 			region, ok := regions[output[x][y].Region]
 			paletteRange := def.Palette.Entries[output[x][y].DitheredIndex].Range
+			if paletteRange == nil || paletteRange.IsAnimatedLight || paletteRange.IsNonRenderable {
+				// Don't alter special colours
+				continue
+			}
 
 			if ok && region.SizeInRange > 1 && output[x][y].DitheredIndex != 0 && region.RangeLength > 0 &&
-				output[x][y].Midpoint != 0 && region.Range == paletteRange {
+				output[x][y].Midpoint != 0 && region.Range == paletteRange && region.MaxIndex - region.MinIndex < 8 {
 
-				distance := output[x][y].DistanceFromMidpoint * (region.RangeLength/2.0)
-				if float64(output[x][y].DitheredIndex) > output[x][y].Midpoint {
-					distance = distance * region.HighColourPush
-				} else {
-					distance = distance * region.LowColourPush
+				byteDistance := byte((output[x][y].DistanceFromMidpoint + 1.0) / 2.0 * 255)
+
+				diff :=  region.Histogram[byteDistance] - int(output[x][y].DitheredIndex)
+				if diff < -2 {
+					diff = -2
+				} else if diff > 2 {
+					diff = 2
 				}
 
-				output[x][y].DitheredIndex = byte(math.Round(output[x][y].Midpoint + distance))
-				if output[x][y].DitheredIndex < region.Range.Start {
-					output[x][y].DitheredIndex = region.Range.Start
-				} else if output[x][y].DitheredIndex > region.Range.End {
-					output[x][y].DitheredIndex = region.Range.End
-				}
+				// Only update the index to within 2 palette steps of the original
+				output[x][y].DitheredIndex = byte(int(output[x][y].DitheredIndex) + diff)
 
+			}
+
+			// "Fosterise" by darkening pixels at the bottom and left
+			if (output[x][y].IsBottom || output[x][y].IsLeft) && output[x][y].DitheredIndex > paletteRange.Start {
+				output[x][y].DitheredIndex--
 			}
 		}
 	}
@@ -345,36 +386,51 @@ func ditherOutput(def manifest.Definition, output ShaderOutput, x int, y int, er
 	return
 }
 
-func floodFill(output *ShaderOutput, region int, x, y int, width, height int, palette *colour.Palette, paletteRange *colour.PaletteRange) bool {
+func floodFill(output *ShaderOutput, region int, x, y int, width, height int, previousIndex byte, palette *colour.Palette, paletteRange *colour.PaletteRange) {
 	index := (*output)[x][y].ModalIndex
 	thisRegion := (*output)[x][y].Region
 	thisRange := (*palette).Entries[index].Range
 
-	// If not the same palette range, or we already set the region, return
-	if thisRange != paletteRange || thisRegion == region {
-		return false
+	gap := int(previousIndex) - int(index)
+	if gap < 0 {
+		gap = -gap
+	}
+
+	// If not the same palette range, or we already set the region, or the indexes are too far apart, return
+	if thisRange != paletteRange || thisRegion == region || gap > 6 {
+		return
 	}
 
 	(*output)[x][y].Region = region
 
 	// Recursively flood fill in the adjacent directions
 	if x > 0 {
-		floodFill(output, region, x - 1, y, width, height, palette, paletteRange)
+		floodFill(output, region, x - 1, y, width, height, index, palette, paletteRange)
 	}
 
 	if y > 0 {
-		floodFill(output, region, x, y - 1, width, height, palette, paletteRange)
+		floodFill(output, region, x, y - 1, width, height, index, palette, paletteRange)
 	}
 
 	if x < width - 1 {
-		floodFill(output, region, x + 1, y, width, height, palette, paletteRange)
+		floodFill(output, region, x + 1, y, width, height, index, palette, paletteRange)
 	}
 
 	if y < height - 1 {
-		floodFill(output, region, x, y + 1, width, height, palette, paletteRange)
+		floodFill(output, region, x, y + 1, width, height, index, palette, paletteRange)
 	}
 
-	return true
+
+	if x > 0 && x < width - 1 && (*output)[x-1][y].Region != region && (*output)[x+1][y].Region == region {
+		(*output)[x][y].IsLeft = true
+	}
+
+
+	if y > 0 && y < height - 1 && (*output)[x][y+1].Region != region && (*output)[x][y-1].Region == region {
+		(*output)[x][y].IsBottom = true
+	}
+
+	return
 }
 
 func getBestIndex(error colour.RGB, palette []colour.RGB) byte {
