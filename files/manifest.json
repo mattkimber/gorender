@@ -13,6 +13,8 @@
   "pad_to_full_length": false,
   "detail_boost": 10.0,
   "falloff_adjustment": 0.5,
+  "max_colour_push": 1,
+  "fosterise": true,
   "size": {
     "x": 126,
     "y": 40,

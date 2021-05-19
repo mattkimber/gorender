@@ -129,7 +129,7 @@ func raycast(def manifest.Definition, spriteInfos []SpriteInfo) {
 	timingutils.Time("Sampling", def.Time, func() {
 		for i, spr := range def.Manifest.Sprites {
 			rect := getSpriteSizeForAngle(spr, def.Scale)
-			spriteInfos[i].ShaderOutput = sprite.GetShaderOutput(renderOutputs[i], spr, def, rect.Max.X, rect.Max.Y)
+			spriteInfos[i].ShaderOutput = sprite.GetShaderOutput(renderOutputs[i], spr, &def, rect.Max.X, rect.Max.Y)
 		}
 	})
 }

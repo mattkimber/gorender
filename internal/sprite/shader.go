@@ -107,7 +107,7 @@ func GetMidpointDistance(s *ShaderInfo) colour.RGB {
 	return FloatValue(s.DistanceFromMidpoint)
 }
 
-func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, def manifest.Definition, width int, height int) (output ShaderOutput) {
+func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, def *manifest.Definition, width int, height int) (output ShaderOutput) {
 	output = make([][]ShaderInfo, width)
 
 	xoffset, yoffset := int(spr.OffsetX*def.Scale), int(spr.OffsetY*def.Scale)
@@ -158,7 +158,7 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 			paletteRange := def.Palette.Entries[output[x][y].ModalIndex].Range
 			info.Range = paletteRange
 
-			floodFill(&output, currentRegion, x, y, width, height, output[x][y].ModalIndex, &def.Palette, paletteRange)
+			floodFill(&output, def, currentRegion, x, y, width, height, output[x][y].ModalIndex, &def.Palette, paletteRange)
 
 			regions[currentRegion] = info
 			currentRegion++
@@ -183,6 +183,11 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 
 			// Update the range stats
 			ditheredRange := def.Palette.Entries[bestIndex].Range
+
+			// Hard reset non-renderable colours for transparent sections
+			if bestIndex == 0 {
+				output[x][y].ModalIndex = 0
+			}
 
 			if ditheredRange != nil {
 				position := 0.0
@@ -249,7 +254,7 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 
 
 			// Expand the range if not many colours are used
-			if region.MaxIndex - region.MinIndex < 4 {
+			if region.MaxIndex - region.MinIndex < rng.ExpectedColourRange {
 				if region.MinIndex > rng.Start {
 					region.MinIndex = region.MinIndex - 1
 				}
@@ -307,10 +312,10 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 				byteDistance := byte((output[x][y].DistanceFromMidpoint + 1.0) / 2.0 * 255)
 
 				diff :=  region.Histogram[byteDistance] - int(output[x][y].DitheredIndex)
-				if diff < -2 {
-					diff = -2
-				} else if diff > 2 {
-					diff = 2
+				if diff < -def.Manifest.MaxPush {
+					diff = -def.Manifest.MaxPush
+				} else if diff > def.Manifest.MaxPush {
+					diff = def.Manifest.MaxPush
 				}
 
 				// Only update the index to within 2 palette steps of the original
@@ -319,7 +324,7 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 			}
 
 			// "Fosterise" by darkening pixels at the bottom and left
-			if (output[x][y].IsBottom || output[x][y].IsLeft) && output[x][y].DitheredIndex > paletteRange.Start {
+			if def.Manifest.Fosterise && (output[x][y].IsBottom || output[x][y].IsLeft) && output[x][y].DitheredIndex > paletteRange.Start {
 				output[x][y].DitheredIndex--
 			}
 		}
@@ -328,7 +333,7 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 	return
 }
 
-func ditherOutput(def manifest.Definition, output ShaderOutput, x int, y int, errCurr []colour.RGB, primaryCCPalette []colour.RGB, secondaryCCPalette []colour.RGB, regularPalette []colour.RGB, errNext []colour.RGB) (bestIndex byte, ditherError colour.RGB) {
+func ditherOutput(def *manifest.Definition, output ShaderOutput, x int, y int, errCurr []colour.RGB, primaryCCPalette []colour.RGB, secondaryCCPalette []colour.RGB, regularPalette []colour.RGB, errNext []colour.RGB) (bestIndex byte, ditherError colour.RGB) {
 	rng := def.Palette.Entries[output[x][y].ModalIndex].Range
 	if rng == nil {
 		rng = &colour.PaletteRange{}
@@ -386,7 +391,7 @@ func ditherOutput(def manifest.Definition, output ShaderOutput, x int, y int, er
 	return
 }
 
-func floodFill(output *ShaderOutput, region int, x, y int, width, height int, previousIndex byte, palette *colour.Palette, paletteRange *colour.PaletteRange) {
+func floodFill(output *ShaderOutput, def *manifest.Definition, region int, x, y int, width, height int, previousIndex byte, palette *colour.Palette, paletteRange *colour.PaletteRange) {
 	index := (*output)[x][y].ModalIndex
 	thisRegion := (*output)[x][y].Region
 	thisRange := (*palette).Entries[index].Range
@@ -397,7 +402,7 @@ func floodFill(output *ShaderOutput, region int, x, y int, width, height int, pr
 	}
 
 	// If not the same palette range, or we already set the region, or the indexes are too far apart, return
-	if thisRange != paletteRange || thisRegion == region || gap > 6 {
+	if thisRange != paletteRange || thisRegion == region || gap > paletteRange.MaxGapInRegion {
 		return
 	}
 
@@ -405,29 +410,46 @@ func floodFill(output *ShaderOutput, region int, x, y int, width, height int, pr
 
 	// Recursively flood fill in the adjacent directions
 	if x > 0 {
-		floodFill(output, region, x - 1, y, width, height, index, palette, paletteRange)
+		floodFill(output, def, region, x - 1, y, width, height, index, palette, paletteRange)
 	}
 
 	if y > 0 {
-		floodFill(output, region, x, y - 1, width, height, index, palette, paletteRange)
+		floodFill(output, def, region, x, y - 1, width, height, index, palette, paletteRange)
 	}
 
 	if x < width - 1 {
-		floodFill(output, region, x + 1, y, width, height, index, palette, paletteRange)
+		floodFill(output, def, region, x + 1, y, width, height, index, palette, paletteRange)
 	}
 
 	if y < height - 1 {
-		floodFill(output, region, x, y + 1, width, height, index, palette, paletteRange)
+		floodFill(output, def, region, x, y + 1, width, height, index, palette, paletteRange)
 	}
 
 
 	if x > 0 && x < width - 1 && (*output)[x-1][y].Region != region && (*output)[x+1][y].Region == region {
-		(*output)[x][y].IsLeft = true
+		if !def.Manifest.NoEdgeFosterisation || (*output)[x-1][y].ModalIndex != 0 {
+			(*output)[x][y].IsLeft = true
+		}
 	}
 
+	// Left edge of sprite at border
+	if x == 0 && x < width - 1 && (*output)[x+1][y].Region == region {
+		if !def.Manifest.NoEdgeFosterisation {
+			(*output)[x][y].IsLeft = true
+		}
+	}
 
 	if y > 0 && y < height - 1 && (*output)[x][y+1].Region != region && (*output)[x][y-1].Region == region {
-		(*output)[x][y].IsBottom = true
+		if !def.Manifest.NoEdgeFosterisation || (*output)[x][y+1].ModalIndex != 0 {
+			(*output)[x][y].IsBottom = true
+		}
+	}
+
+	// Bottom edge of sprite at border
+	if y == height - 1 && y > 0 && (*output)[x][y-1].Region == region {
+		if !def.Manifest.NoEdgeFosterisation {
+			(*output)[x][y].IsBottom = true
+		}
 	}
 
 	return
@@ -457,7 +479,7 @@ func squareDiff(a, b float64) float64 {
 	return diff * diff
 }
 
-func shade(info raycaster.RenderInfo, def manifest.Definition, prevIndex byte) (output ShaderInfo) {
+func shade(info raycaster.RenderInfo, def *manifest.Definition, prevIndex byte) (output ShaderInfo) {
 	totalInfluence, filledInfluence := 0.0, 0.0
 	filledSamples, totalSamples := 0, 0
 	values := map[byte]float64{}
