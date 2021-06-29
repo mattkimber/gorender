@@ -23,7 +23,7 @@ type PaletteRange struct {
 	IsProcessColour          bool `json:"is_process_colour"`
 	Smoothness               int  `json:"smoothness"`
 	IsNonRenderable          bool `json:"non_renderable"`
-	MaxGapInRegion           int `json:"max_gap_in_region"`
+	MaxGapInRegion           int  `json:"max_gap_in_region"`
 	ExpectedColourRange      byte `json:"expected_colour_range"`
 }
 

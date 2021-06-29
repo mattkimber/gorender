@@ -17,8 +17,8 @@ type RenderSample struct {
 	Depth, Occlusion       int
 	LightAmount            float64
 	Shadowing              float64
-	Influence 			   float64
-	Detail				   float64
+	Influence              float64
+	Detail                 float64
 	Count                  int
 	IsRecovered            bool
 }

@@ -8,27 +8,27 @@ import (
 )
 
 type ShaderInfo struct {
-	Colour         colour.RGB
-	SpecialColour  colour.RGB
-	Alpha          float64
-	Specialness    float64
-	Normal         colour.RGB
-	AveragedNormal colour.RGB
-	Depth          colour.RGB
-	Occlusion      colour.RGB
-	Lighting       colour.RGB
-	Shadowing      colour.RGB
-	Detail         colour.RGB
-	Transparency   colour.RGB
-	Region         int
-	ModalIndex     byte
-	DitheredIndex  byte
-	IsMaskColour   bool
-	IsAnimated     bool
-	Midpoint 	   float64
+	Colour               colour.RGB
+	SpecialColour        colour.RGB
+	Alpha                float64
+	Specialness          float64
+	Normal               colour.RGB
+	AveragedNormal       colour.RGB
+	Depth                colour.RGB
+	Occlusion            colour.RGB
+	Lighting             colour.RGB
+	Shadowing            colour.RGB
+	Detail               colour.RGB
+	Transparency         colour.RGB
+	Region               int
+	ModalIndex           byte
+	DitheredIndex        byte
+	IsMaskColour         bool
+	IsAnimated           bool
+	Midpoint             float64
 	DistanceFromMidpoint float64
-	IsBottom bool
-	IsLeft bool
+	IsBottom             bool
+	IsLeft               bool
 }
 
 type ShaderOutput [][]ShaderInfo
@@ -36,14 +36,14 @@ type ShaderOutput [][]ShaderInfo
 type RegionInfo struct {
 	MinDistanceFromMidpoint float64
 	MaxDistanceFromMidpoint float64
-	MinIndex byte
-	MaxIndex byte
-	Histogram []int
-	FilledHistogramBuckets int
-	RangeLength float64
-	Size int
-	SizeInRange int
-	Range *colour.PaletteRange
+	MinIndex                byte
+	MaxIndex                byte
+	Histogram               []int
+	FilledHistogramBuckets  int
+	RangeLength             float64
+	Size                    int
+	SizeInRange             int
+	Range                   *colour.PaletteRange
 }
 
 func GetColour(s *ShaderInfo) colour.RGB {
@@ -97,9 +97,9 @@ func GetMaskIndex(s *ShaderInfo) byte {
 
 func GetRegion(s *ShaderInfo) colour.RGB {
 	return colour.RGB{
-		R: float64(s.Region % 4 * (65535/4)),
-		G: float64((s.Region/4) % 4 * (65535/4)),
-		B: float64((s.Region/16) % 4 * (65535/4)),
+		R: float64(s.Region % 4 * (65535 / 4)),
+		G: float64((s.Region / 4) % 4 * (65535 / 4)),
+		B: float64((s.Region / 16) % 4 * (65535 / 4)),
 	}
 }
 
@@ -111,7 +111,6 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 	output = make([][]ShaderInfo, width)
 
 	xoffset, yoffset := int(spr.OffsetX*def.Scale), int(spr.OffsetY*def.Scale)
-
 
 	prevIndex := byte(0)
 
@@ -164,7 +163,6 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 			currentRegion++
 		}
 	}
-
 
 	// Floyd-Steinberg error rows
 	errCurr := make([]colour.RGB, height+2)
@@ -252,9 +250,8 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 			rangeLength := float64(rng.End - rng.Start)
 			region.RangeLength = rangeLength
 
-
 			// Expand the range if not many colours are used
-			if region.MaxIndex - region.MinIndex < rng.ExpectedColourRange {
+			if region.MaxIndex-region.MinIndex < rng.ExpectedColourRange {
 				if region.MinIndex > rng.Start {
 					region.MinIndex = region.MinIndex - 1
 				}
@@ -263,7 +260,6 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 					region.MaxIndex = region.MaxIndex + 1
 				}
 			}
-
 
 			usedRangeLength := region.MaxIndex - region.MinIndex
 
@@ -295,7 +291,6 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 		}
 	}
 
-
 	// Do the second pass dithered output to expand the colour range
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
@@ -307,11 +302,11 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 			}
 
 			if ok && region.SizeInRange > 1 && output[x][y].DitheredIndex != 0 && region.RangeLength > 0 &&
-				output[x][y].Midpoint != 0 && region.Range == paletteRange && region.MaxIndex - region.MinIndex < 8 {
+				output[x][y].Midpoint != 0 && region.Range == paletteRange && region.MaxIndex-region.MinIndex < 8 {
 
 				byteDistance := byte((output[x][y].DistanceFromMidpoint + 1.0) / 2.0 * 255)
 
-				diff :=  region.Histogram[byteDistance] - int(output[x][y].DitheredIndex)
+				diff := region.Histogram[byteDistance] - int(output[x][y].DitheredIndex)
 				if diff < -def.Manifest.MaxPush {
 					diff = -def.Manifest.MaxPush
 				} else if diff > def.Manifest.MaxPush {
@@ -410,43 +405,42 @@ func floodFill(output *ShaderOutput, def *manifest.Definition, region int, x, y 
 
 	// Recursively flood fill in the adjacent directions
 	if x > 0 {
-		floodFill(output, def, region, x - 1, y, width, height, index, palette, paletteRange)
+		floodFill(output, def, region, x-1, y, width, height, index, palette, paletteRange)
 	}
 
 	if y > 0 {
-		floodFill(output, def, region, x, y - 1, width, height, index, palette, paletteRange)
+		floodFill(output, def, region, x, y-1, width, height, index, palette, paletteRange)
 	}
 
-	if x < width - 1 {
-		floodFill(output, def, region, x + 1, y, width, height, index, palette, paletteRange)
+	if x < width-1 {
+		floodFill(output, def, region, x+1, y, width, height, index, palette, paletteRange)
 	}
 
-	if y < height - 1 {
-		floodFill(output, def, region, x, y + 1, width, height, index, palette, paletteRange)
+	if y < height-1 {
+		floodFill(output, def, region, x, y+1, width, height, index, palette, paletteRange)
 	}
 
-
-	if x > 0 && x < width - 1 && (*output)[x-1][y].Region != region && (*output)[x+1][y].Region == region {
+	if x > 0 && x < width-1 && (*output)[x-1][y].Region != region && (*output)[x+1][y].Region == region {
 		if !def.Manifest.NoEdgeFosterisation || (*output)[x-1][y].ModalIndex != 0 {
 			(*output)[x][y].IsLeft = true
 		}
 	}
 
 	// Left edge of sprite at border
-	if x == 0 && x < width - 1 && (*output)[x+1][y].Region == region {
+	if x == 0 && x < width-1 && (*output)[x+1][y].Region == region {
 		if !def.Manifest.NoEdgeFosterisation {
 			(*output)[x][y].IsLeft = true
 		}
 	}
 
-	if y > 0 && y < height - 1 && (*output)[x][y+1].Region != region && (*output)[x][y-1].Region == region {
+	if y > 0 && y < height-1 && (*output)[x][y+1].Region != region && (*output)[x][y-1].Region == region {
 		if !def.Manifest.NoEdgeFosterisation || (*output)[x][y+1].ModalIndex != 0 {
 			(*output)[x][y].IsBottom = true
 		}
 	}
 
 	// Bottom edge of sprite at border
-	if y == height - 1 && y > 0 && (*output)[x][y-1].Region == region {
+	if y == height-1 && y > 0 && (*output)[x][y-1].Region == region {
 		if !def.Manifest.NoEdgeFosterisation {
 			(*output)[x][y].IsBottom = true
 		}
@@ -562,7 +556,7 @@ func shade(info raycaster.RenderInfo, def *manifest.Definition, prevIndex byte) 
 	}
 
 	// Fewer than hard edge threshold collisions = transparent
-	if totalSamples == 0 || filledSamples * 100 / totalSamples <= hardEdgeThreshold {
+	if totalSamples == 0 || filledSamples*100/totalSamples <= hardEdgeThreshold {
 		return ShaderInfo{}
 	}
 
@@ -595,7 +589,7 @@ func shade(info raycaster.RenderInfo, def *manifest.Definition, prevIndex byte) 
 		output.Shadowing.DivideAndClamp(debugDivisor)
 		output.Lighting.DivideAndClamp(debugDivisor)
 		output.Detail.DivideAndClamp(debugDivisor)
-		output.Transparency = FloatValue(float64(filledSamples)/ float64(totalSamples))
+		output.Transparency = FloatValue(float64(filledSamples) / float64(totalSamples))
 	}
 
 	return

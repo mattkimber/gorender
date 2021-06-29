@@ -154,7 +154,6 @@ func getRadiusStartValues(radius int) (values radiusStartValues) {
 	return
 }
 
-
 func (p *ProcessedVoxelObject) getDetail(x, y, z int) (detail float64) {
 	if !p.Elements[x][y][z].IsSurface {
 		return
@@ -186,7 +185,7 @@ func (p *ProcessedVoxelObject) getDetail(x, y, z int) (detail float64) {
 					// more than 2 palette indexes apart
 					// not the same range
 					// in a company colour range and different colours
-					if elem - thisIndex > 2 || thisIndex - elem > 2 || elemRange != thisRange || (elemRange == thisRange && (thisRange.IsPrimaryCompanyColour || thisRange.IsSecondaryCompanyColour) && elem != thisIndex)  {
+					if elem-thisIndex > 2 || thisIndex-elem > 2 || elemRange != thisRange || (elemRange == thisRange && (thisRange.IsPrimaryCompanyColour || thisRange.IsSecondaryCompanyColour) && elem != thisIndex) {
 						diff += 1.0
 					}
 				}

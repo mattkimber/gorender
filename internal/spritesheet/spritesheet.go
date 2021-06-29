@@ -49,7 +49,6 @@ func GetSpritesheets(def manifest.Definition) (sheets Spritesheets) {
 
 	raycast(def, spriteInfos)
 
-
 	timingutils.Time("Spritesheets", def.Time, func() {
 		getRegularSheets(&sheets, def, bounds, spriteInfos)
 	})
@@ -77,7 +76,7 @@ func getDebugSheets(sheets *Spritesheets, def manifest.Definition, bounds image.
 
 	go func() {
 		defer wg.Done()
-		smp := sampler.Get(def.Manifest.Sampler)(1, 1, def.Manifest.Accuracy, def.Manifest.Overlap, 0.5 + def.Manifest.Falloff)
+		smp := sampler.Get(def.Manifest.Sampler)(1, 1, def.Manifest.Accuracy, def.Manifest.Overlap, 0.5+def.Manifest.Falloff)
 		sheets.Store("sampler", Spritesheet{Image: smp.GetImage()})
 	}()
 
@@ -124,7 +123,6 @@ func raycast(def manifest.Definition, spriteInfos []SpriteInfo) {
 			renderOutputs[i] = raycaster.GetRaycastOutput(def.Object, def.Manifest, spr, smp)
 		}
 	})
-
 
 	timingutils.Time("Sampling", def.Time, func() {
 		for i, spr := range def.Manifest.Sprites {

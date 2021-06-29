@@ -28,41 +28,41 @@ type Sprite struct {
 	OffsetY              float64 `json:"offset_y"`
 	X                    int
 	ZError               float64
-	Flip                 bool `json:"flip"`
-	Slice                int  `json:"slice"`
-	RenderElevationAngle int  `json:"render_elevation"`
+	Flip                 bool    `json:"flip"`
+	Slice                int     `json:"slice"`
+	RenderElevationAngle int     `json:"render_elevation"`
 	Joggle               float64 `json:"joggle"`
 }
 
 type Manifest struct {
-	LightingAngle        int              `json:"lighting_angle"`
-	LightingElevation    int              `json:"lighting_elevation"`
-	Size                 geometry.Vector3 `json:"size"`
-	RenderElevationAngle int              `json:"render_elevation"`
-	Sprites              []Sprite         `json:"sprites"`
-	DepthInfluence       float64          `json:"depth_influence"`
-	TiledNormals         bool             `json:"tiled_normals"`
-	SolidBase            bool             `json:"solid_base"`
-	SoftenEdges          float64          `json:"soften_edges"`
-	Accuracy             int              `json:"accuracy"`
-	Sampler              string           `json:"sampler"`
-	Overlap              float64          `json:"overlap"`
-	Brightness           float64          `json:"brightness"`
-	Contrast             float64          `json:"contrast"`
-	DetailBoost          float64          `json:"detail_boost"`
-	FadeToBlack          bool             `json:"fade_to_black"`
-	EdgeThreshold        float64          `json:"alpha_edge_threshold"`
-	HardEdgeThreshold    float64          `json:"hard_edge_threshold"`
-	PadToFullLength      bool             `json:"pad_to_full_length"`
-	SliceThreshold       int              `json:"slice_threshold"`
-	SliceLength          int              `json:"slice_length"`
-	SliceOverlap         int              `json:"slice_overlap"`
-	Falloff              float64          `json:"falloff_adjustment"`
-	RecoveredVoxelSuppression float64     `json:"recovered_voxel_suppression"`
-	Joggle               float64 		  `json:"joggle"`
-	MaxPush              int              `json:"max_colour_push"`
-	Fosterise            bool             `json:"fosterise"`
-	NoEdgeFosterisation  bool             `json:"suppress_edge_fosterisation"`
+	LightingAngle             int              `json:"lighting_angle"`
+	LightingElevation         int              `json:"lighting_elevation"`
+	Size                      geometry.Vector3 `json:"size"`
+	RenderElevationAngle      int              `json:"render_elevation"`
+	Sprites                   []Sprite         `json:"sprites"`
+	DepthInfluence            float64          `json:"depth_influence"`
+	TiledNormals              bool             `json:"tiled_normals"`
+	SolidBase                 bool             `json:"solid_base"`
+	SoftenEdges               float64          `json:"soften_edges"`
+	Accuracy                  int              `json:"accuracy"`
+	Sampler                   string           `json:"sampler"`
+	Overlap                   float64          `json:"overlap"`
+	Brightness                float64          `json:"brightness"`
+	Contrast                  float64          `json:"contrast"`
+	DetailBoost               float64          `json:"detail_boost"`
+	FadeToBlack               bool             `json:"fade_to_black"`
+	EdgeThreshold             float64          `json:"alpha_edge_threshold"`
+	HardEdgeThreshold         float64          `json:"hard_edge_threshold"`
+	PadToFullLength           bool             `json:"pad_to_full_length"`
+	SliceThreshold            int              `json:"slice_threshold"`
+	SliceLength               int              `json:"slice_length"`
+	SliceOverlap              int              `json:"slice_overlap"`
+	Falloff                   float64          `json:"falloff_adjustment"`
+	RecoveredVoxelSuppression float64          `json:"recovered_voxel_suppression"`
+	Joggle                    float64          `json:"joggle"`
+	MaxPush                   int              `json:"max_colour_push"`
+	Fosterise                 bool             `json:"fosterise"`
+	NoEdgeFosterisation       bool             `json:"suppress_edge_fosterisation"`
 }
 
 func FromJson(handle io.Reader) (manifest Manifest, err error) {

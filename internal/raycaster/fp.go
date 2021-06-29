@@ -179,7 +179,7 @@ func getIntersectionVector(rayDimension, locDimension, limitDimension float64, r
 
 func isNearlyInsideBoundingVolume(loc geometry.Vector3, limits geometry.Vector3) bool {
 	// We are within 3 voxels of the bounding box, which is considered "approached"
-	return loc.X >= -3 && loc.Y >= -3 && loc.Z >= -3 && loc.X < limits.X + 3 && loc.Y < limits.Y + 3 && loc.Z < limits.Z + 3
+	return loc.X >= -3 && loc.Y >= -3 && loc.Z >= -3 && loc.X < limits.X+3 && loc.Y < limits.Y+3 && loc.Z < limits.Z+3
 }
 
 func isInsideBoundingVolume(loc geometry.Vector3, limits geometry.Vector3) bool {

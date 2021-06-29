@@ -45,7 +45,7 @@ func Test_raycaster(t *testing.T) {
 }
 
 func getObject(filename string, t *testing.T) voxelobject.ProcessedVoxelObject {
-	mv, err := magica.FromFile("testdata/"+filename)
+	mv, err := magica.FromFile("testdata/" + filename)
 	if err != nil {
 		t.Fatalf("error loading test file: %v", err)
 	}
@@ -53,7 +53,7 @@ func getObject(filename string, t *testing.T) voxelobject.ProcessedVoxelObject {
 	entries := make([]colour.PaletteEntry, 256)
 
 	pal := colour.Palette{
-		Entries: 						   entries,
+		Entries:                           entries,
 		CompanyColourLightingContribution: 0,
 		DefaultBrightness:                 0,
 		CompanyColourLightingScale:        0,
@@ -99,7 +99,7 @@ func Benchmark_raycaster(b *testing.B) {
 }
 
 func getObjectForBenchmark(filename string, b *testing.B) voxelobject.ProcessedVoxelObject {
-	mv, err := magica.FromFile("testdata/"+filename)
+	mv, err := magica.FromFile("testdata/" + filename)
 	if err != nil {
 		b.Fatalf("error loading test file: %v", err)
 	}

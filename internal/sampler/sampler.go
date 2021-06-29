@@ -10,7 +10,7 @@ import (
 )
 
 type Sample struct {
-	Location geometry.Vector2
+	Location  geometry.Vector2
 	Influence float64
 }
 
@@ -37,7 +37,7 @@ func (s Samples) GetImage() (img *image.RGBA) {
 	for _, smp := range samples {
 		x, y := int(100.0+(smp.Location.X*50.0)), int(100.0+(smp.Location.Y*50.0))
 		if x >= 0 && y >= 0 && x < 200 && y < 200 {
-			img.Set(x, y, color.RGBA{R: uint8(smp.Influence*255.0), G: 0, B: 0, A: 255})
+			img.Set(x, y, color.RGBA{R: uint8(smp.Influence * 255.0), G: 0, B: 0, A: 255})
 		}
 	}
 
@@ -82,10 +82,9 @@ func Square(width, height int, accuracy int, overlap float64, falloff float64) (
 						Y: fractionL,
 					}
 
-
 					location = geometry.Vector2{
-						X: (float64(i*accuracy) + (fractionK * (1.0 + overlap))*fAccuracy) / (float64(width*accuracy)),
-						Y: (float64(j*accuracy) + (fractionL * (1.0 + overlap))*fAccuracy) / (float64(height*accuracy)),
+						X: (float64(i*accuracy) + (fractionK*(1.0+overlap))*fAccuracy) / (float64(width * accuracy)),
+						Y: (float64(j*accuracy) + (fractionL*(1.0+overlap))*fAccuracy) / (float64(height * accuracy)),
 					}
 
 					influence := 1.0 - (math.Pow(centre.DistanceSquared(fraction), falloff) * 2.0)
@@ -95,7 +94,7 @@ func Square(width, height int, accuracy int, overlap float64, falloff float64) (
 					}
 
 					result[i][j][l+(k*accuracy)] = Sample{
-						Location: location,
+						Location:  location,
 						Influence: influence,
 					}
 				}
@@ -133,7 +132,7 @@ func Disc(width, height int, accuracy int, overlap float64, falloff float64) (re
 				}
 
 				result[i][j][k] = Sample{
-					Location: location,
+					Location:  location,
 					Influence: influence,
 				}
 			}

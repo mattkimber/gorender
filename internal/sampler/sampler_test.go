@@ -9,16 +9,16 @@ import (
 func TestSquare(t *testing.T) {
 	expected := Samples{
 		[]SampleList{{
-			{ Location:  geometry.Vector2{X: 1.0/6.0, Y: 1.0/3.0}, Influence: 0.5285954792089682},
-			{ Location:  geometry.Vector2{X: 1.0/6.0, Y: 2.0/3.0}, Influence: 0.5285954792089683},
-			{ Location:  geometry.Vector2{X: 2.0/6.0, Y: 1.0/3.0}, Influence: 0.5285954792089683},
-			{ Location:  geometry.Vector2{X: 2.0/6.0, Y: 2.0/3.0}, Influence: 0.5285954792089684},
+			{Location: geometry.Vector2{X: 1.0 / 6.0, Y: 1.0 / 3.0}, Influence: 0.5285954792089682},
+			{Location: geometry.Vector2{X: 1.0 / 6.0, Y: 2.0 / 3.0}, Influence: 0.5285954792089683},
+			{Location: geometry.Vector2{X: 2.0 / 6.0, Y: 1.0 / 3.0}, Influence: 0.5285954792089683},
+			{Location: geometry.Vector2{X: 2.0 / 6.0, Y: 2.0 / 3.0}, Influence: 0.5285954792089684},
 		}},
 		[]SampleList{{
-			{ Location:  geometry.Vector2{X: 4.0/6.0, Y: 1.0/3.0}, Influence: 0.5285954792089682},
-			{ Location:  geometry.Vector2{X: 4.0/6.0, Y: 2.0/3.0}, Influence: 0.5285954792089683},
-			{ Location:  geometry.Vector2{X: 0.8333333333333333, Y: 1.0/3.0}, Influence: 0.5285954792089683},
-			{ Location:  geometry.Vector2{X: 0.8333333333333333, Y: 2.0/3.0}, Influence: 0.5285954792089684},
+			{Location: geometry.Vector2{X: 4.0 / 6.0, Y: 1.0 / 3.0}, Influence: 0.5285954792089682},
+			{Location: geometry.Vector2{X: 4.0 / 6.0, Y: 2.0 / 3.0}, Influence: 0.5285954792089683},
+			{Location: geometry.Vector2{X: 0.8333333333333333, Y: 1.0 / 3.0}, Influence: 0.5285954792089683},
+			{Location: geometry.Vector2{X: 0.8333333333333333, Y: 2.0 / 3.0}, Influence: 0.5285954792089684},
 		}},
 	}
 

@@ -124,7 +124,7 @@ func getPalette(b *testing.B) colour.Palette {
 }
 
 func getObjectForBenchmark(filename string, b *testing.B) voxelobject.ProcessedVoxelObject {
-	mv, err := magica.FromFile("../raycaster/testdata/"+filename)
+	mv, err := magica.FromFile("../raycaster/testdata/" + filename)
 	if err != nil {
 		b.Fatalf("error loading test file: %v", err)
 	}
