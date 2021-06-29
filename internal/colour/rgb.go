@@ -24,6 +24,16 @@ func ClampRGB(input RGB) (output RGB) {
 	return
 }
 
+func PermissiveClampRGB(input RGB) (output RGB) {
+	output = RGB{
+		R: Clamp(input.R, 0, 65535),
+		G: Clamp(input.G, 0, 65535),
+		B: Clamp(input.B, 0, 65535),
+	}
+
+	return
+}
+
 func Clamp(input float64, min, max float64) float64 {
 	if input > max {
 		return max

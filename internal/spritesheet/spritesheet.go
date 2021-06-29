@@ -63,7 +63,7 @@ func GetSpritesheets(def manifest.Definition) (sheets Spritesheets) {
 }
 
 func getDebugSheets(sheets *Spritesheets, def manifest.Definition, bounds image.Rectangle, spriteInfos []SpriteInfo) {
-	debugOutputs := []string{"lighting", "depth", "normals", "occlusion", "shadow", "avg_normals", "detail", "transparency"}
+	debugOutputs := []string{"lighting", "depth", "normals", "occlusion", "shadow", "avg_normals", "detail", "transparency", "region", "midpoint_distance"}
 	var wg sync.WaitGroup
 	wg.Add(len(debugOutputs) + 1)
 
@@ -129,7 +129,7 @@ func raycast(def manifest.Definition, spriteInfos []SpriteInfo) {
 	timingutils.Time("Sampling", def.Time, func() {
 		for i, spr := range def.Manifest.Sprites {
 			rect := getSpriteSizeForAngle(spr, def.Scale)
-			spriteInfos[i].ShaderOutput = sprite.GetShaderOutput(renderOutputs[i], spr, def, rect.Max.X, rect.Max.Y)
+			spriteInfos[i].ShaderOutput = sprite.GetShaderOutput(renderOutputs[i], spr, &def, rect.Max.X, rect.Max.Y)
 		}
 	})
 }
@@ -187,6 +187,10 @@ func applySprite32bpp(img *image.RGBA, def manifest.Definition, spriteInfo Sprit
 		sprite.Apply32bppSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.ShaderOutput, sprite.GetDetail)
 	} else if depth == "transparency" {
 		sprite.Apply32bppSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.ShaderOutput, sprite.GetTransparency)
+	} else if depth == "region" {
+		sprite.Apply32bppSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.ShaderOutput, sprite.GetRegion)
+	} else if depth == "midpoint_distance" {
+		sprite.Apply32bppSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.ShaderOutput, sprite.GetMidpointDistance)
 	} else {
 		sprite.Apply32bppSprite(img, spriteInfo.SpriteBounds, loc, spriteInfo.ShaderOutput, sprite.GetColour)
 	}

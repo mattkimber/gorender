@@ -60,6 +60,9 @@ type Manifest struct {
 	Falloff              float64          `json:"falloff_adjustment"`
 	RecoveredVoxelSuppression float64     `json:"recovered_voxel_suppression"`
 	Joggle               float64 		  `json:"joggle"`
+	MaxPush              int              `json:"max_colour_push"`
+	Fosterise            bool             `json:"fosterise"`
+	NoEdgeFosterisation  bool             `json:"suppress_edge_fosterisation"`
 }
 
 func FromJson(handle io.Reader) (manifest Manifest, err error) {

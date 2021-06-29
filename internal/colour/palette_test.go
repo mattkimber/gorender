@@ -9,7 +9,14 @@ import (
 const exampleJson = "{\"company_colour_lighting_contribution\": 1.0, \"entries\": [[0,0,0],[255,255,255],[255,127,0]], \"ranges\": [{\"start\": 0, \"end\": 1, \"is_primary_company_colour\": true}]}"
 
 func TestGetPaletteFromJson(t *testing.T) {
-	expectedRanges := []PaletteRange{{Start: 0, End: 1, IsPrimaryCompanyColour: true, IsSecondaryCompanyColour: false}}
+	expectedRanges := []PaletteRange{{
+		Start:                    0,
+		End:                      1,
+		IsPrimaryCompanyColour:   true,
+		IsSecondaryCompanyColour: false,
+		MaxGapInRegion:           6,
+		ExpectedColourRange:      4,
+	}}
 	expectedEntries := []PaletteEntry{{R: 0, G: 0, B: 0}, {R: 255, G: 255, B: 255}, {R: 255, G: 127, B: 0}}
 
 	palette, err := FromJson(strings.NewReader(exampleJson))

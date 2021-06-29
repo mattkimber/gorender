@@ -23,6 +23,8 @@ type PaletteRange struct {
 	IsProcessColour          bool `json:"is_process_colour"`
 	Smoothness               int  `json:"smoothness"`
 	IsNonRenderable          bool `json:"non_renderable"`
+	MaxGapInRegion           int `json:"max_gap_in_region"`
+	ExpectedColourRange      byte `json:"expected_colour_range"`
 }
 
 type Palette struct {
@@ -282,6 +284,13 @@ func (p *Palette) SetRanges(ranges []PaletteRange) (err error) {
 	}
 
 	for i, r := range ranges {
+
+		// Set the default for max region gap
+		if r.MaxGapInRegion == 0 {
+			ranges[i].MaxGapInRegion = 6
+			ranges[i].ExpectedColourRange = 4
+		}
+
 		for j := int(r.Start); j <= int(r.End); j++ {
 			if p.Entries[j].Range != nil {
 				return fmt.Errorf("range %d overlaps colour %d", i, j)

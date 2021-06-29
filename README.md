@@ -220,6 +220,26 @@ model. These are:
 * `default_brightness` (`0.0`-`2.0`): the default brightness used to blend with company colour brightness when this happens. 
 * `company_colour_lighting_scale`: (default `2.0`): how responsive colours in the "company colours" range are to the lighting model.
 
+## Colour expansion modes
+
+Sometimes objects will be rendered with insufficient variety within a region of
+colour. You can increase the variety (at the cost of noisier sprites and
+inconsistencies between angles) by configuring the following:
+
+* `max_colour_push` (`0`-`8`): how many palette indexes a colour can be moved by
+                               in either direction. (Colours will always stay within
+                               their palette range). Higher values give more variety
+                               but increase noise and artifacts. 1 or 2 tends to produce
+                               the most "TTD-like" results.
+* `fosterise` (`true`/`false`): a distinctive feature of most original TTD sprites is
+                                the line of darker pixels at the lower and left edges
+                                each region of colour. Set this parameter to emulate
+                                this art style in output.
+* `suppress_edge_fosterisation` (`true`/`false`): if set to true, pixels on sprite edges
+                                                  will not be Fosterised. This is useful
+                                                  when rendering objects that will be
+                                                  tiled.
+                                
 ## Special palette colour properties
 
 The following properties can be used to change palette range behaviour in the palette file:
@@ -230,6 +250,14 @@ The following properties can be used to change palette range behaviour in the pa
                                 with other colours (including the primary colour).
 * `is_process_colour`: This colour will be considered a valid voxel when calculating normals, 
                        but ignored when rendering and calculating shadows/occlusion/etc.
+* `max_gap_in_region`: How many palette indexes adjacent colours can differ by before they are no
+                       longer considered part of the same region. Defaults to 6.
+* `expected_colour_range`: How many colours are expected to be used in a given region. If fewer
+                           than this are used, the range will be considered for colour range expansion.
+                           Defaults to 4. Reduce this if output is becoming overly noisy, increase if
+                           you have large areas with insufficient variation.
+                           (This is the overall distance between the first and last colour,
+                           not the number of distinct colours.)                       
                        
 Use the process colour (by default the range of pinks 217-224) to influence how normals
 are generated for very thin objects.
