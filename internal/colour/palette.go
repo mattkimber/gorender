@@ -288,7 +288,7 @@ func (p *Palette) SetRanges(ranges []PaletteRange) (err error) {
 		// Set the default for max region gap
 		if r.MaxGapInRegion == 0 {
 			ranges[i].MaxGapInRegion = 6
-			ranges[i].ExpectedColourRange = 4
+			ranges[i].ExpectedColourRange = 3
 		}
 
 		for j := int(r.Start); j <= int(r.End); j++ {
