@@ -37,13 +37,15 @@ type RegionInfo struct {
 	MinDistanceFromMidpoint float64
 	MaxDistanceFromMidpoint float64
 	MinIndex                byte
-	MaxIndex                byte
-	Histogram               []int
-	FilledHistogramBuckets  int
+	MaxIndex               byte
+	DistanceHistogram      []int
+	IndexHistogram      []int
+	FilledHistogramBuckets int
 	RangeLength             float64
 	Size                    int
 	SizeInRange             int
 	Range                   *colour.PaletteRange
+	RequiresExpansion       bool
 }
 
 func GetColour(s *ShaderInfo) colour.RGB {
@@ -212,13 +214,19 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 			info.Size++
 
 			if ditheredRange == info.Range && bestIndex != 0 {
-				if info.Histogram == nil {
-					info.Histogram = make([]int, 256)
+				if info.DistanceHistogram == nil {
+					info.DistanceHistogram = make([]int, 256)
 				}
+
+				if info.IndexHistogram == nil {
+					info.IndexHistogram = make([]int, 256)
+				}
+
 				info.SizeInRange++
 
 				byteDistance := byte((output[x][y].DistanceFromMidpoint + 1.0) / 2.0 * 255)
-				info.Histogram[byteDistance]++
+				info.DistanceHistogram[byteDistance]++
+				info.IndexHistogram[bestIndex]++
 
 				if output[x][y].DistanceFromMidpoint < info.MinDistanceFromMidpoint {
 					info.MinDistanceFromMidpoint = output[x][y].DistanceFromMidpoint
@@ -228,12 +236,12 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 					info.MaxDistanceFromMidpoint = output[x][y].DistanceFromMidpoint
 				}
 
-				if output[x][y].DitheredIndex < info.MinIndex || info.MinIndex == 0 {
-					info.MinIndex = output[x][y].DitheredIndex
+				if bestIndex < info.MinIndex || info.MinIndex == 0 {
+					info.MinIndex = bestIndex
 				}
 
-				if output[x][y].DitheredIndex > info.MaxIndex {
-					info.MaxIndex = output[x][y].DitheredIndex
+				if bestIndex > info.MaxIndex {
+					info.MaxIndex = bestIndex
 				}
 
 				regions[output[x][y].Region] = info
@@ -245,10 +253,34 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 	}
 
 	for idx, region := range regions {
-		if region.Size > 1 {
+
+		if region.SizeInRange > 1 {
 			rng := region.Range
 			rangeLength := float64(rng.End - rng.Start)
 			region.RangeLength = rangeLength
+
+			// Check the histogram. If more than 50% of a 4px or larger region is a single colour, we need to expand
+			// the colour range
+			//
+			// Additionally if the region is >8px and only two colours have been used, we will expand the range
+			histogramMax := 0
+			usedColours := 0
+
+			for i := range region.IndexHistogram {
+				if region.IndexHistogram[i] > 0 {
+					usedColours++
+				}
+
+				if region.IndexHistogram[i] > histogramMax {
+					histogramMax = region.IndexHistogram[i]
+				}
+			}
+
+			// If more than 60% of a region is a single colour, or the region is >8px and it has only used 2 colours,
+			// then range expansion is desired
+			if (histogramMax * 100) / region.SizeInRange > 60 || (region.SizeInRange > 7 && usedColours <= 2) {
+				region.RequiresExpansion = true
+			}
 
 			// Expand the range if not many colours are used
 			if region.MaxIndex-region.MinIndex < rng.ExpectedColourRange {
@@ -267,8 +299,8 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 				curIndex := region.MinIndex
 				visited := 0
 				partitionSize := region.SizeInRange / int(usedRangeLength)
-				for i := 0; i < len(region.Histogram); i++ {
-					visited += region.Histogram[i]
+				for i := 0; i < len(region.DistanceHistogram); i++ {
+					visited += region.DistanceHistogram[i]
 					if visited >= partitionSize {
 						visited -= partitionSize
 						curIndex++
@@ -277,13 +309,13 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 						}
 					}
 
-					if region.Histogram[i] > 0 {
+					if region.DistanceHistogram[i] > 0 {
 						region.FilledHistogramBuckets++
 					}
 
 					// Replace the histogram entry with the palette index it will
 					// correspond to
-					region.Histogram[i] = int(curIndex)
+					region.DistanceHistogram[i] = int(curIndex)
 				}
 			}
 
@@ -301,12 +333,13 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 				continue
 			}
 
-			if ok && region.SizeInRange > 1 && output[x][y].DitheredIndex != 0 && region.RangeLength > 0 &&
-				output[x][y].Midpoint != 0 && region.Range == paletteRange && region.MaxIndex-region.MinIndex < 8 {
+			if ok && region.RequiresExpansion && region.SizeInRange > 1 && output[x][y].DitheredIndex != 0 &&
+				region.RangeLength > 0 && output[x][y].Midpoint != 0 && region.Range == paletteRange &&
+				region.MaxIndex-region.MinIndex < 8 {
 
 				byteDistance := byte((output[x][y].DistanceFromMidpoint + 1.0) / 2.0 * 255)
 
-				diff := region.Histogram[byteDistance] - int(output[x][y].DitheredIndex)
+				diff := region.DistanceHistogram[byteDistance] - int(output[x][y].DitheredIndex)
 				if diff < -def.Manifest.MaxPush {
 					diff = -def.Manifest.MaxPush
 				} else if diff > def.Manifest.MaxPush {
@@ -315,7 +348,6 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 
 				// Only update the index to within 2 palette steps of the original
 				output[x][y].DitheredIndex = byte(int(output[x][y].DitheredIndex) + diff)
-
 			}
 
 			// "Fosterise" by darkening pixels at the bottom and left
