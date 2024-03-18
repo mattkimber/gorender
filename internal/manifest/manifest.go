@@ -63,6 +63,8 @@ type Manifest struct {
 	MaxPush                   int              `json:"max_colour_push"`
 	Fosterise                 bool             `json:"fosterise"`
 	NoEdgeFosterisation       bool             `json:"suppress_edge_fosterisation"`
+	SoftShadow                bool             `json:"soft_shadow"`
+	ShadowThreshold           float64          `json:"shadow_threshold"`
 }
 
 func FromJson(handle io.Reader) (manifest Manifest, err error) {
