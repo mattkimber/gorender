@@ -15,7 +15,7 @@ func TestGetPaletteFromJson(t *testing.T) {
 		IsPrimaryCompanyColour:   true,
 		IsSecondaryCompanyColour: false,
 		MaxGapInRegion:           6,
-		ExpectedColourRange:      4,
+		ExpectedColourRange:      3,
 	}}
 	expectedEntries := []PaletteEntry{{R: 0, G: 0, B: 0}, {R: 255, G: 255, B: 255}, {R: 255, G: 127, B: 0}}
 
