@@ -77,7 +77,7 @@ func GetRaycastOutput(object voxelobject.ProcessedVoxelObject, m manifest.Manife
 			for y := 0; y < h; y++ {
 				samples := sampler[thisX][y]
 				result[thisX][y] = make(RenderInfo, len(samples))
-				raycastSamples(viewport, &samples, ray, limits, object, spr, lighting, result, thisX, y, minX, maxX, joggle)
+				raycastSamples(viewport, &samples, ray, limits, object, m, spr, lighting, result, thisX, y, minX, maxX, joggle)
 			}
 			wg.Done()
 		}()
@@ -94,6 +94,7 @@ func raycastSamples(
 	ray geometry.Vector3,
 	limits geometry.Vector3,
 	object voxelobject.ProcessedVoxelObject,
+	m manifest.Manifest,
 	spr manifest.Sprite,
 	lighting geometry.Vector3,
 	result RenderOutput,
@@ -134,7 +135,7 @@ func raycastSamples(
 			}
 
 			shadowResult := 0
-			if getLightingValue(object.Elements[rayResult.X][rayResult.Y][rayResult.Z].AveragedNormal, lighting) > 0 {
+			if getLightingValue(object.Elements[rayResult.X][rayResult.Y][rayResult.Z].AveragedNormal, lighting) > m.ShadowThreshold {
 				resultVec := geometry.Vector3{X: float64(rayResult.X), Y: float64(rayResult.Y), Z: float64(rayResult.Z)}
 				shadowLoc := resultVec
 
@@ -153,7 +154,7 @@ func raycastSamples(
 				// Don't flip Y when calculating shadows, as it has been pre-flipped on input.
 				shadowResult = castFpRay(object, shadowLoc, shadowLoc, shadowVec, limits, false).Depth
 			}
-			setResult(&result[thisX][y][i], object.Elements[rayResult.X][rayResult.Y][rayResult.Z], lighting, rayResult.Depth, shadowResult, s.Influence, rayResult.IsRecovered)
+			setResult(&result[thisX][y][i], object.Elements[rayResult.X][rayResult.Y][rayResult.Z], lighting, rayResult.Depth, shadowResult, s.Influence, rayResult.IsRecovered, m)
 		} else if !rayResult.ApproachedBoundingBox {
 			// Optimise the outside-bounding-box cases by skipping all further samples
 			break
@@ -161,7 +162,7 @@ func raycastSamples(
 	}
 }
 
-func setResult(result *RenderSample, element voxelobject.ProcessedElement, lighting geometry.Vector3, depth int, shadowLength int, influence float64, isRecovered bool) {
+func setResult(result *RenderSample, element voxelobject.ProcessedElement, lighting geometry.Vector3, depth int, shadowLength int, influence float64, isRecovered bool, m manifest.Manifest) {
 
 	if shadowLength > 0 && shadowLength < 10 {
 		result.Shadowing = 1.0
@@ -173,6 +174,13 @@ func setResult(result *RenderSample, element voxelobject.ProcessedElement, light
 	result.Index = element.Index
 	result.Depth = depth
 	result.LightAmount = getLightingValue(element.AveragedNormal, lighting)
+	if result.LightAmount > m.ShadowThreshold {
+		if m.SoftShadow {
+			result.Shadowing = result.Shadowing * (result.LightAmount - m.ShadowThreshold) / (1.0 - m.ShadowThreshold)
+		}
+	} else {
+		result.Shadowing = 0.0
+	}
 	result.Normal = element.Normal
 	result.Occlusion = element.Occlusion
 	result.AveragedNormal = element.AveragedNormal
