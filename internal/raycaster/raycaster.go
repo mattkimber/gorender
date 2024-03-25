@@ -133,23 +133,26 @@ func raycastSamples(
 				pi = i
 			}
 
-			resultVec := geometry.Vector3{X: float64(rayResult.X), Y: float64(rayResult.Y), Z: float64(rayResult.Z)}
-			shadowLoc := resultVec
+			shadowResult := 0
+			if getLightingValue(object.Elements[rayResult.X][rayResult.Y][rayResult.Z].AveragedNormal, lighting) > 0 {
+				resultVec := geometry.Vector3{X: float64(rayResult.X), Y: float64(rayResult.Y), Z: float64(rayResult.Z)}
+				shadowLoc := resultVec
 
-			shadowVec := geometry.Zero().Subtract(lighting).Normalise()
+				shadowVec := geometry.Zero().Subtract(lighting).Normalise()
 
-			for {
-				sx, sy, sz := int(shadowLoc.X), int(shadowLoc.Y), int(shadowLoc.Z)
+				for {
+					sx, sy, sz := int(shadowLoc.X), int(shadowLoc.Y), int(shadowLoc.Z)
 
-				if sx != rayResult.X || sy != rayResult.Y || sz != rayResult.Z {
-					break
+					if sx != rayResult.X || sy != rayResult.Y || sz != rayResult.Z {
+						break
+					}
+
+					shadowLoc = shadowLoc.Add(shadowVec)
 				}
 
-				shadowLoc = shadowLoc.Add(shadowVec)
+				// Don't flip Y when calculating shadows, as it has been pre-flipped on input.
+				shadowResult = castFpRay(object, shadowLoc, shadowLoc, shadowVec, limits, false).Depth
 			}
-
-			// Don't flip Y when calculating shadows, as it has been pre-flipped on input.
-			shadowResult := castFpRay(object, shadowLoc, shadowLoc, shadowVec, limits, false).Depth
 			setResult(&result[thisX][y][i], object.Elements[rayResult.X][rayResult.Y][rayResult.Z], lighting, rayResult.Depth, shadowResult, s.Influence, rayResult.IsRecovered)
 		} else if !rayResult.ApproachedBoundingBox {
 			// Optimise the outside-bounding-box cases by skipping all further samples
