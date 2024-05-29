@@ -42,14 +42,10 @@ type RegionInfo struct {
 	MaxDistanceFromMidpoint float64
 	MinIndex                byte
 	MaxIndex                byte
-	DistanceHistogram       []int
-	IndexHistogram          []int
-	FilledHistogramBuckets  int
 	RangeLength             float64
 	Size                    int
 	SizeInRange             int
 	Range                   *colour.PaletteRange
-	RequiresExpansion       bool
 }
 
 func GetColour(s *ShaderInfo) colour.RGB {
@@ -175,7 +171,8 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 	primaryCCPalette := def.Palette.GetPrimaryCompanyColourPalette()
 	secondaryCCPalette := def.Palette.GetSecondaryCompanyColourPalette()
 
-	// Get the first pass dithered output to find what the colour ranges are
+	// Get the first pass dithered output to get the basic sprite, which may have
+	// some flat areas
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
 
@@ -193,16 +190,8 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 			info.Size++
 
 			if ditheredRange == info.Range && bestIndex != 0 {
-				if info.DistanceHistogram == nil {
-					info.DistanceHistogram = make([]int, 256)
-				}
-
-				if info.IndexHistogram == nil {
-					info.IndexHistogram = make([]int, 256)
-				}
 
 				info.SizeInRange++
-				info.IndexHistogram[bestIndex]++
 
 				if bestIndex < info.MinIndex || info.MinIndex == 0 {
 					info.MinIndex = bestIndex
@@ -220,46 +209,7 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 		errCurr, errNext = errNext, errCurr
 	}
 
-	for idx, region := range regions {
-
-		if region.SizeInRange > 1 {
-			rng := region.Range
-			rangeLength := float64(rng.End - rng.Start)
-			region.RangeLength = rangeLength
-
-			// Check the histogram. If more than 50% of a 4px or larger region is a single colour, we need to expand
-			// the colour range
-			//
-			// Additionally if the region is >8px and only two colours have been used, we will expand the range
-			histogramMax := 0
-			usedColours := 0
-
-			for i := range region.IndexHistogram {
-				if region.IndexHistogram[i] > 0 {
-					usedColours++
-				}
-
-				if region.IndexHistogram[i] > histogramMax {
-					histogramMax = region.IndexHistogram[i]
-				}
-			}
-
-			// Expand the range if not many colours are used
-			if region.MaxIndex-region.MinIndex < rng.ExpectedColourRange {
-				if region.MinIndex > rng.Start {
-					region.MinIndex = region.MinIndex - 1
-				}
-
-				if region.MaxIndex < rng.End {
-					region.MaxIndex = region.MaxIndex + 1
-				}
-			}
-
-			regions[idx] = region
-		}
-	}
-
-	// Do the second pass dithered output to expand the colour range
+	// Do the second pass dithered output to add fine detail
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
 			paletteRange := def.Palette.Entries[output[x][y].DitheredIndex].Range
