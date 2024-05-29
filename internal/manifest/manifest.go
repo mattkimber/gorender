@@ -60,7 +60,7 @@ type Manifest struct {
 	Falloff                   float64          `json:"falloff_adjustment"`
 	RecoveredVoxelSuppression float64          `json:"recovered_voxel_suppression"`
 	Joggle                    float64          `json:"joggle"`
-	MaxPush                   int              `json:"max_colour_push"`
+	DitherFlatAreas           bool             `json:"dither_flat_areas"`
 	Fosterise                 bool             `json:"fosterise"`
 	NoEdgeFosterisation       bool             `json:"suppress_edge_fosterisation"`
 	SoftShadow                bool             `json:"soft_shadow"`

@@ -5,30 +5,34 @@ import (
 	"github.com/mattkimber/gorender/internal/manifest"
 	"github.com/mattkimber/gorender/internal/raycaster"
 	"math"
+	"sort"
 )
 
 type ShaderInfo struct {
-	Colour               colour.RGB
-	SpecialColour        colour.RGB
-	Alpha                float64
-	Specialness          float64
-	Normal               colour.RGB
-	AveragedNormal       colour.RGB
-	Depth                colour.RGB
-	Occlusion            colour.RGB
-	Lighting             colour.RGB
-	Shadowing            colour.RGB
-	Detail               colour.RGB
-	Transparency         colour.RGB
-	Region               int
-	ModalIndex           byte
-	DitheredIndex        byte
-	IsMaskColour         bool
-	IsAnimated           bool
-	Midpoint             float64
-	DistanceFromMidpoint float64
-	IsBottom             bool
-	IsLeft               bool
+	Colour           colour.RGB
+	SpecialColour    colour.RGB
+	Alpha            float64
+	Specialness      float64
+	Normal           colour.RGB
+	AveragedNormal   colour.RGB
+	Depth            colour.RGB
+	Occlusion        colour.RGB
+	Lighting         colour.RGB
+	Shadowing        colour.RGB
+	Detail           colour.RGB
+	Transparency     colour.RGB
+	Region           int
+	LightingCalcDone bool
+	DitherChecked    bool
+	DitherDone       bool
+	MaxLighting      float64
+	MinLighting      float64
+	ModalIndex       byte
+	DitheredIndex    byte
+	IsMaskColour     bool
+	IsAnimated       bool
+	IsBottom         bool
+	IsLeft           bool
 }
 
 type ShaderOutput [][]ShaderInfo
@@ -37,10 +41,10 @@ type RegionInfo struct {
 	MinDistanceFromMidpoint float64
 	MaxDistanceFromMidpoint float64
 	MinIndex                byte
-	MaxIndex               byte
-	DistanceHistogram      []int
-	IndexHistogram      []int
-	FilledHistogramBuckets int
+	MaxIndex                byte
+	DistanceHistogram       []int
+	IndexHistogram          []int
+	FilledHistogramBuckets  int
 	RangeLength             float64
 	Size                    int
 	SizeInRange             int
@@ -105,10 +109,6 @@ func GetRegion(s *ShaderInfo) colour.RGB {
 	}
 }
 
-func GetMidpointDistance(s *ShaderInfo) colour.RGB {
-	return FloatValue(s.DistanceFromMidpoint)
-}
-
 func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, def *manifest.Definition, width int, height int) (output ShaderOutput) {
 	output = make([][]ShaderInfo, width)
 
@@ -159,7 +159,7 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 			paletteRange := def.Palette.Entries[output[x][y].ModalIndex].Range
 			info.Range = paletteRange
 
-			floodFill(&output, def, currentRegion, x, y, width, height, output[x][y].ModalIndex, &def.Palette, paletteRange)
+			identifyRegions(&output, def, currentRegion, x, y, width, height, output[x][y].ModalIndex, &def.Palette, paletteRange)
 
 			regions[currentRegion] = info
 			currentRegion++
@@ -179,7 +179,7 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
 
-			bestIndex, ditherErr := ditherOutput(def, output, x, y, errCurr, primaryCCPalette, secondaryCCPalette, regularPalette, errNext)
+			bestIndex := ditherOutput(def, output, x, y, errCurr, primaryCCPalette, secondaryCCPalette, regularPalette, errNext)
 
 			// Update the range stats
 			ditheredRange := def.Palette.Entries[bestIndex].Range
@@ -187,27 +187,6 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 			// Hard reset non-renderable colours for transparent sections
 			if bestIndex == 0 {
 				output[x][y].ModalIndex = 0
-			}
-
-			if ditheredRange != nil {
-				position := 0.0
-
-				if bestIndex != ditheredRange.Start && bestIndex != ditheredRange.End {
-					otherIndex := bestIndex + 1
-
-					resultErr := ditherErr.Subtract(def.Palette.Entries[bestIndex].GetRGB())
-					otherResultErr := ditherErr.Subtract(def.Palette.Entries[otherIndex].GetRGB())
-
-					distance := math.Sqrt(resultErr.R*resultErr.R) + math.Sqrt(resultErr.G*resultErr.G) + math.Sqrt(resultErr.B*resultErr.B)
-					otherDistance := math.Sqrt(otherResultErr.R*otherResultErr.R) + math.Sqrt(otherResultErr.G*otherResultErr.G) + math.Sqrt(otherResultErr.B*otherResultErr.B)
-
-					position = distance / (distance + otherDistance)
-				}
-
-				rangeLength := float64(ditheredRange.End - ditheredRange.Start)
-				midpoint := float64(ditheredRange.Start) + (rangeLength / 2.0)
-				output[x][y].Midpoint = midpoint
-				output[x][y].DistanceFromMidpoint = ((float64(bestIndex) + position) - midpoint) / (rangeLength / 2.0)
 			}
 
 			info := regions[output[x][y].Region]
@@ -223,18 +202,7 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 				}
 
 				info.SizeInRange++
-
-				byteDistance := byte((output[x][y].DistanceFromMidpoint + 1.0) / 2.0 * 255)
-				info.DistanceHistogram[byteDistance]++
 				info.IndexHistogram[bestIndex]++
-
-				if output[x][y].DistanceFromMidpoint < info.MinDistanceFromMidpoint {
-					info.MinDistanceFromMidpoint = output[x][y].DistanceFromMidpoint
-				}
-
-				if output[x][y].DistanceFromMidpoint > info.MaxDistanceFromMidpoint {
-					info.MaxDistanceFromMidpoint = output[x][y].DistanceFromMidpoint
-				}
 
 				if bestIndex < info.MinIndex || info.MinIndex == 0 {
 					info.MinIndex = bestIndex
@@ -276,12 +244,6 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 				}
 			}
 
-			// If more than 60% of a region is a single colour, or the region is >8px and it has only used 2 colours,
-			// then range expansion is desired
-			if (histogramMax * 100) / region.SizeInRange > 60 || (region.SizeInRange > 7 && usedColours <= 2) {
-				region.RequiresExpansion = true
-			}
-
 			// Expand the range if not many colours are used
 			if region.MaxIndex-region.MinIndex < rng.ExpectedColourRange {
 				if region.MinIndex > rng.Start {
@@ -293,32 +255,6 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 				}
 			}
 
-			usedRangeLength := region.MaxIndex - region.MinIndex
-
-			if usedRangeLength > 0 {
-				curIndex := region.MinIndex
-				visited := 0
-				partitionSize := region.SizeInRange / int(usedRangeLength)
-				for i := 0; i < len(region.DistanceHistogram); i++ {
-					visited += region.DistanceHistogram[i]
-					if visited >= partitionSize {
-						visited -= partitionSize
-						curIndex++
-						if curIndex > region.MaxIndex {
-							curIndex = region.MaxIndex
-						}
-					}
-
-					if region.DistanceHistogram[i] > 0 {
-						region.FilledHistogramBuckets++
-					}
-
-					// Replace the histogram entry with the palette index it will
-					// correspond to
-					region.DistanceHistogram[i] = int(curIndex)
-				}
-			}
-
 			regions[idx] = region
 		}
 	}
@@ -326,28 +262,34 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 	// Do the second pass dithered output to expand the colour range
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
-			region, ok := regions[output[x][y].Region]
 			paletteRange := def.Palette.Entries[output[x][y].DitheredIndex].Range
 			if paletteRange == nil || paletteRange.IsAnimatedLight || paletteRange.IsNonRenderable {
 				// Don't alter special colours
 				continue
 			}
 
-			if ok && region.RequiresExpansion && region.SizeInRange > 1 && output[x][y].DitheredIndex != 0 &&
-				region.RangeLength > 0 && output[x][y].Midpoint != 0 && region.Range == paletteRange &&
-				region.MaxIndex-region.MinIndex < 8 {
+			if def.Manifest.DitherFlatAreas {
+				minLighting, maxLighting, totalPixels := math.MaxFloat64, 0.0, 0
+				getLightingForSameColourArea(&output, def, x, y, width, height, output[x][y].ModalIndex, &minLighting, &maxLighting, &totalPixels)
 
-				byteDistance := byte((output[x][y].DistanceFromMidpoint + 1.0) / 2.0 * 255)
+				if maxLighting-minLighting > 0.0 {
+					// Work out how much to dither so 60% of output is un-dithered, 20% darkened, 20% lightened
+					lightingValues := make([]float64, 0)
+					getLightingValues(&output, def, x, y, width, height, output[x][y].ModalIndex, minLighting, maxLighting, &lightingValues)
 
-				diff := region.DistanceHistogram[byteDistance] - int(output[x][y].DitheredIndex)
-				if diff < -def.Manifest.MaxPush {
-					diff = -def.Manifest.MaxPush
-				} else if diff > def.Manifest.MaxPush {
-					diff = def.Manifest.MaxPush
+					if len(lightingValues) > 1 {
+						sort.Slice(lightingValues, func(i, j int) bool {
+							return lightingValues[i] < lightingValues[j]
+						})
+
+						ditherThresholdLow := lightingValues[len(lightingValues)/5]
+						ditherThresholdHigh := lightingValues[(len(lightingValues)*4)/5]
+
+						if ditherThresholdLow != ditherThresholdHigh {
+							doColourPush(&output, def, x, y, width, height, output[x][y].ModalIndex, &def.Palette, minLighting, maxLighting, ditherThresholdLow, ditherThresholdHigh)
+						}
+					}
 				}
-
-				// Only update the index to within 2 palette steps of the original
-				output[x][y].DitheredIndex = byte(int(output[x][y].DitheredIndex) + diff)
 			}
 
 			// "Fosterise" by darkening pixels at the bottom and left
@@ -360,7 +302,9 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 	return
 }
 
-func ditherOutput(def *manifest.Definition, output ShaderOutput, x int, y int, errCurr []colour.RGB, primaryCCPalette []colour.RGB, secondaryCCPalette []colour.RGB, regularPalette []colour.RGB, errNext []colour.RGB) (bestIndex byte, ditherError colour.RGB) {
+func ditherOutput(def *manifest.Definition, output ShaderOutput, x int, y int, errCurr []colour.RGB, primaryCCPalette []colour.RGB, secondaryCCPalette []colour.RGB, regularPalette []colour.RGB, errNext []colour.RGB) (bestIndex byte) {
+	var ditherError colour.RGB
+
 	rng := def.Palette.Entries[output[x][y].ModalIndex].Range
 	if rng == nil {
 		rng = &colour.PaletteRange{}
@@ -418,7 +362,27 @@ func ditherOutput(def *manifest.Definition, output ShaderOutput, x int, y int, e
 	return
 }
 
-func floodFill(output *ShaderOutput, def *manifest.Definition, region int, x, y int, width, height int, previousIndex byte, palette *colour.Palette, paletteRange *colour.PaletteRange) {
+func floodFill(x, y, width, height int, fn func(int, int)) {
+	// Recursively flood fill in the adjacent directions
+	if x > 0 {
+		fn(x-1, y)
+	}
+
+	if y > 0 {
+		fn(x, y-1)
+	}
+
+	if x < width-1 {
+		fn(x+1, y)
+	}
+
+	if y < height-1 {
+		fn(x, y+1)
+	}
+
+}
+
+func identifyRegions(output *ShaderOutput, def *manifest.Definition, region int, x, y int, width, height int, previousIndex byte, palette *colour.Palette, paletteRange *colour.PaletteRange) {
 	index := (*output)[x][y].ModalIndex
 	thisRegion := (*output)[x][y].Region
 	thisRange := (*palette).Entries[index].Range
@@ -435,22 +399,10 @@ func floodFill(output *ShaderOutput, def *manifest.Definition, region int, x, y 
 
 	(*output)[x][y].Region = region
 
-	// Recursively flood fill in the adjacent directions
-	if x > 0 {
-		floodFill(output, def, region, x-1, y, width, height, index, palette, paletteRange)
-	}
-
-	if y > 0 {
-		floodFill(output, def, region, x, y-1, width, height, index, palette, paletteRange)
-	}
-
-	if x < width-1 {
-		floodFill(output, def, region, x+1, y, width, height, index, palette, paletteRange)
-	}
-
-	if y < height-1 {
-		floodFill(output, def, region, x, y+1, width, height, index, palette, paletteRange)
-	}
+	// Recursively find the regions
+	floodFill(x, y, width, height, func(x1, y1 int) {
+		identifyRegions(output, def, region, x1, y1, width, height, index, palette, paletteRange)
+	})
 
 	if x > 0 && x < width-1 && (*output)[x-1][y].Region != region && (*output)[x+1][y].Region == region {
 		if !def.Manifest.NoEdgeFosterisation || (*output)[x-1][y].ModalIndex != 0 {
@@ -477,6 +429,76 @@ func floodFill(output *ShaderOutput, def *manifest.Definition, region int, x, y 
 			(*output)[x][y].IsBottom = true
 		}
 	}
+
+	return
+}
+
+func getLightingForSameColourArea(output *ShaderOutput, def *manifest.Definition, x, y int, width, height int, previousIndex byte, minLighting, maxLighting *float64, totalPixels *int) {
+	index := (*output)[x][y].DitheredIndex
+
+	if (*output)[x][y].LightingCalcDone || index != previousIndex {
+		return
+	}
+
+	if (*output)[x][y].Lighting.R > *maxLighting {
+		*maxLighting = (*output)[x][y].Lighting.R
+	}
+
+	if (*output)[x][y].Lighting.R < *minLighting {
+		*minLighting = (*output)[x][y].Lighting.R
+	}
+
+	(*output)[x][y].LightingCalcDone = true
+	*totalPixels++
+
+	// Recursively flood fill in the adjacent directions
+	floodFill(x, y, width, height, func(x1, y1 int) {
+		getLightingForSameColourArea(output, def, x1, y1, width, height, index, minLighting, maxLighting, totalPixels)
+	})
+
+	return
+}
+
+func getLightingValues(output *ShaderOutput, def *manifest.Definition, x, y int, width, height int, previousIndex byte, minLighting, maxLighting float64, lightingValues *[]float64) {
+	index := (*output)[x][y].DitheredIndex
+
+	if (*output)[x][y].DitherChecked || index != previousIndex {
+		return
+	}
+
+	lightingValue := ((*output)[x][y].Lighting.R - minLighting) / (maxLighting - minLighting)
+	*lightingValues = append(*lightingValues, lightingValue)
+	(*output)[x][y].DitherChecked = true
+
+	// Recursively flood fill in the adjacent directions
+	floodFill(x, y, width, height, func(x1, y1 int) {
+		getLightingValues(output, def, x1, y1, width, height, index, minLighting, maxLighting, lightingValues)
+	})
+
+	return
+}
+
+func doColourPush(output *ShaderOutput, def *manifest.Definition, x, y int, width, height int, previousIndex byte, palette *colour.Palette, minLighting, maxLighting, ditherThresholdLow, ditherThresholdHigh float64) {
+	index := (*output)[x][y].DitheredIndex
+	thisRange := (*palette).Entries[index].Range
+
+	if (*output)[x][y].DitherDone || index != previousIndex {
+		return
+	}
+
+	lightingValue := ((*output)[x][y].Lighting.R - minLighting) / (maxLighting - minLighting)
+	if lightingValue > ditherThresholdHigh && (x%2+y)%2 == 0 && index < thisRange.End {
+		(*output)[x][y].DitheredIndex++
+	} else if lightingValue < ditherThresholdLow && (x%2+y)%2 == 0 && index > thisRange.Start {
+		(*output)[x][y].DitheredIndex--
+	}
+
+	(*output)[x][y].DitherDone = true
+
+	// Recursively flood fill in the adjacent directions
+	floodFill(x, y, width, height, func(x1, y1 int) {
+		doColourPush(output, def, x1, y1, width, height, index, palette, minLighting, maxLighting, ditherThresholdLow, ditherThresholdHigh)
+	})
 
 	return
 }
@@ -553,17 +575,16 @@ func shade(info raycaster.RenderInfo, def *manifest.Definition, prevIndex byte) 
 				values[s.Index] += s.Influence
 			}
 
+			output.Lighting = output.Lighting.Add(Lighting(s).MultiplyBy(s.Influence))
+
 			if def.Debug {
-				// Loop makes this a little slower but is fine for debug purposes
-				for i := 0; i < s.Count; i++ {
-					output.Normal = output.Normal.Add(Normal(s))
-					output.AveragedNormal = output.AveragedNormal.Add(AveragedNormal(s))
-					output.Depth = output.Depth.Add(Depth(s))
-					output.Occlusion = output.Occlusion.Add(Occlusion(s))
-					output.Shadowing = output.Shadowing.Add(Shadow(s))
-					output.Lighting = output.Lighting.Add(Lighting(s))
-					output.Detail = output.Detail.Add(Detail(s))
-				}
+				floatCount := float64(s.Count)
+				output.Normal = output.Normal.Add(Normal(s).MultiplyBy(floatCount))
+				output.AveragedNormal = output.AveragedNormal.Add(AveragedNormal(s).MultiplyBy(floatCount))
+				output.Depth = output.Depth.Add(Depth(s).MultiplyBy(floatCount))
+				output.Occlusion = output.Occlusion.Add(Occlusion(s).MultiplyBy(floatCount))
+				output.Shadowing = output.Shadowing.Add(Shadow(s).MultiplyBy(floatCount))
+				output.Detail = output.Detail.Add(Detail(s).MultiplyBy(floatCount))
 			}
 		}
 
@@ -612,6 +633,8 @@ func shade(info raycaster.RenderInfo, def *manifest.Definition, prevIndex byte) 
 
 	output.Specialness = output.Specialness / divisor
 
+	output.Lighting.DivideAndClamp(divisor)
+
 	if def.Debug {
 		debugDivisor := float64(filledSamples)
 		output.Normal.DivideAndClamp(debugDivisor)
@@ -619,7 +642,6 @@ func shade(info raycaster.RenderInfo, def *manifest.Definition, prevIndex byte) 
 		output.Depth.DivideAndClamp(debugDivisor)
 		output.Occlusion.DivideAndClamp(debugDivisor)
 		output.Shadowing.DivideAndClamp(debugDivisor)
-		output.Lighting.DivideAndClamp(debugDivisor)
 		output.Detail.DivideAndClamp(debugDivisor)
 		output.Transparency = FloatValue(float64(filledSamples) / float64(totalSamples))
 	}

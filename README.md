@@ -226,11 +226,11 @@ Sometimes objects will be rendered with insufficient variety within a region of
 colour. You can increase the variety (at the cost of noisier sprites and
 inconsistencies between angles) by configuring the following:
 
-* `max_colour_push` (`0`-`8`): how many palette indexes a colour can be moved by
-                               in either direction. (Colours will always stay within
-                               their palette range). Higher values give more variety
-                               but increase noise and artifacts. 1 or 2 tends to produce
-                               the most "TTD-like" results.
+* `dither_flat_areas` (`true`/`false`): apply extra dithering to areas of contiguous
+                                        identical colour. This will dither light/dark
+                                        sections within a single area of colour to make
+                                        the object appear more detailed, at the cost of
+                                        being somewhat noisier.
 * `fosterise` (`true`/`false`): a distinctive feature of most original TTD sprites is
                                 the line of darker pixels at the lower and left edges
                                 each region of colour. Set this parameter to emulate
