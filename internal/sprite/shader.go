@@ -209,6 +209,24 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 		errCurr, errNext = errNext, errCurr
 	}
 
+	// "Fosterise" by darkening pixels at the bottom and left.
+	// Do this here so areas don't get affected by the dither algorithm later
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			paletteRange := def.Palette.Entries[output[x][y].DitheredIndex].Range
+			if paletteRange == nil || paletteRange.IsAnimatedLight || paletteRange.IsNonRenderable {
+				// Don't alter special colours
+				continue
+			}
+
+			if def.Manifest.Fosterise && (output[x][y].IsBottom || output[x][y].IsLeft) && output[x][y].DitheredIndex > paletteRange.Start {
+				output[x][y].DitheredIndex--
+				output[x][y].DitherChecked = true
+				output[x][y].DitherDone = true
+			}
+		}
+	}
+
 	// Do the second pass dithered output to add fine detail
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
@@ -240,11 +258,6 @@ func GetShaderOutput(renderOutput raycaster.RenderOutput, spr manifest.Sprite, d
 						}
 					}
 				}
-			}
-
-			// "Fosterise" by darkening pixels at the bottom and left
-			if def.Manifest.Fosterise && (output[x][y].IsBottom || output[x][y].IsLeft) && output[x][y].DitheredIndex > paletteRange.Start {
-				output[x][y].DitheredIndex--
 			}
 		}
 	}
