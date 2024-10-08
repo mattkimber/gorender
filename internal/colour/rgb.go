@@ -8,7 +8,7 @@ type RGB struct {
 	B float64
 }
 
-func (rgb RGB) DivideAndClamp(divisor float64) {
+func (rgb *RGB) DivideAndClamp(divisor float64) {
 	rgb.R = Clamp(rgb.R/divisor, 256, 65535-256)
 	rgb.G = Clamp(rgb.G/divisor, 256, 65535-256)
 	rgb.B = Clamp(rgb.B/divisor, 256, 65535-256)
@@ -44,7 +44,7 @@ func Clamp(input float64, min, max float64) float64 {
 	return input
 }
 
-func (rgb RGB) GetRGBA(alpha float64) color.NRGBA64 {
+func (rgb *RGB) GetRGBA(alpha float64) color.NRGBA64 {
 	return color.NRGBA64{
 		R: uint16(rgb.R),
 		G: uint16(rgb.G),
