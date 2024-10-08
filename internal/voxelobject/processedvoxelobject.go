@@ -42,7 +42,7 @@ const normalAverageDistance = 1
 const occlusionRadius = 4
 const accessBorder = 8
 
-func GetProcessedVoxelObject(o magica.VoxelObject, pal *colour.Palette, isTiled, hasBase bool) (p ProcessedVoxelObject) {
+func GetProcessedVoxelObject(o magica.VoxelObject, pal *colour.Palette, isTiled bool, tilingMode string, hasBase bool) (p ProcessedVoxelObject) {
 	p.Size = geometry.FromGandalfPoint(o.Size)
 	p.Palette = pal
 
@@ -50,7 +50,7 @@ func GetProcessedVoxelObject(o magica.VoxelObject, pal *colour.Palette, isTiled,
 		startValues = map[int]radiusStartValues{}
 	}
 
-	p.setElements(o, isTiled, hasBase)
+	p.setElements(o, isTiled, tilingMode, hasBase)
 	p.calculatePass(processFirstPassElement)
 	p.calculatePass(processSecondPassElement)
 
@@ -356,7 +356,25 @@ func (p *ProcessedVoxelObject) isInvisibleColourIndex(idx byte) bool {
 	return idx == 0 || p.Palette.Entries[idx].Range.IsProcessColour
 }
 
-func (p *ProcessedVoxelObject) setElements(r magica.VoxelObject, isTiled bool, hasBase bool) {
+func reflect(a, n int) int {
+	b := (a%(n*2) + n*2) % (n * 2)
+	if b < n {
+		return b
+	} else {
+		return n*2 - 1 - b
+	}
+}
+
+func reflect101(a, n int) int {
+	b := (a%(n*2-2) + n*2 - 2) % (n*2 - 2)
+	if b < n {
+		return b
+	} else {
+		return n*2 - 2 - b
+	}
+}
+
+func (p *ProcessedVoxelObject) setElements(r magica.VoxelObject, isTiled bool, tilingMode string, hasBase bool) {
 	p.Elements = make([][][]ProcessedElement, p.Size.X)
 	borderedElementLookup = make([][][]int, p.Size.X+(accessBorder*2))
 
@@ -380,8 +398,22 @@ func (p *ProcessedVoxelObject) setElements(r magica.VoxelObject, isTiled bool, h
 			borderedElementLookup[x][y] = make([]int, p.Size.Z+(accessBorder*2))
 			for z := 0; z < p.Size.Z+(accessBorder*2); z++ {
 				if isTiled {
-					if r.Voxels[(x+sx-accessBorder)%p.Size.X][(y+sy-accessBorder)%p.Size.Y][(z+sz-accessBorder)%p.Size.Z] == 0 {
-						borderedElementLookup[x][y][z] = 1
+					if tilingMode == "repeat" {
+						if r.Voxels[min(max(x-accessBorder, 0), p.Size.X-1)][min(max(y-accessBorder, 0), p.Size.Y-1)][min(max(z-accessBorder, 0), p.Size.Z-1)] == 0 {
+							borderedElementLookup[x][y][z] = 1
+						}
+					} else if tilingMode == "reflect" {
+						if r.Voxels[reflect(x-accessBorder, p.Size.X)][reflect(y-accessBorder, p.Size.Y)][reflect(z-accessBorder, p.Size.Z)] == 0 {
+							borderedElementLookup[x][y][z] = 1
+						}
+					} else if tilingMode == "reflect101" {
+						if r.Voxels[reflect101(x-accessBorder, p.Size.X)][reflect101(y-accessBorder, p.Size.Y)][reflect101(z-accessBorder, p.Size.Z)] == 0 {
+							borderedElementLookup[x][y][z] = 1
+						}
+					} else {
+						if r.Voxels[(x+sx-accessBorder)%p.Size.X][(y+sy-accessBorder)%p.Size.Y][(z+sz-accessBorder)%p.Size.Z] == 0 {
+							borderedElementLookup[x][y][z] = 1
+						}
 					}
 				} else {
 					borderedElementLookup[x][y][z] = 1
