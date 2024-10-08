@@ -10,6 +10,8 @@ func TestGetBaseFilename(t *testing.T) {
 		{"test.png", "test"},
 		{"files/test.png", "files/test"},
 		{"test.a.b.c", "test.a.b"},
+		{".render/a/b/c", ".render/a/b/c"},
+		{".render/a/b/c.png", ".render/a/b/c"},
 	}
 
 	for _, testCase := range testCases {
