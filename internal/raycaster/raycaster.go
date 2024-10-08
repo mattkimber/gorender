@@ -106,7 +106,7 @@ func raycastSamples(
 
 	px, py, pz, pi := 0, 0, 0, 0
 
-	for i, _ := range *samples {
+	for i := range *samples {
 		result[thisX][y][i].Count = 1
 	}
 

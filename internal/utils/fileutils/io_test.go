@@ -2,7 +2,6 @@ package fileutils
 
 import (
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"strconv"
@@ -14,7 +13,7 @@ type testData struct {
 }
 
 func (d *testData) GetFromReader(r io.Reader) error {
-	bytes, err := ioutil.ReadAll(r)
+	bytes, err := io.ReadAll(r)
 	if err != nil {
 		return err
 	}

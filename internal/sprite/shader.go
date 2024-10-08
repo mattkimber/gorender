@@ -554,12 +554,12 @@ func shade(info raycaster.RenderInfo, def *manifest.Definition, prevIndex byte) 
 		totalSamples = totalSamples + s.Count
 	}
 
-	max := 0.0
+	mx := 0.0
 	alternateModal := byte(0)
 
 	for k, v := range values {
-		if v > max {
-			max = v
+		if v > mx {
+			mx = v
 			// Store the previous modal
 			alternateModal = output.ModalIndex
 			output.ModalIndex = k

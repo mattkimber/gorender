@@ -30,7 +30,7 @@ func doFileIO(filename string, handler fileIOHandler) (err error) {
 	err = handler.DoIO(file)
 
 	if err != nil {
-		file.Close()
+		_ = file.Close()
 		return
 	}
 

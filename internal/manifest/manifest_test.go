@@ -28,7 +28,9 @@ func TestFromJson(t *testing.T) {
 		t.Fatalf("Could not open test data: %v", err)
 	}
 
-	defer file.Close()
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
 
 	actual, err := FromJson(file)
 	if err != nil {

@@ -212,7 +212,7 @@ func (sheets *Spritesheets) SaveAll(baseFilename string) (err error) {
 	for i, sheet := range sheets.Data {
 		filename := baseFilename + "_" + i + ".png"
 		thisSheet := sheet
-		go func() { fileutils.WriteToFile(filename, thisSheet); wg.Done() }()
+		go func() { _ = fileutils.WriteToFile(filename, thisSheet); wg.Done() }()
 	}
 
 	wg.Wait()

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"image/color"
 	"io"
-	"io/ioutil"
 	"math"
 )
 
@@ -187,15 +186,15 @@ func (p Palette) GetLitIndexed(index byte, l float64) (idx byte) {
 	if int(index) < len(p.Entries) {
 		rng := p.Entries[index].Range
 		if rng != nil {
-			min, max := rng.Start, rng.End
-			spread := max - min
+			mn, mx := rng.Start, rng.End
+			spread := mx - mn
 			offsetIndex := float64(index) + math.Round(float64(spread)*(l/2))
 
-			if offsetIndex < float64(min) {
-				return min
+			if offsetIndex < float64(mn) {
+				return mn
 			}
-			if offsetIndex > float64(max) {
-				return max
+			if offsetIndex > float64(mx) {
+				return mx
 			}
 
 			return byte(offsetIndex)
@@ -259,7 +258,7 @@ func (pe *PaletteEntry) UnmarshalJSON(data []byte) error {
 }
 
 func FromJson(handle io.Reader) (p Palette, err error) {
-	data, err := ioutil.ReadAll(handle)
+	data, err := io.ReadAll(handle)
 
 	if err != nil {
 		return Palette{}, err

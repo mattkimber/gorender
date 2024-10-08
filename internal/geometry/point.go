@@ -1,8 +1,8 @@
 package geometry
 
-import gandalf_geo "github.com/mattkimber/gandalf/geometry"
+import gandalfgeo "github.com/mattkimber/gandalf/geometry"
 
-func FromGandalfPoint(point gandalf_geo.Point) Point {
+func FromGandalfPoint(point gandalfgeo.Point) Point {
 	return Point{
 		X: point.X,
 		Y: point.Y,

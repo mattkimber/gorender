@@ -6,7 +6,6 @@ import (
 	"github.com/mattkimber/gorender/internal/geometry"
 	"github.com/mattkimber/gorender/internal/voxelobject"
 	"io"
-	"io/ioutil"
 	"math"
 )
 
@@ -74,7 +73,7 @@ func FromJson(handle io.Reader) (manifest Manifest, err error) {
 	manifest.EdgeThreshold = 0.5
 	manifest.TilingMode = "normal"
 
-	data, err := ioutil.ReadAll(handle)
+	data, err := io.ReadAll(handle)
 
 	if err != nil {
 		return
@@ -105,7 +104,7 @@ func (d *Definition) SoftenEdges() bool {
 
 func (m *Manifest) SetSpriteSizes() {
 	// Set any auto-height sprites
-	for i, _ := range m.Sprites {
+	for i := range m.Sprites {
 		// 0 means "auto"
 		if m.Sprites[i].Height == 0 {
 			height, delta := getCalculatedSpriteHeight(m, m.Sprites[i])

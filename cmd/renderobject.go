@@ -129,15 +129,15 @@ func processFile(inputFilename string) {
 		log.Fatal(err)
 	}
 
-	manifest, err := getManifest(flags.ManifestFilename)
+	renderManifest, err := getManifest(flags.ManifestFilename)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	if flags.Fast {
-		manifest.Sampler = "square"
-		manifest.Accuracy = 1
-		manifest.Overlap = 0
+		renderManifest.Sampler = "square"
+		renderManifest.Accuracy = 1
+		renderManifest.Overlap = 0
 	}
 
 	object, err := magica.FromFile(inputFilename)
@@ -150,7 +150,9 @@ func processFile(inputFilename string) {
 		if err != nil {
 			log.Fatal("could not create CPU profile: ", err)
 		}
-		defer f.Close() // error handling omitted for example
+		defer func(f *os.File) {
+			_ = f.Close()
+		}(f)
 		if err := pprof.StartCPUProfile(f); err != nil {
 			log.Fatal("could not start CPU profile: ", err)
 		}
@@ -159,13 +161,13 @@ func processFile(inputFilename string) {
 
 	var processedObject voxelobject.ProcessedVoxelObject
 	timingutils.Time("Voxel processing", flags.OutputTime, func() {
-		processedObject = voxelobject.GetProcessedVoxelObject(object, &palette, manifest.TiledNormals, manifest.TilingMode, manifest.SolidBase)
+		processedObject = voxelobject.GetProcessedVoxelObject(object, &palette, renderManifest.TiledNormals, renderManifest.TilingMode, renderManifest.SolidBase)
 	})
 
 	// Check if there are files to output
 	for _, scale := range splitScales {
 		timingutils.Time(fmt.Sprintf("Total (%sx)", scale), flags.OutputTime, func() {
-			renderScale(inputFilename, scale, manifest, processedObject, palette, numScales)
+			renderScale(inputFilename, scale, renderManifest, processedObject, palette, numScales)
 		})
 	}
 

@@ -24,6 +24,6 @@ func (w writer) GetFileHandle(filename string) (f *os.File, err error) {
 func (w writer) DoIO(f *os.File) (err error) {
 	buf := bufio.NewWriterSize(f, writerSize)
 	err = w.fileWriter.OutputToWriter(buf)
-	buf.Flush()
+	_ = buf.Flush()
 	return
 }
