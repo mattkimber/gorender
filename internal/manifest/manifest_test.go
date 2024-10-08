@@ -15,6 +15,7 @@ func TestFromJson(t *testing.T) {
 		Accuracy:          2,
 		Contrast:          1.0,
 		EdgeThreshold:     0.5,
+		TilingMode:        "normal",
 		Size: geometry.Vector3{
 			X: 20,
 			Y: 30,

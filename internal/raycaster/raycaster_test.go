@@ -61,7 +61,7 @@ func getObject(filename string, t *testing.T) voxelobject.ProcessedVoxelObject {
 
 	pal.SetRanges([]colour.PaletteRange{{Start: 0, End: 255}})
 
-	v := voxelobject.GetProcessedVoxelObject(mv, &pal, false, false)
+	v := voxelobject.GetProcessedVoxelObject(mv, &pal, false, "normal", false)
 	return v
 }
 
@@ -104,6 +104,6 @@ func getObjectForBenchmark(filename string, b *testing.B) voxelobject.ProcessedV
 		b.Fatalf("error loading test file: %v", err)
 	}
 
-	v := voxelobject.GetProcessedVoxelObject(mv, &colour.Palette{}, false, false)
+	v := voxelobject.GetProcessedVoxelObject(mv, &colour.Palette{}, false, "normal", false)
 	return v
 }

@@ -24,16 +24,16 @@ func TestRawVoxelObject_GetProcessedVoxelObject(t *testing.T) {
 
 	pal.SetRanges([]colour.PaletteRange{{Start: 0, End: 255}})
 
-	v := GetProcessedVoxelObject(mv, &pal, false, false)
+	v := GetProcessedVoxelObject(mv, &pal, false, "normal", false)
 	testObject(t, mv, v)
 
-	v = GetProcessedVoxelObject(mv, &pal, true, false)
+	v = GetProcessedVoxelObject(mv, &pal, true, "normal", false)
 	testObject(t, mv, v)
 
-	v = GetProcessedVoxelObject(mv, &pal, true, true)
+	v = GetProcessedVoxelObject(mv, &pal, true, "repeat", false)
 	testObject(t, mv, v)
 
-	v = GetProcessedVoxelObject(mv, &pal, false, true)
+	v = GetProcessedVoxelObject(mv, &pal, false, "repeat", false)
 	testObject(t, mv, v)
 }
 
@@ -119,7 +119,7 @@ func getObject(filename string, t *testing.T) ProcessedVoxelObject {
 
 	pal.SetRanges([]colour.PaletteRange{{Start: 0, End: 255}})
 
-	v := GetProcessedVoxelObject(mv, &pal, false, false)
+	v := GetProcessedVoxelObject(mv, &pal, false, "normal", false)
 	return v
 }
 
