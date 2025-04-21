@@ -190,20 +190,23 @@ func allPotentialOutputFilesExist(inputFilename string, scale string, numScales 
 		return false, err
 	}
 
+	manifestFileStats, err := os.Stat(manifestFilepath)
+	if err != nil {
+		return false, err
+	}
+
 	check := []string{"8bpp"}
 	if !flags.Output8bppOnly {
 		check = []string{"8bpp", "32bpp", "mask"}
 	}
 
-	manifestNewer, err := fileIsNewerThanDate(manifestFilepath, inputFileStats.ModTime())
-	if err != nil {
-		return false, err
+	modTime := inputFileStats.ModTime()
+	if manifestFileStats.ModTime().After(modTime) {
+		modTime = manifestFileStats.ModTime()
 	}
-	if manifestNewer {
-		return false, nil
-	}
+
 	for _, f := range check {
-		newer, err := fileIsNewerThanDate(outputFilename+"_"+f+".png", inputFileStats.ModTime())
+		newer, err := fileIsNewerThanDate(outputFilename+"_"+f+".png", modTime)
 		if err != nil {
 			return false, err
 		}
@@ -211,7 +214,6 @@ func allPotentialOutputFilesExist(inputFilename string, scale string, numScales 
 		if !newer {
 			return false, nil
 		}
-
 	}
 
 	return true, nil
